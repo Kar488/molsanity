@@ -150,28 +150,45 @@ def regime_stratification_figure(cells: dict, out_path, split="scaffold") -> dic
     gt = [_mean(pooled[r]["gt_auroc"]) for r in regimes]
     occ = [_mean(pooled[r]["occ_spearman"]) for r in regimes]
 
-    fig, ax = plt.subplots(figsize=(6.2, 3.6))
+    fig, ax = plt.subplots(figsize=(6.4, 3.8))
     x = np.arange(len(regimes))
     w = 0.38
     b1 = ax.bar(x - w / 2, gt, w, color=attributor_color("IntegratedGradients"),
                 label="GT AUROC")
     b2 = ax.bar(x + w / 2, occ, w, color=GT_GREEN, label="Occlusion Spearman")
+
+    finite = [v for v in gt + occ if np.isfinite(v)] or [0.0]
+    top = max(0.5, max(finite)) + 0.14
+    bottom = min(0.0, min(finite)) - 0.14
+    ax.set_ylim(bottom, top)
     ax.axhline(0.5, color=GREY, ls="--", lw=1)
+    ax.text(len(regimes) - 1 + 0.30, 0.512, "chance", color=GREY, fontsize=7,
+            va="bottom", ha="right")
     ax.axhline(0, color="#3a3a38", lw=0.8)
+
+    # Value labels sit just outside the bar on the zero-facing side, so they
+    # never reach the axis edge / x tick labels.
     for bars, vals in [(b1, gt), (b2, occ)]:
         for bar, v in zip(bars, vals):
-            if np.isfinite(v):
-                ax.text(bar.get_x() + bar.get_width() / 2,
-                        v + (0.02 if v >= 0 else -0.05), f"{v:.2f}",
-                        ha="center", va="bottom" if v >= 0 else "top", fontsize=7.5)
+            if not np.isfinite(v):
+                continue
+            if v >= 0:
+                ax.text(bar.get_x() + bar.get_width() / 2, v + 0.015, f"{v:.2f}",
+                        ha="center", va="bottom", fontsize=7.5)
+            else:
+                ax.text(bar.get_x() + bar.get_width() / 2, v - 0.015, f"{v:.2f}",
+                        ha="center", va="top", fontsize=7.5)
+
     ax.set_xticks(x)
     ax.set_xticklabels([f"{lab}\n(n={counts[r]})" for lab, r in zip(reg_labels, regimes)])
     ax.set_ylabel("Mean reliability")
     ax.set_title(f"Attribution reliability by regime ({split} split, pooled)")
     ax.grid(axis="x", visible=False)
-    # Legend in the empty middle column (confident_error is often n=0).
-    ax.legend(loc="center", bbox_to_anchor=(0.5, 0.5), frameon=True,
-              framealpha=0.9, edgecolor="none")
+    # Compact legend in the empty middle column (confident_error is ~n=0), where
+    # there are no bars to overlap.
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 0.99), ncol=1,
+              frameon=True, framealpha=0.9, edgecolor="none", fontsize=7.5)
+    ax.margins(x=0.10)
     fig.tight_layout()
     return save_vector(fig, Path(out_path))
 

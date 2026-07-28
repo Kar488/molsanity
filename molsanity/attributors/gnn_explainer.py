@@ -2,27 +2,19 @@
 
 Perturbation-based (learns soft node/edge masks maximising mutual information
 with the prediction). Not reimplemented — driven via ``torch_geometric.explain``.
+The shared attribution flow lives in :class:`BaseExplainerAttributor`.
 """
 from __future__ import annotations
 
-import numpy as np
-import torch
-
-from ..utils import get_logger
-from .base import Attribution
-from .captum_methods import _ExplainerWrapper
-
-log = get_logger()
+from .base import BaseExplainerAttributor, _ExplainerWrapper
 
 
-class GNNExplainerAttributor:
+class GNNExplainerAttributor(BaseExplainerAttributor):
     method = "GNNExplainer"
 
     def __init__(self, model, task: str = "graph-classification", epochs: int = 100):
-        self.model = model
-        self.task = task
         self.epochs = epochs
-        self._explainer = self._build_explainer()
+        super().__init__(model, task=task)
 
     def _build_explainer(self):
         from torch_geometric.explain import Explainer, GNNExplainer
@@ -37,34 +29,5 @@ class GNNExplainerAttributor:
             model_config=dict(mode=mode, task_level="graph", return_type="raw"),
         )
 
-    def attribute(self, data, target: int | None = None) -> Attribution:
-        self.model.eval()
-        device = next(self.model.parameters()).device
-        data = data.to(device)
-        batch = torch.zeros(data.num_nodes, dtype=torch.long, device=device)
-        with torch.no_grad():
-            out = self.model(data.x, data.edge_index, data.edge_attr, batch)
-        pred = int(out.argmax(dim=1)) if self.task == "graph-classification" else 0
-        tgt = target if target is not None else pred
-
-        explanation = self._explainer(
-            x=data.x, edge_index=data.edge_index,
-            target=torch.tensor([tgt], device=device),
-            edge_attr=data.edge_attr, batch=batch,
-        )
-        node_mask = explanation.get("node_mask")
-        if node_mask is not None:
-            node_attr = node_mask.detach().abs().cpu().numpy()
-            if node_attr.ndim > 1:
-                node_attr = node_attr.sum(axis=1)
-        else:
-            node_attr = np.zeros(data.num_nodes)
-        edge_mask = explanation.get("edge_mask")
-        edge_attr = edge_mask.detach().abs().cpu().numpy() if edge_mask is not None else None
-
-        return Attribution(
-            graph_id=int(getattr(data, "graph_id", -1)),
-            node_attr=node_attr.astype(np.float64),
-            edge_attr=edge_attr.astype(np.float64) if edge_attr is not None else None,
-            method=self.method, target=tgt, meta={"pred": pred, "epochs": self.epochs},
-        )
+    def _extra_meta(self) -> dict:
+        return {"epochs": self.epochs}

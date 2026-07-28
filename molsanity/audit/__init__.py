@@ -10,7 +10,7 @@ from .regime import (
     stratify_by_regime,
 )
 from .run import MoleculeAuditRecord, aggregate_records, audit_molecule
-from .stability import cross_checkpoint_stability, motif_attr_vector
+from .stability import cross_checkpoint_stability
 from .stats import bootstrap_ci, paired_wilcoxon, summarise, wilcoxon_vs_zero
 
 __all__ = [
@@ -20,7 +20,7 @@ __all__ = [
     "occlusion_faithfulness",
     "assign_regime", "confidence_from_logits", "stratify_by_regime",
     "calibration_linkage",
-    "cross_checkpoint_stability", "motif_attr_vector",
+    "cross_checkpoint_stability",
     "MoleculeAuditRecord", "audit_molecule", "aggregate_records",
     "bootstrap_ci", "paired_wilcoxon", "summarise", "wilcoxon_vs_zero",
 ]

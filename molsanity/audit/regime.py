@@ -24,10 +24,9 @@ def assign_regime(confidence: float, correct: int, tau: float = 0.8) -> str:
 
 def confidence_from_logits(logits: np.ndarray, temperature: float = 1.0) -> tuple[int, float]:
     """Return (pred, max calibrated prob) for a single logit vector."""
-    z = np.asarray(logits, dtype=np.float64) / max(temperature, 1e-6)
-    z = z - z.max()
-    e = np.exp(z)
-    p = e / e.sum()
+    from ..models.calibration import softmax_1d
+
+    p = softmax_1d(logits, temperature)
     return int(p.argmax()), float(p.max())
 
 

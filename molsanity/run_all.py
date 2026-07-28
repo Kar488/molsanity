@@ -39,6 +39,7 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     from . import data as dataio
     from .attributors import build_attributor
     from .audit import aggregate_records, audit_molecule, cross_checkpoint_stability
+    from .audit.motifs import decompose
     from .models import build_backbone, train_model
     from .viz import ground_truth_validation_figure, molecule_attribution_svg
 
@@ -90,15 +91,22 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         eval_idx = eval_idx[:cap]
 
     records = []
+    first_attribution = None
     for i in eval_idx:
         g = dataset[i]
         g.graph_id = i
         attribution = attributor.attribute(g)
-        rec = audit_molecule(model, g, attribution, dataset_name, temperature=temperature)
-        if early_model is not None:
+        if first_attribution is None:
+            first_attribution = attribution
+        # Motif decomposition depends only on the molecule; compute once and
+        # share it between the coherence/occlusion audit and the stability check.
+        decomp = decompose(g)
+        rec = audit_molecule(model, g, attribution, dataset_name,
+                             temperature=temperature, decomp=decomp)
+        if early_attr is not None:
             try:
                 rec.stability = cross_checkpoint_stability(
-                    early_model, model, early_attr, attributor, g, dataset_name
+                    early_attr, g, decomp, attribution.node_attr
                 )
             except Exception:
                 pass
@@ -112,13 +120,12 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         records, fig_dir / "gt_validation",
         title=f"{dataset_name} · {backbone} · {attributor_name} ({split_kind} split)",
     )
-    if eval_idx:
+    if eval_idx and first_attribution is not None:
         g0 = dataset[eval_idx[0]]
         g0.graph_id = eval_idx[0]
-        a0 = attributor.attribute(g0)
-        gt0 = dataio.ground_truth_mask(dataset_name, g0)
+        gt0 = dataio.ground_truth_mask(dataset_name, g0)  # reuse loop's attribution
         molecule_attribution_svg(
-            g0, a0.node_attr, fig_dir / "case_molecule.svg", gt_mask=gt0,
+            g0, first_attribution.node_attr, fig_dir / "case_molecule.svg", gt_mask=gt0,
         )
 
     row = results_row(cell, agg, train_res.__dict__, split_kind)

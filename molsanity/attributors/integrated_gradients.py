@@ -1,7 +1,7 @@
 """Integrated Gradients attributor (Captum via PyG's CaptumExplainer).
 
 Thin specialisation of :class:`CaptumAttributor`; the generic Captum bridge and
-schema packaging live in ``captum_methods.py``.
+schema packaging live in ``captum_methods.py`` / ``base.py``.
 """
 from __future__ import annotations
 

@@ -39,7 +39,7 @@ Legend: ✓ = core capability · ~ = partial / possible but not central · ✗ =
 
 On MUTAG × GINE under a scaffold split, Saliency and InputXGradient are
 *faithful* (occlusion Spearman ≈ 0.38/0.40) yet **anti-aligned with the nitro
-ground truth** (GT AUROC ≈ 0.03/0.04), while IG (0.54) and GNNExplainer (0.57)
+ground truth** (GT AUROC ≈ 0.03/0.04), while IG (0.54) and GNNExplainer (0.49)
 recover it at similar faithfulness — a >0.5 AUROC localisation gap. A
 faithfulness-only benchmark would score all four as fine; MolSanity's
 ground-truth + shift view separates them. See `RESULTS.md` / `BENCHMARK.md` for

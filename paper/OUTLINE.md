@@ -50,7 +50,7 @@ confidence/correctness regime stratification, across backbones and datasets.
   Headline (validated, `configs/matrix.yaml`): faithfulness ≠ correctness. On
   MUTAG/GINE, Saliency and InputXGradient are *faithful* (occlusion Spearman
   ≈ 0.38/0.40) yet **anti-aligned with the nitro ground truth** (GT AUROC
-  ≈ 0.03/0.04 ≪ 0.5), while IG (0.54) and GNNExplainer (0.57) recover it — a
+  ≈ 0.03/0.04 ≪ 0.5), while IG (0.54) and GNNExplainer (0.49) recover it — a
   >0.5 AUROC gap at near-equal faithfulness that a faithfulness-only benchmark
   misses.
 - 5.2 Head-to-head across attributors — **BENCHMARK.md** + paired Wilcoxon.

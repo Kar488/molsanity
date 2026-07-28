@@ -49,7 +49,10 @@ class MoleculeAuditRecord:
 
 
 def audit_molecule(model, data, attribution, dataset_name: str,
-                   temperature: float = 1.0, tau: float = 0.8) -> MoleculeAuditRecord:
+                   temperature: float = 1.0, tau: float = 0.8,
+                   decomp=None) -> MoleculeAuditRecord:
+    """Audit one molecule. ``decomp`` (an RDKit motif decomposition) may be
+    passed in to avoid recomputing it — it depends only on the molecule."""
     import torch
 
     from .regime import assign_regime, confidence_from_logits
@@ -59,8 +62,9 @@ def audit_molecule(model, data, attribution, dataset_name: str,
     pred = attribution.meta.get("pred", target)
     label = int(data.y.view(-1)[0]) if hasattr(data, "y") else -1
 
-    mol, _ = mol_from_data(data)
-    decomp = decompose(data, mol=mol)
+    if decomp is None:
+        mol, _ = mol_from_data(data)
+        decomp = decompose(data, mol=mol)
     edge_index = data.edge_index.cpu().numpy()
 
     # Calibrated confidence + regime.

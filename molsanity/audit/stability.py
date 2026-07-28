@@ -9,28 +9,24 @@ from __future__ import annotations
 
 import numpy as np
 
-from .motifs import decompose, motif_scores
+from .motifs import motif_scores
 
 
-def motif_attr_vector(model, attributor, data, dataset_name: str) -> np.ndarray:
-    """Motif-level attribution scores for one molecule under a given model."""
-    from ..data.chem import mol_from_data
-
-    mol, _ = mol_from_data(data)
-    decomp = decompose(data, mol=mol)
-    attribution = attributor.attribute(data)
-    return motif_scores(np.clip(attribution.node_attr, 0, None), decomp, reduce="sum")
+def _motif_vector(node_attr: np.ndarray, decomp) -> np.ndarray:
+    return motif_scores(np.clip(node_attr, 0, None), decomp, reduce="sum")
 
 
-def cross_checkpoint_stability(
-    model_early, model_final, attr_early, attr_final, data, dataset_name: str
-) -> float:
-    """Spearman(motif attributions early, motif attributions final)."""
+def cross_checkpoint_stability(early_attr, data, decomp, final_node_attr) -> float:
+    """Spearman(early motif attributions, final motif attributions).
+
+    The final attribution is already computed in the audit loop and passed in as
+    ``final_node_attr``; the shared motif ``decomp`` is reused for both. Only the
+    *early* checkpoint's attribution is (re)computed here.
+    """
     from scipy.stats import spearmanr
 
-    v_early = motif_attr_vector(model_early, attr_early, data, dataset_name)
-    v_final = motif_attr_vector(model_final, attr_final, data, dataset_name)
+    v_final = _motif_vector(final_node_attr, decomp)
+    v_early = _motif_vector(early_attr.attribute(data).node_attr, decomp)
     if v_early.size < 2 or np.std(v_early) == 0 or np.std(v_final) == 0:
         return float("nan")
-    rho = spearmanr(v_early, v_final).correlation
-    return float(rho)
+    return float(spearmanr(v_early, v_final).correlation)

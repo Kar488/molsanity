@@ -13,6 +13,19 @@ from torch import nn
 from torch_geometric.nn import GINEConv, global_add_pool, global_mean_pool
 
 
+def cast_inputs(x, edge_attr):
+    """Coerce node/edge features to float once at each forward entry.
+
+    Datasets ship features as int (MoleculeNet one-hot codes) or float (MUTAG);
+    the linear encoders need float. Shared by every backbone's forward so a new
+    backbone cannot forget the cast.
+    """
+    x = x.float()
+    if edge_attr is not None:
+        edge_attr = edge_attr.float()
+    return x, edge_attr
+
+
 class GINE(nn.Module):
     def __init__(
         self,
@@ -52,9 +65,7 @@ class GINE(nn.Module):
         )
 
     def forward(self, x, edge_index, edge_attr, batch, node_mask=None):
-        x = x.float()
-        if edge_attr is not None:
-            edge_attr = edge_attr.float()
+        x, edge_attr = cast_inputs(x, edge_attr)
         if node_mask is not None:
             # Broadcast a per-node scalar (or per-feature) multiplier onto inputs.
             x = x * node_mask
@@ -70,29 +81,9 @@ class GINE(nn.Module):
 
     @torch.no_grad()
     def embed(self, x, edge_index, edge_attr, batch):
-        x = x.float()
-        if edge_attr is not None:
-            edge_attr = edge_attr.float()
+        x, edge_attr = cast_inputs(x, edge_attr)
         h = self.node_encoder(x)
         e = self.edge_encoder(edge_attr) if edge_attr is not None else None
         for conv, bn in zip(self.convs, self.bns):
             h = F.relu(bn(conv(h, edge_index, e)))
         return self.pool(h, batch)
-
-
-def build_model(sample_graph, cfg: dict) -> GINE:
-    """Construct a GINE from a sample graph and a model config dict."""
-    in_channels = sample_graph.x.size(1)
-    edge_dim = sample_graph.edge_attr.size(1) if sample_graph.edge_attr is not None else 1
-    task = cfg.get("task", "graph-classification")
-    out_channels = cfg.get("out_channels", 2 if task == "graph-classification" else 1)
-    return GINE(
-        in_channels=in_channels,
-        edge_dim=edge_dim,
-        hidden_channels=cfg.get("hidden_channels", 64),
-        num_layers=cfg.get("num_layers", 3),
-        out_channels=out_channels,
-        dropout=cfg.get("dropout", 0.5),
-        pool=cfg.get("pool", "mean"),
-        task=task,
-    )

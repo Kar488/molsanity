@@ -62,7 +62,7 @@ model yet fail to recover the true motif. On MUTAG under a **scaffold split**
   near-equal faithfulness.** On GINE, Saliency and InputXGradient are *faithful*
   (occlusion Spearman ≈ 0.38 / 0.40) yet strongly **anti-aligned with the nitro
   ground truth** (GT AUROC ≈ **0.03 / 0.04**, chance = 0.5) — faithful-but-wrong.
-  Integrated Gradients (0.54) and GNNExplainer (0.57) recover the motif far
+  Integrated Gradients (0.54) and GNNExplainer (0.49) recover the motif far
   better at similar faithfulness. A faithfulness-only benchmark would rate all
   four as fine; MolSanity's ground-truth view separates them.
 - **Backbone matters too.** With IG, ground-truth localisation ranges from GINE

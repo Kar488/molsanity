@@ -12,10 +12,9 @@ def attribution_gt_scores(node_attr: np.ndarray, gt_mask: np.ndarray) -> dict:
     """
     from sklearn.metrics import average_precision_score, roc_auc_score
 
-    a = np.abs(np.asarray(node_attr, dtype=np.float64))
-    rng = a.max() - a.min()
-    a = (a - a.min()) / rng if rng > 0 else np.zeros_like(a)
+    from ..attributors.base import minmax_normalise
 
+    a = minmax_normalise(node_attr)
     gt = (np.asarray(gt_mask) > 0).astype(int)
     pos = int(gt.sum())
     if pos == 0 or pos == gt.size:

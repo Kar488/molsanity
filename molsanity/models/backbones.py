@@ -18,13 +18,12 @@ from torch_geometric.nn import (
     AttentiveFP,
     GATConv,
     GCNConv,
-    GINEConv,
     NNConv,
     global_add_pool,
     global_mean_pool,
 )
 
-from .gine import GINE  # re-exported; canonical GINE lives there
+from .gine import GINE, cast_inputs  # canonical GINE + shared input cast
 
 
 def _pool_fn(pool: str):
@@ -57,9 +56,7 @@ class _BaseGNN(nn.Module):
         raise NotImplementedError
 
     def forward(self, x, edge_index, edge_attr, batch, node_mask=None):
-        x = x.float()
-        if edge_attr is not None:
-            edge_attr = edge_attr.float()
+        x, edge_attr = cast_inputs(x, edge_attr)
         if node_mask is not None:
             x = x * node_mask
         h = self.node_encoder(x)
@@ -120,19 +117,6 @@ class MPNN(_BaseGNN):
         return conv(h, edge_index, e)
 
 
-class GINEBackbone(_BaseGNN):
-    """GINE reimplemented on the shared base (kept in sync with gine.GINE)."""
-
-    def _build_convs(self, hidden, num_layers):
-        for _ in range(num_layers):
-            mlp = nn.Sequential(nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, hidden))
-            self.convs.append(GINEConv(mlp, edge_dim=hidden, train_eps=True))
-            self.bns.append(nn.BatchNorm1d(hidden))
-
-    def _conv_forward(self, conv, h, edge_index, e):
-        return conv(h, edge_index, e)
-
-
 class AttentiveFPBackbone(nn.Module):
     """Wrap PyG's canonical AttentiveFP into the common forward signature."""
 
@@ -149,19 +133,16 @@ class AttentiveFPBackbone(nn.Module):
         )
 
     def forward(self, x, edge_index, edge_attr, batch, node_mask=None):
-        x = x.float()
+        x, edge_attr = cast_inputs(x, edge_attr)
         if node_mask is not None:
             x = x * node_mask
         if edge_attr is None:
             edge_attr = torch.zeros(edge_index.size(1), self.edge_dim, device=x.device)
-        else:
-            edge_attr = edge_attr.float()
         return self.model(x, edge_index, edge_attr, batch)
 
 
 _BACKBONES = {
-    "GINE": GINE,          # the original standalone GINE (slice-compatible)
-    "GINEBase": GINEBackbone,
+    "GINE": GINE,
     "GCN": GCN,
     "GAT": GAT,
     "MPNN": MPNN,
@@ -170,6 +151,8 @@ _BACKBONES = {
 
 
 def build_backbone(name: str, sample_graph, cfg: dict):
+    if name not in _BACKBONES:
+        raise KeyError(f"Unknown backbone '{name}'. Known: {sorted(_BACKBONES)}")
     in_channels = sample_graph.x.size(1)
     edge_dim = sample_graph.edge_attr.size(1) if sample_graph.edge_attr is not None else 1
     task = cfg.get("task", "graph-classification")
@@ -180,9 +163,4 @@ def build_backbone(name: str, sample_graph, cfg: dict):
         num_layers=cfg.get("num_layers", 3), out_channels=out_channels,
         dropout=cfg.get("dropout", 0.5), pool=cfg.get("pool", "mean"), task=task,
     )
-    if name not in _BACKBONES:
-        raise KeyError(f"Unknown backbone '{name}'. Known: {sorted(_BACKBONES)}")
-    if name == "GINE":
-        # gine.GINE has a slightly different ctor (no edge_dim kw duplication).
-        return GINE(**common)
     return _BACKBONES[name](**common)

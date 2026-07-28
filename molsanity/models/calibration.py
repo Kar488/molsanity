@@ -65,6 +65,15 @@ def softmax_np(logits: np.ndarray) -> np.ndarray:
     return e / e.sum(axis=1, keepdims=True)
 
 
+def softmax_1d(logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
+    """Numerically-stable softmax of a single (optionally temperature-scaled)
+    logit vector. Shared by the occlusion and regime audit code."""
+    z = np.asarray(logits, dtype=np.float64) / max(temperature, 1e-6)
+    z = z - z.max()
+    e = np.exp(z)
+    return e / e.sum()
+
+
 def expected_calibration_error(
     probs: np.ndarray, labels: np.ndarray, n_bins: int = 10
 ) -> dict:

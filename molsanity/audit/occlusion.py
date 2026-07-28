@@ -90,10 +90,10 @@ def occlusion_faithfulness(
     all_masks = np.concatenate([base_mask, motif_masks, rm_salient, rm_nonsalient], axis=0)
     logits = _batched_masked_logits(model, data, all_masks)  # [M, C]
 
+    from ..models.calibration import softmax_1d
+
     def target_prob(row):
-        z = row - row.max()
-        e = np.exp(z)
-        return float(e[target] / e.sum())
+        return float(softmax_1d(row)[target])
 
     base_logit = logits[0, target]
     motif_logits = logits[1 : 1 + len(motifs), target]

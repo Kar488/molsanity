@@ -13,7 +13,7 @@
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.650 | 0.132 | 0.150 | 0.993 | -0.880 | 0.000 | 0.002 | 0.012 | 0.771 | 0.235 |
 | MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.750 | 0.130 | 0.151 | 0.992 | 0.268 | 0.600 | 0.189 | 0.247 | 0.771 | 0.155 |
 | MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.750 | 0.203 | 0.222 | 0.989 | 0.175 | 0.600 | 0.123 | 0.228 | 0.767 | 0.138 |
-| MUTAG | GINE | GNNExplainer | scaffold | 20 | 0.800 | 0.574 | 0.360 | 0.986 | 0.296 | 0.350 | 0.112 | 0.285 | 0.771 | 0.117 |
+| MUTAG | GINE | GNNExplainer | scaffold | 20 | 0.800 | 0.491 | 0.347 | 0.987 | 0.279 | 0.350 | 0.113 | 0.278 | 0.771 | 0.117 |
 | MUTAG | GINE | InputXGradient | scaffold | 20 | 0.800 | 0.042 | 0.134 | 0.998 | 0.398 | 0.350 | 0.251 | 0.225 | 0.771 | 0.117 |
 | MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.800 | 0.540 | 0.405 | 0.979 | 0.414 | 0.350 | 0.252 | 0.245 | 0.771 | 0.117 |
 | MUTAG | GINE | Saliency | scaffold | 20 | 0.800 | 0.026 | 0.131 | 0.997 | 0.376 | 0.350 | 0.267 | 0.230 | 0.771 | 0.117 |

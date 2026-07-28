@@ -1,5 +1,5 @@
 """molsanity.attributors — uniform adapter over canonical attribution methods."""
-from .base import Attribution
+from .base import Attribution, minmax_normalise
 from .captum_methods import CaptumAttributor
 from .gnn_explainer import GNNExplainerAttributor
 from .integrated_gradients import IntegratedGradientsAttributor
@@ -29,6 +29,7 @@ def build_attributor(name, model, **kwargs):
 ATTRIBUTORS = sorted(_CAPTUM_METHODS | {"GNNExplainer"})
 
 __all__ = [
-    "Attribution", "CaptumAttributor", "IntegratedGradientsAttributor",
-    "GNNExplainerAttributor", "build_attributor", "ATTRIBUTORS",
+    "Attribution", "minmax_normalise", "CaptumAttributor",
+    "IntegratedGradientsAttributor", "GNNExplainerAttributor",
+    "build_attributor", "ATTRIBUTORS",
 ]

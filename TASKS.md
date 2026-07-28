@@ -15,7 +15,9 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] Manifest schema (loader, source, licence, cache path, checksum)
 - [x] Idempotent caching + checksum verification + provenance logging
 - [x] Wire Tier-1 MUTAG (PyG TUDataset) and verify a load
-- [x] Wire BA-2Motifs (Tier-1, ground-truth motif masks)
+- [!] Wire BA-2Motifs — loader written + GT extractor ready, but the PyG source
+      returns **HTTP 403** in this environment (network policy). Handled
+      gracefully (skip+log); retry where the source is reachable.
 - [ ] Wire ShapeGGen via GraphXAI (blocked-tolerant: skip+log if unavailable)
 - [x] Bemis–Murcko scaffold split (deterministic) + random split reference
 
@@ -51,5 +53,9 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [ ] Full README, LIMITATIONS.md
 
 ## Blockers / notes
+- **BA-2Motifs**: PyG download source returns HTTP 403 in this environment.
+  Loader + ground-truth extractor are implemented; blocked on data fetch only.
 - ShapeGGen (GraphXAI) install may be heavy; treat as blocked-tolerant.
 - TDC (PyTDC) not yet installed; wire in Milestone 4.
+- MUTAG ground truth is a nitro-motif *proxy* (documented in LIMITATIONS.md),
+  not annotator labels; exact GT comes from synthetic Tier-1 sets.

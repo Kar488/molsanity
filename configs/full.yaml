@@ -1,0 +1,37 @@
+# Full config — overnight matrix. Broaden only after the slice is verified.
+# Cells for not-yet-implemented backbones/attributors/datasets are attempted and
+# gracefully skipped+logged (never aborting the run) until wired in later
+# milestones.
+seed: 0
+budget:
+  epochs: 150
+  ig_steps: 50
+  max_eval_molecules: null   # audit the full evaluation set
+
+split:
+  kind: scaffold
+  frac_train: 0.8
+  frac_val: 0.1
+
+model:
+  hidden_channels: 64
+  num_layers: 3
+  dropout: 0.5
+  pool: mean
+
+train:
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: 32
+
+# Also run a random-split reference for in-distribution comparison.
+extra_splits: [random]
+
+cells:
+  # --- Tier 1 (implemented) ---
+  - {dataset: MUTAG,      backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
+  # --- Broadening (wired in later milestones; skipped+logged until then) ---
+  - {dataset: BBBP,       backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: BACE,       backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: ClinTox,    backbone: GINE, attributor: IntegratedGradients}

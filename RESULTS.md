@@ -18,6 +18,9 @@
 | MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.800 | 0.540 | 0.405 | 0.979 | 0.414 | 0.350 | 0.252 | 0.245 | 0.771 | 0.117 |
 | MUTAG | GINE | Saliency | scaffold | 20 | 0.800 | 0.026 | 0.131 | 0.997 | 0.376 | 0.350 | 0.267 | 0.230 | 0.771 | 0.117 |
 | MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.750 | 0.356 | 0.274 | 0.985 | 0.191 | 0.600 | 0.263 | 0.312 | 0.768 | 0.129 |
+| SynthMotifs | GINE | GNNExplainer | scaffold | 20 | 1.000 | 0.498 | 0.246 | 0.043 | -0.017 | 0.050 | 0.101 | 0.099 | 0.800 | 0.000 |
+| SynthMotifs | GINE | IntegratedGradients | scaffold | 20 | 1.000 | 0.742 | 0.633 | 0.225 | 0.073 | 0.050 | 0.109 | 0.100 | 0.792 | 0.000 |
+| SynthMotifs | GINE | Saliency | scaffold | 20 | 1.000 | 0.983 | 0.935 | 0.199 | 0.022 | 0.050 | 0.123 | 0.074 | 0.778 | 0.000 |
 
 ## Regression audit matrix
 

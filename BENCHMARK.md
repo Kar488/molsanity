@@ -31,6 +31,9 @@
 | MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.540 | 0.414 | 0.728 | 0.979 | 0.252 | 0.245 | 0.771 |
 | MUTAG | GINE | Saliency | scaffold | 20 | 0.026 | 0.376 | 0.931 | 0.997 | 0.267 | 0.230 | 0.771 |
 | MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.356 | 0.191 | 0.885 | 0.985 | 0.263 | 0.312 | 0.768 |
+| SynthMotifs | GINE | GNNExplainer | scaffold | 20 | 0.498 | -0.017 | 0.934 | 0.043 | 0.101 | 0.099 | 0.800 |
+| SynthMotifs | GINE | IntegratedGradients | scaffold | 20 | 0.742 | 0.073 | 0.656 | 0.225 | 0.109 | 0.100 | 0.792 |
+| SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 |
 
 ## Paired attributor comparisons (Wilcoxon, shared molecules)
 
@@ -50,4 +53,12 @@
 | InputXGradient | IntegratedGradients | 20 | 0.000 | 1.000 |
 | InputXGradient | Saliency | 20 | 0.000 | 0.102 |
 | IntegratedGradients | Saliency | 20 | 0.000 | 0.206 |
+
+**SynthMotifs · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | IntegratedGradients | 20 | 0.124 | 0.368 |
+| GNNExplainer | Saliency | 20 | 0.001 | 0.648 |
+| IntegratedGradients | Saliency | 20 | 0.094 | 0.123 |
 

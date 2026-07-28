@@ -49,6 +49,20 @@ MANIFEST: dict[str, DatasetSpec] = {
         has_ground_truth=True,
         notes="Barabasi-Albert base + house/cycle motif; exact node GT.",
     ),
+    "SynthMotifs": DatasetSpec(
+        name="SynthMotifs",
+        tier=1,
+        task="graph-classification",
+        source="Synthetic (PyG ExplainerDataset: BA base + house/cycle motif)",
+        licence="Synthetic / generated offline",
+        loader="synthmotifs",
+        has_ground_truth=True,
+        notes=(
+            "Exact node ground truth (injected-motif nodes). Offline BA-2Motifs "
+            "equivalent; validates the audit against real GT, not a proxy."
+        ),
+        extras={"num_graphs": 200, "num_nodes": 25},
+    ),
     "ShapeGGen": DatasetSpec(
         name="ShapeGGen",
         tier=1,

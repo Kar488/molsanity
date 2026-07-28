@@ -55,17 +55,26 @@ def ba2motifs_node_mask(data) -> np.ndarray | None:
     return None
 
 
+def synth_motifs_node_mask(data) -> np.ndarray | None:
+    """Exact node ground truth for the synthetic motif dataset."""
+    if hasattr(data, "node_gt") and data.node_gt is not None:
+        return data.node_gt.detach().cpu().numpy().astype(np.float32).reshape(-1)
+    return None
+
+
 def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
     """Dispatch to the right GT extractor. Returns None when no GT is defined."""
     if dataset_name == "MUTAG":
         return mutag_nitro_mask(data)
     if dataset_name == "BA-2Motifs":
         return ba2motifs_node_mask(data)
+    if dataset_name == "SynthMotifs":
+        return synth_motifs_node_mask(data)
     return None
 
 
 def has_ground_truth(dataset_name: str) -> bool:
-    return dataset_name in {"MUTAG", "BA-2Motifs"}
+    return dataset_name in {"MUTAG", "BA-2Motifs", "SynthMotifs"}
 
 
 __all__ = [

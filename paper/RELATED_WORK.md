@@ -40,10 +40,12 @@ Legend: ✓ = core capability · ~ = partial / possible but not central · ✗ =
 On MUTAG × GINE under a scaffold split, Saliency and InputXGradient are
 *faithful* (occlusion Spearman ≈ 0.38/0.40) yet **anti-aligned with the nitro
 ground truth** (GT AUROC ≈ 0.03/0.04), while IG (0.54) and GNNExplainer (0.49)
-recover it at similar faithfulness — a >0.5 AUROC localisation gap. A
-faithfulness-only benchmark would score all four as fine; MolSanity's
-ground-truth + shift view separates them. See `RESULTS.md` / `BENCHMARK.md` for
-the computed numbers.
+recover it at similar faithfulness — a >0.5 AUROC localisation gap. Crucially,
+the ranking **flips** on SynthMotifs (exact node ground truth, GINE at 100 %
+accuracy): there Saliency is best (0.98), IG 0.74, GNNExplainer at chance (0.50).
+No attributor is universally reliable; a faithfulness-only benchmark would miss
+this regime dependence. MolSanity's ground-truth + shift view surfaces it. See
+`RESULTS.md` / `BENCHMARK.md` for the computed numbers.
 
 > References (to be completed with full citations in the manuscript):
 > GraphXAI (Agarwal et al., 2023); GraphFramEx (Amara et al., 2022);

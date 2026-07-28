@@ -24,7 +24,11 @@ train:
   batch_size: 32
 
 cells:
-  # MUTAG (ground-truth) × backbones (IG)
+  # SynthMotifs: EXACT node ground truth (validates the audit itself)
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: Saliency}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: GNNExplainer}
+  # MUTAG (quasi-GT) × backbones (IG)
   - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}

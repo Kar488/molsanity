@@ -127,6 +127,21 @@ def _load_moleculenet(spec: DatasetSpec) -> LoadedDataset:
     return LoadedDataset(spec, ds, prov)
 
 
+def _load_synthmotifs(spec: DatasetSpec) -> LoadedDataset:
+    from .synthetic import generate_synth_motifs
+
+    cache_dir = DATA_ROOT / spec.name
+    ds = generate_synth_motifs(
+        num_graphs=spec.extras.get("num_graphs", 200),
+        num_nodes=spec.extras.get("num_nodes", 25),
+        seed=0,
+    )
+    checksum = _verify_or_record_checksum(spec, ds, cache_dir)
+    prov = _write_provenance(spec, ds, cache_dir, checksum)
+    log.info("Loaded SynthMotifs: %d graphs, checksum %s", len(ds), checksum[:12])
+    return LoadedDataset(spec, ds, prov)
+
+
 def _load_shapeggen(spec: DatasetSpec) -> LoadedDataset:
     try:
         import graphxai  # noqa: F401
@@ -152,6 +167,7 @@ def _load_tdc(spec: DatasetSpec) -> LoadedDataset:
 _LOADERS = {
     "mutag": _load_mutag,
     "ba2motifs": _load_ba2motifs,
+    "synthmotifs": _load_synthmotifs,
     "moleculenet": _load_moleculenet,
     "shapeggen": _load_shapeggen,
     "tdc": _load_tdc,

@@ -18,6 +18,10 @@ current alongside RESULTS.md.
 
 ## Data
 
+- **SynthMotifs** provides *exact* node ground truth but is a **structural,
+  non-molecular** synthetic task (BA base + house/cycle motif); it validates the
+  audit machinery, not chemical generalisation. Molecular ground truth remains
+  the MUTAG nitro *proxy* until BA-2Motifs/ShapeGGen are reachable.
 - ShapeGGen (GraphXAI) is an optional heavy dependency; if unavailable it is
   skipped and logged, never faked.
 - TDC (Tier-3) datasets are wired in a later milestone.

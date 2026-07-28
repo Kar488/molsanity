@@ -68,6 +68,13 @@ model yet fail to recover the true motif. On MUTAG under a **scaffold split**
 - **Backbone matters too.** With IG, ground-truth localisation ranges from GINE
   0.54 → MPNN 0.36 → GCN 0.20 → GAT/AttentiveFP ≈ 0.13 (anti-aligned); AttentiveFP
   is even *anti-faithful* (occlusion ≈ −0.88). Reliability is model-dependent.
+- **The attributor ranking flips with the regime.** On **SynthMotifs** (a
+  synthetic Tier-1 task with *exact* node ground truth, where GINE hits 100 %
+  test accuracy and provably uses the motif), Saliency localises the motif almost
+  perfectly (GT AUROC **0.98**), IG 0.74, GNNExplainer 0.50 (chance) — the
+  *opposite* order to MUTAG under scaffold shift, where Saliency was worst (0.03).
+  No single attributor is "best"; reliability is regime-dependent, which is
+  exactly what the audit is built to surface.
 
 See the ground-truth validation figure under `results_figures/` and
 `artifacts/figures/`. (MUTAG's motif "ground truth" is a chemically motivated
@@ -82,7 +89,7 @@ checksum). Provenance is logged per dataset to `data/<name>/provenance.json`.
 
 | Tier | Datasets | Source | Ground truth |
 |------|----------|--------|--------------|
-| 1 | MUTAG, BA-2Motifs, ShapeGGen | PyG / GraphXAI | yes (exact or proxy) |
+| 1 | MUTAG, SynthMotifs, BA-2Motifs, ShapeGGen | PyG / generated / GraphXAI | yes (SynthMotifs exact, MUTAG proxy) |
 | 2 | ESOL, FreeSolv, Lipophilicity, BBBP, BACE, Tox21 | MoleculeNet (PyG) | no |
 | 3 | ClinTox, SIDER, DILI, hERG | Therapeutics Data Commons | no |
 

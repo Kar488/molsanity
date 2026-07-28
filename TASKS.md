@@ -18,6 +18,9 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [!] Wire BA-2Motifs — loader written + GT extractor ready, but the PyG source
       returns **HTTP 403** in this environment (network policy). Handled
       gracefully (skip+log); retry where the source is reachable.
+- [x] Exact-GT synthetic Tier-1: **SynthMotifs** (BA base + house/cycle motif,
+      generated offline via PyG ExplainerDataset). Replaces the 403-blocked
+      BA-2Motifs for validating the audit against real ground truth.
 - [ ] Wire ShapeGGen via GraphXAI (blocked-tolerant: skip+log if unavailable)
 - [x] Bemis–Murcko scaffold split (deterministic) + random split reference
 

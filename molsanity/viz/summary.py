@@ -173,13 +173,17 @@ def make_summary_figures(out_dir="artifacts/figures/_summary") -> dict:
     if not cells:
         log.info("No audit cells found; skipping summary figures.")
         return made
-    for name, fn in [
-        ("attributor_gt_bar", lambda: attributor_gt_bar(cells, out_dir / "attributor_gt_bar")),
+    jobs = [
+        ("attributor_gt_bar_MUTAG",
+         lambda: attributor_gt_bar(cells, out_dir / "attributor_gt_bar_MUTAG", dataset="MUTAG")),
+        ("attributor_gt_bar_SynthMotifs",
+         lambda: attributor_gt_bar(cells, out_dir / "attributor_gt_bar_SynthMotifs", dataset="SynthMotifs")),
         ("faithfulness_stability_ecdf",
          lambda: faithfulness_stability_ecdf(cells, out_dir / "faithfulness_stability_ecdf")),
         ("regime_stratification",
          lambda: regime_stratification_figure(cells, out_dir / "regime_stratification")),
-    ]:
+    ]
+    for name, fn in jobs:
         try:
             info = fn()
             if info:

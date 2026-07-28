@@ -65,3 +65,17 @@ def test_motif_decomposition_covers_and_top1(mutag):
 def test_blocked_dataset_raises(mutag):
     with pytest.raises(data.DatasetBlocked):
         data.load_dataset("MIMIC")
+
+
+def test_synth_motifs_exact_ground_truth():
+    ld = data.load_dataset("SynthMotifs")
+    assert len(ld) == 200
+    g = ld.dataset[0]
+    gt = data.ground_truth_mask("SynthMotifs", g)
+    assert gt is not None
+    assert gt.sum() == 5  # exactly the injected 5-node motif
+    assert set(int(ld.dataset[i].y) for i in range(len(ld))) == {0, 1}  # both motifs
+    # Deterministic: regenerating gives the same checksum.
+    c1 = data.dataset_checksum(ld.dataset)
+    ld2 = data.load_dataset("SynthMotifs")
+    assert data.dataset_checksum(ld2.dataset) == c1

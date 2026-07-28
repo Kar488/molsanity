@@ -1,8 +1,9 @@
 """Cross-matrix publication figures built from the per-cell audit records.
 
-These summarise the whole audit matrix (not a single cell): a head-to-head bar
-of ground-truth localisation by attributor, faithfulness/stability ECDFs, and
-regime-stratified reliability. All vector (PDF + SVG).
+House-styled (see ``style.py``): fixed entity colours, bold panel letters, inline
+value labels, clean spines. All vector (PDF + SVG). These summarise the whole
+audit matrix — GT localisation by attributor, faithfulness/stability ECDFs, and
+regime-stratified reliability.
 """
 from __future__ import annotations
 
@@ -11,27 +12,17 @@ from pathlib import Path
 import numpy as np
 
 from ..utils import get_logger
+from .style import (
+    GREY,
+    GT_GREEN,
+    apply_style,
+    attributor_color,
+    panel_label,
+    save_vector,
+    short,
+)
 
 log = get_logger()
-
-_PALETTE = ["#2166ac", "#b2182b", "#1b7837", "#762a83", "#e08214", "#01665e"]
-
-
-def _use_agg():
-    import matplotlib
-
-    matplotlib.use("Agg")
-
-
-def _save(fig, out_path: Path) -> dict:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    pdf, svg = out_path.with_suffix(".pdf"), out_path.with_suffix(".svg")
-    fig.savefig(pdf, bbox_inches="tight")
-    fig.savefig(svg, bbox_inches="tight")
-    import matplotlib.pyplot as plt
-
-    plt.close(fig)
-    return {"pdf": str(pdf), "svg": str(svg)}
 
 
 def _ecdf(x):
@@ -52,7 +43,7 @@ def _parse_cell_id(cell_id: str) -> dict:
 
 def attributor_gt_bar(cells: dict, out_path, dataset="MUTAG", split="scaffold") -> dict | None:
     """Bar of mean GT AUROC per attributor (fixed backbone GINE) with 95% CI."""
-    _use_agg()
+    apply_style()
     import matplotlib.pyplot as plt
 
     from ..audit.stats import bootstrap_ci
@@ -67,26 +58,34 @@ def attributor_gt_bar(cells: dict, out_path, dataset="MUTAG", split="scaffold") 
     if not rows:
         return None
     rows.sort(key=lambda r: r[1]["mean"])
-    labels = [r[0] for r in rows]
+    labels = [short(r[0]) for r in rows]
+    colors = [attributor_color(r[0]) for r in rows]
     means = [r[1]["mean"] for r in rows]
-    lo = [r[1]["mean"] - r[1]["lo"] for r in rows]
-    hi = [r[1]["hi"] - r[1]["mean"] for r in rows]
+    lo = [max(0.0, r[1]["mean"] - r[1]["lo"]) for r in rows]
+    hi = [max(0.0, r[1]["hi"] - r[1]["mean"]) for r in rows]
 
-    fig, ax = plt.subplots(figsize=(6, 3.4))
+    fig, ax = plt.subplots(figsize=(6.2, 3.3))
     y = np.arange(len(labels))
-    ax.barh(y, means, xerr=[lo, hi], color=_PALETTE[0], alpha=0.85, capsize=3)
-    ax.axvline(0.5, color="grey", ls="--", lw=1, label="chance")
-    ax.set_yticks(y); ax.set_yticklabels(labels, fontsize=8)
+    ax.barh(y, means, xerr=[lo, hi], color=colors, alpha=0.92, capsize=3,
+            error_kw={"lw": 1, "ecolor": "#3a3a38"}, height=0.66)
+    ax.axvline(0.5, color=GREY, ls="--", lw=1)
+    ax.text(0.5, -0.75, "chance", color=GREY, fontsize=7.5, ha="center", va="top")
+    for yi, mval in zip(y, means):
+        ax.text(mval + 0.015, yi, f"{mval:.2f}", va="center", ha="left",
+                fontsize=8, color="#1a1a19")
+    ax.set_yticks(y); ax.set_yticklabels(labels)
+    ax.set_ylim(-0.9, len(labels) - 0.35)
+    ax.set_xlim(0, 1.05)
     ax.set_xlabel("Ground-truth AUROC (mean ± 95% CI)")
     ax.set_title(f"{dataset} · GINE · attribution vs ground truth ({split} split)")
-    ax.legend(fontsize=7)
+    ax.grid(axis="y", visible=False)
     fig.tight_layout()
-    return _save(fig, Path(out_path))
+    return save_vector(fig, Path(out_path))
 
 
 def faithfulness_stability_ecdf(cells: dict, out_path, dataset="MUTAG", split="scaffold") -> dict | None:
     """ECDFs of occlusion faithfulness and cross-checkpoint stability per attributor."""
-    _use_agg()
+    apply_style()
     import matplotlib.pyplot as plt
 
     series = {}
@@ -98,34 +97,37 @@ def faithfulness_stability_ecdf(cells: dict, out_path, dataset="MUTAG", split="s
         return None
 
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.6))
-    for i, (name, recs) in enumerate(sorted(series.items())):
-        c = _PALETTE[i % len(_PALETTE)]
+    for name, recs in sorted(series.items()):
+        c = attributor_color(name)
         x, y = _ecdf(_col(recs, "occ_spearman"))
         if x.size:
-            axes[0].step(x, y, where="post", color=c, lw=1.8, label=name)
+            axes[0].step(x, y, where="post", color=c, lw=2, label=short(name))
         xs, ys = _ecdf(_col(recs, "stability"))
         if xs.size:
-            axes[1].step(xs, ys, where="post", color=c, lw=1.8, label=name)
-    axes[0].axvline(0, color="grey", ls="--", lw=1)
+            axes[1].step(xs, ys, where="post", color=c, lw=2, label=short(name))
+    axes[0].axvline(0, color=GREY, ls="--", lw=1)
     axes[0].set_xlabel("Occlusion faithfulness (Spearman)")
-    axes[0].set_ylabel("Cumulative fraction")
-    axes[0].set_title("A. Faithfulness ECDF")
-    axes[0].legend(fontsize=7)
+    axes[0].set_ylabel("Cumulative fraction of molecules")
+    axes[0].set_title("Faithfulness")
+    axes[0].legend(loc="upper left")
+    panel_label(axes[0], "a")
     axes[1].set_xlabel("Cross-checkpoint stability (Spearman)")
-    axes[1].set_title("B. Stability ECDF")
-    axes[1].legend(fontsize=7)
-    fig.suptitle(f"{dataset} · GINE ({split} split)", fontsize=11)
+    axes[1].set_title("Stability")
+    axes[1].legend(loc="upper left")
+    panel_label(axes[1], "b")
+    fig.suptitle(f"{dataset} · GINE ({split} split)", fontsize=11, fontweight="bold")
     fig.tight_layout(rect=(0, 0, 1, 0.95))
-    return _save(fig, Path(out_path))
+    return save_vector(fig, Path(out_path))
 
 
 def regime_stratification_figure(cells: dict, out_path, split="scaffold") -> dict | None:
     """Reliability (GT AUROC, occlusion) stratified by confidence/correctness regime,
     pooled across all classification cells with the given split."""
-    _use_agg()
+    apply_style()
     import matplotlib.pyplot as plt
 
     regimes = ["confident_correct", "confident_error", "borderline"]
+    reg_labels = ["confident\ncorrect", "confident\nerror", "borderline"]
     pooled = {r: {"gt_auroc": [], "occ_spearman": []} for r in regimes}
     for cid, recs in cells.items():
         m = _parse_cell_id(cid)
@@ -148,19 +150,30 @@ def regime_stratification_figure(cells: dict, out_path, split="scaffold") -> dic
     gt = [_mean(pooled[r]["gt_auroc"]) for r in regimes]
     occ = [_mean(pooled[r]["occ_spearman"]) for r in regimes]
 
-    fig, ax = plt.subplots(figsize=(6, 3.6))
+    fig, ax = plt.subplots(figsize=(6.2, 3.6))
     x = np.arange(len(regimes))
     w = 0.38
-    ax.bar(x - w / 2, gt, w, color=_PALETTE[0], label="GT AUROC")
-    ax.bar(x + w / 2, occ, w, color=_PALETTE[1], label="Occlusion Spearman")
-    ax.axhline(0.5, color="grey", ls="--", lw=1)
+    b1 = ax.bar(x - w / 2, gt, w, color=attributor_color("IntegratedGradients"),
+                label="GT AUROC")
+    b2 = ax.bar(x + w / 2, occ, w, color=GT_GREEN, label="Occlusion Spearman")
+    ax.axhline(0.5, color=GREY, ls="--", lw=1)
+    ax.axhline(0, color="#3a3a38", lw=0.8)
+    for bars, vals in [(b1, gt), (b2, occ)]:
+        for bar, v in zip(bars, vals):
+            if np.isfinite(v):
+                ax.text(bar.get_x() + bar.get_width() / 2,
+                        v + (0.02 if v >= 0 else -0.05), f"{v:.2f}",
+                        ha="center", va="bottom" if v >= 0 else "top", fontsize=7.5)
     ax.set_xticks(x)
-    ax.set_xticklabels([f"{r}\n(n={counts[r]})" for r in regimes], fontsize=8)
+    ax.set_xticklabels([f"{lab}\n(n={counts[r]})" for lab, r in zip(reg_labels, regimes)])
     ax.set_ylabel("Mean reliability")
     ax.set_title(f"Attribution reliability by regime ({split} split, pooled)")
-    ax.legend(fontsize=7)
+    ax.grid(axis="x", visible=False)
+    # Legend in the empty middle column (confident_error is often n=0).
+    ax.legend(loc="center", bbox_to_anchor=(0.5, 0.5), frameon=True,
+              framealpha=0.9, edgecolor="none")
     fig.tight_layout()
-    return _save(fig, Path(out_path))
+    return save_vector(fig, Path(out_path))
 
 
 def make_summary_figures(out_dir="artifacts/figures/_summary") -> dict:
@@ -191,4 +204,18 @@ def make_summary_figures(out_dir="artifacts/figures/_summary") -> dict:
                 log.info("Wrote summary figure: %s", info["pdf"])
         except Exception as exc:  # noqa: BLE001
             log.warning("Summary figure %s failed: %s", name, exc)
+
+    # Signature molecule × attributor grids (retrains cheaply from cached ckpts).
+    from .molgrid import make_case_study_grid
+
+    grid_methods = ["Saliency", "InputXGradient", "IntegratedGradients", "GNNExplainer"]
+    for ds in ("MUTAG", "SynthMotifs"):
+        try:
+            info = make_case_study_grid(ds, "GINE", grid_methods,
+                                        out_dir / f"molgrid_{ds}", n_molecules=3)
+            if info:
+                made[f"molgrid_{ds}"] = info
+                log.info("Wrote molecule grid: %s", info["pdf"])
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Molecule grid %s failed: %s", ds, exc)
     return made

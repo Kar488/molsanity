@@ -68,7 +68,10 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [ ] Multi-task datasets (Tox21, SIDER) label handling
 - [ ] PGExplainer (parametric) + SubgraphX (needs DIG)
 - [ ] ShapeGGen (GraphXAI) synthetic exact-GT
-- [ ] Stability ECDF + regime case-study composite figures
+- [x] Publication figures: house style (validated CVD-safe palette, fixed entity
+      colours, panel letters, inline labels); GT-by-attributor bars, faithfulness/
+      stability ECDFs, regime stratification, and the signature attributor ×
+      molecule/graph grid (RDKit skeletal + node-link, GT motif outlined)
 - [ ] Full overnight `configs/full.yaml` run on GPU
 
 ## Blockers / notes

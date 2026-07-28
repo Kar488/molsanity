@@ -70,12 +70,12 @@ def attributor_gt_bar(cells: dict, out_path, dataset="MUTAG", split="scaffold") 
             error_kw={"lw": 1, "ecolor": "#3a3a38"}, height=0.66)
     ax.axvline(0.5, color=GREY, ls="--", lw=1)
     ax.text(0.5, -0.75, "chance", color=GREY, fontsize=7.5, ha="center", va="top")
-    for yi, mval in zip(y, means):
-        ax.text(mval + 0.015, yi, f"{mval:.2f}", va="center", ha="left",
+    for yi, mval, h in zip(y, means, hi):
+        ax.text(mval + h + 0.025, yi, f"{mval:.2f}", va="center", ha="left",
                 fontsize=8, color="#1a1a19")
     ax.set_yticks(y); ax.set_yticklabels(labels)
     ax.set_ylim(-0.9, len(labels) - 0.35)
-    ax.set_xlim(0, 1.05)
+    ax.set_xlim(0, 1.15)
     ax.set_xlabel("Ground-truth AUROC (mean ± 95% CI)")
     ax.set_title(f"{dataset} · GINE · attribution vs ground truth ({split} split)")
     ax.grid(axis="y", visible=False)
@@ -204,6 +204,17 @@ def make_summary_figures(out_dir="artifacts/figures/_summary") -> dict:
                 log.info("Wrote summary figure: %s", info["pdf"])
         except Exception as exc:  # noqa: BLE001
             log.warning("Summary figure %s failed: %s", name, exc)
+
+    # Assembled multi-panel composite (Nature-style Figure 2).
+    try:
+        from .composite import results_composite
+
+        info = results_composite(out_dir / "results_composite")
+        if info:
+            made["results_composite"] = info
+            log.info("Wrote composite figure: %s", info["pdf"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Composite figure failed: %s", exc)
 
     # Signature molecule × attributor grids (retrains cheaply from cached ckpts).
     from .molgrid import make_case_study_grid

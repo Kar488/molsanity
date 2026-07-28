@@ -1,8 +1,9 @@
-"""Training loop + checkpointing for graph classification (the slice target).
+"""Training loop + checkpointing for graph classification and regression.
 
 Deterministic, resumable: if a checkpoint with a matching config hash exists we
-load it instead of retraining. Records train/val metrics and the calibration
-temperature into the checkpoint payload.
+load it instead of retraining. Classification records the calibration temperature
+and ECE; regression records RMSE/MAE/R2 (targets standardised on the train split
+for stable optimisation, metrics reported in original units).
 """
 from __future__ import annotations
 
@@ -24,16 +25,25 @@ log = get_logger()
 @dataclass
 class TrainResult:
     ckpt_path: str
-    val_acc: float
-    val_auc: float
-    test_acc: float
-    test_auc: float
-    temperature: float
-    val_ece: float
-    test_ece: float
-    epochs_run: int
     config_hash: str
+    epochs_run: int
+    task: str = "graph-classification"
     backbone: str = "GINE"
+    # classification metrics
+    val_acc: float = float("nan")
+    val_auc: float = float("nan")
+    test_acc: float = float("nan")
+    test_auc: float = float("nan")
+    temperature: float = 1.0
+    val_ece: float = float("nan")
+    test_ece: float = float("nan")
+    # regression metrics
+    val_rmse: float = float("nan")
+    test_rmse: float = float("nan")
+    test_mae: float = float("nan")
+    test_r2: float = float("nan")
+    y_mean: float = 0.0
+    y_std: float = 1.0
     early_ckpt_path: str | None = None
     history: list = field(default_factory=list)
 
@@ -43,15 +53,17 @@ def _subset(dataset, idx):
 
 
 @torch.no_grad()
-def _collect_logits(model, loader, device):
+def _collect_outputs(model, loader, device):
     model.eval()
-    logits_all, labels_all = [], []
+    out_all, y_all = [], []
     for batch in loader:
         batch = batch.to(device)
         out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
-        logits_all.append(out.cpu())
-        labels_all.append(batch.y.view(-1).cpu())
-    return torch.cat(logits_all), torch.cat(labels_all)
+        out_all.append(out.cpu())
+        y_all.append(batch.y.view(-1).cpu())
+    if not out_all:
+        return torch.empty(0), torch.empty(0)
+    return torch.cat(out_all), torch.cat(y_all)
 
 
 def _binary_metrics(logits: torch.Tensor, labels: torch.Tensor) -> tuple[float, float]:
@@ -68,6 +80,55 @@ def _binary_metrics(logits: torch.Tensor, labels: torch.Tensor) -> tuple[float, 
     return acc, auc
 
 
+def _regression_metrics(pred: torch.Tensor, y: torch.Tensor) -> dict:
+    from sklearn.metrics import mean_absolute_error, r2_score
+
+    p = pred.view(-1).numpy().astype(np.float64)
+    t = y.view(-1).numpy().astype(np.float64)
+    rmse = float(np.sqrt(np.mean((p - t) ** 2))) if p.size else float("nan")
+    mae = float(mean_absolute_error(t, p)) if p.size else float("nan")
+    try:
+        r2 = float(r2_score(t, p)) if p.size > 1 else float("nan")
+    except Exception:
+        r2 = float("nan")
+    return {"rmse": rmse, "mae": mae, "r2": r2}
+
+
+def _train_epochs(model, opt, train_loader, val_loader, epochs, split, device,
+                  loss_fn, eval_fn, better, save_intermediate_epoch, early_ckpt_path):
+    """Shared training loop. ``loss_fn(out, batch)`` returns the batch loss;
+    ``eval_fn()`` returns (monitor_scalar, history_dict); ``better(a, b)`` is the
+    model-selection comparison. Identical control flow for both tasks."""
+    best_monitor, best_state, best_epoch = None, None, 0
+    history = []
+    for epoch in range(1, epochs + 1):
+        model.train()
+        total = 0.0
+        for batch in train_loader:
+            batch = batch.to(device)
+            opt.zero_grad()
+            out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
+            loss = loss_fn(out, batch)
+            loss.backward()
+            opt.step()
+            total += float(loss) * batch.num_graphs
+        train_loss = total / max(1, len(split.train))
+
+        monitor, hist = eval_fn()
+        history.append({"epoch": epoch, "train_loss": train_loss, **hist})
+        if best_monitor is None or better(monitor, best_monitor):
+            best_monitor, best_epoch = monitor, epoch
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        if save_intermediate_epoch is not None and epoch == save_intermediate_epoch:
+            torch.save(
+                {"state_dict": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
+                 "epoch": epoch},
+                early_ckpt_path,
+            )
+            log.info("Saved early checkpoint @epoch %d -> %s", epoch, early_ckpt_path.name)
+    return best_state, best_monitor, best_epoch, history
+
+
 def train_model(
     dataset,
     split,
@@ -81,8 +142,7 @@ def train_model(
     """Train (or load) a backbone on the given split. Idempotent by config hash.
 
     ``save_intermediate_epoch`` additionally snapshots the model at that epoch
-    (an *early* checkpoint) so the audit can measure cross-checkpoint stability
-    between an early and the final model.
+    (an *early* checkpoint) so the audit can measure cross-checkpoint stability.
     """
     from ..utils import set_global_seed
 
@@ -90,6 +150,8 @@ def train_model(
     device = get_device(train_cfg.get("device"))
     ckpt_dir = Path(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
+    task = model_cfg.get("task", "graph-classification")
+    is_reg = task == "graph-regression"
 
     cfg_hash = hash_config(
         {"model": model_cfg, "train": train_cfg, "split": split.kind,
@@ -105,7 +167,7 @@ def train_model(
         payload = torch.load(ckpt_path, map_location=device, weights_only=False)
         model.load_state_dict(payload["state_dict"])
         model.eval()
-        log.info("Loaded existing checkpoint %s (val_acc=%.3f)", ckpt_path.name, payload["val_acc"])
+        log.info("Loaded existing checkpoint %s", ckpt_path.name)
         res = TrainResult(**{k: payload[k] for k in TrainResult.__dataclass_fields__ if k in payload})
         return model, res
 
@@ -119,69 +181,82 @@ def train_model(
         weight_decay=train_cfg.get("weight_decay", 5e-4),
     )
     epochs = int(train_cfg.get("epochs", 100))
-    best_val, best_state, best_epoch = -1.0, None, 0
-    history = []
 
-    for epoch in range(1, epochs + 1):
-        model.train()
-        total = 0.0
-        for batch in train_loader:
-            batch = batch.to(device)
-            opt.zero_grad()
-            out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
-            loss = F.cross_entropy(out, batch.y.view(-1).long())
-            loss.backward()
-            opt.step()
-            total += float(loss) * batch.num_graphs
-        train_loss = total / max(1, len(split.train))
+    if is_reg:
+        # Standardise targets on the train split for stable optimisation.
+        train_y = torch.cat([dataset[i].y.view(-1) for i in split.train]).float()
+        y_mean, y_std = float(train_y.mean()), float(train_y.std().clamp_min(1e-6))
 
-        vl, vy = _collect_logits(model, val_loader, device)
-        val_acc, val_auc = _binary_metrics(vl, vy)
-        history.append({"epoch": epoch, "train_loss": train_loss, "val_acc": val_acc, "val_auc": val_auc})
-        if val_acc > best_val:
-            best_val, best_epoch = val_acc, epoch
-            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-        if save_intermediate_epoch is not None and epoch == save_intermediate_epoch:
-            torch.save(
-                {"state_dict": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
-                 "epoch": epoch},
-                early_ckpt_path,
-            )
-            log.info("Saved early checkpoint @epoch %d -> %s", epoch, early_ckpt_path.name)
+        def loss_fn(out, batch):
+            target = (batch.y.view(-1).float() - y_mean) / y_std
+            return F.smooth_l1_loss(out.view(-1), target)
+
+        def eval_fn():
+            out, y = _collect_outputs(model, val_loader, device)
+            pred = out.view(-1) * y_std + y_mean
+            m = _regression_metrics(pred, y)
+            return m["rmse"], {"val_rmse": m["rmse"]}
+
+        better = lambda a, b: a < b  # lower RMSE is better
+    else:
+        y_mean, y_std = 0.0, 1.0
+
+        def loss_fn(out, batch):
+            return F.cross_entropy(out, batch.y.view(-1).long())
+
+        def eval_fn():
+            vl, vy = _collect_outputs(model, val_loader, device)
+            acc, _ = _binary_metrics(vl, vy)
+            return acc, {"val_acc": acc}
+
+        better = lambda a, b: a > b  # higher accuracy is better
+
+    best_state, best_monitor, best_epoch, history = _train_epochs(
+        model, opt, train_loader, val_loader, epochs, split, device,
+        loss_fn, eval_fn, better, save_intermediate_epoch, early_ckpt_path,
+    )
 
     if best_state is not None:
         model.load_state_dict(best_state)
     model.eval()  # deterministic downstream attribution/audit
-    log.info("Training done: best val_acc=%.3f @epoch %d", best_val, best_epoch)
 
-    # Calibrate on validation logits.
-    vl, vy = _collect_logits(model, val_loader, device)
-    scaler = TemperatureScaler().to("cpu")
-    if len(vy) > 0:
-        scaler.fit(vl, vy)
-    temperature = scaler.temperature
-
-    val_acc, val_auc = _binary_metrics(vl, vy)
-    tl, ty = _collect_logits(model, test_loader, device)
-    test_acc, test_auc = _binary_metrics(tl, ty)
-
-    val_ece = expected_calibration_error(softmax_np((vl / temperature).numpy()), vy.numpy().astype(int))["ece"]
-    test_ece = expected_calibration_error(softmax_np((tl / temperature).numpy()), ty.numpy().astype(int))["ece"]
-
-    res = TrainResult(
-        ckpt_path=str(ckpt_path),
-        val_acc=val_acc, val_auc=val_auc,
-        test_acc=test_acc, test_auc=test_auc,
-        temperature=temperature,
-        val_ece=val_ece, test_ece=test_ece,
-        epochs_run=epochs, config_hash=cfg_hash, backbone=backbone,
+    common = dict(
+        ckpt_path=str(ckpt_path), config_hash=cfg_hash, epochs_run=epochs,
+        task=task, backbone=backbone,
         early_ckpt_path=str(early_ckpt_path) if early_ckpt_path.exists() else None,
-        history=history,
+        history=history, y_mean=y_mean, y_std=y_std,
     )
+
+    if is_reg:
+        vout, vy = _collect_outputs(model, val_loader, device)
+        tout, ty = _collect_outputs(model, test_loader, device)
+        vm = _regression_metrics(vout.view(-1) * y_std + y_mean, vy)
+        tm = _regression_metrics(tout.view(-1) * y_std + y_mean, ty)
+        res = TrainResult(val_rmse=vm["rmse"], test_rmse=tm["rmse"],
+                          test_mae=tm["mae"], test_r2=tm["r2"], **common)
+        log.info("Training done (regression): best val_rmse=%.3f @epoch %d | "
+                 "test_rmse=%.3f test_r2=%.3f", best_monitor, best_epoch,
+                 tm["rmse"], tm["r2"])
+    else:
+        vl, vy = _collect_outputs(model, val_loader, device)
+        scaler = TemperatureScaler().to("cpu")
+        if len(vy) > 0:
+            scaler.fit(vl, vy)
+        temperature = scaler.temperature
+        val_acc, val_auc = _binary_metrics(vl, vy)
+        tl, ty = _collect_outputs(model, test_loader, device)
+        test_acc, test_auc = _binary_metrics(tl, ty)
+        val_ece = expected_calibration_error(softmax_np((vl / temperature).numpy()), vy.numpy().astype(int))["ece"]
+        test_ece = expected_calibration_error(softmax_np((tl / temperature).numpy()), ty.numpy().astype(int))["ece"]
+        res = TrainResult(val_acc=val_acc, val_auc=val_auc, test_acc=test_acc,
+                          test_auc=test_auc, temperature=temperature,
+                          val_ece=val_ece, test_ece=test_ece, **common)
+        log.info("Training done: best val_acc=%.3f @epoch %d | test_acc=%.3f "
+                 "test_auc=%.3f T=%.3f", best_monitor, best_epoch, test_acc, test_auc, temperature)
 
     payload = {"state_dict": model.state_dict(), **res.__dict__}
     torch.save(payload, ckpt_path)
-    log.info("Saved checkpoint %s | test_acc=%.3f test_auc=%.3f T=%.3f", ckpt_path.name, test_acc, test_auc, temperature)
+    log.info("Saved checkpoint %s", ckpt_path.name)
     return model, res
 
 

@@ -60,7 +60,8 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] README, LIMITATIONS.md kept current with validated numbers
 
 ## Milestone 6 — Remaining for journal-ready
-- [ ] Regression datasets (ESOL/FreeSolv/Lipophilicity) + regression audit path
+- [x] Regression datasets (ESOL/FreeSolv/Lipophilicity) + regression audit path
+      (RMSE/MAE/R2 head, output-space occlusion; ESOL R2≈0.67, FreeSolv≈0.61)
 - [ ] Multi-task datasets (Tox21, SIDER) label handling
 - [ ] PGExplainer (parametric) + SubgraphX (needs DIG)
 - [ ] ShapeGGen (GraphXAI) synthetic exact-GT

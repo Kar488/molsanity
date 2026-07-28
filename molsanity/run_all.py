@@ -50,7 +50,8 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
 
     loaded = dataio.load_dataset(dataset_name)  # raises DatasetBlocked -> skipped
     dataset = loaded.dataset
-    n_classes = int(loaded.spec.extras.get("num_classes", 2))
+    task = loaded.spec.task
+    n_out = 1 if task == "graph-regression" else int(loaded.spec.extras.get("num_classes", 2))
 
     split = dataio.make_split(
         dataset, kind=split_kind,
@@ -59,7 +60,7 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     )
 
     budget = cfg.get("budget", {})
-    model_cfg = {**cfg["model"], "task": "graph-classification", "out_channels": n_classes}
+    model_cfg = {**cfg["model"], "task": task, "out_channels": n_out}
     train_cfg = {**cfg["train"], "epochs": budget.get("epochs", 100)}
     epochs = train_cfg["epochs"]
     early_epoch = max(1, epochs // 5)  # early checkpoint for stability
@@ -72,7 +73,7 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     temperature = train_res.temperature
 
     attributor = build_attributor(
-        attributor_name, model, ig_steps=budget.get("ig_steps", 25),
+        attributor_name, model, task=task, ig_steps=budget.get("ig_steps", 25),
     )
 
     # Early-checkpoint model + attributor for cross-checkpoint stability.
@@ -83,7 +84,8 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         payload = torch.load(train_res.early_ckpt_path, map_location="cpu", weights_only=False)
         early_model.load_state_dict(payload["state_dict"])
         early_model.eval()
-        early_attr = build_attributor(attributor_name, early_model, ig_steps=budget.get("ig_steps", 25))
+        early_attr = build_attributor(attributor_name, early_model, task=task,
+                                      ig_steps=budget.get("ig_steps", 25))
 
     eval_idx = list(split.test)
     cap = budget.get("max_eval_molecules")
@@ -102,7 +104,7 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         # share it between the coherence/occlusion audit and the stability check.
         decomp = decompose(g)
         rec = audit_molecule(model, g, attribution, dataset_name,
-                             temperature=temperature, decomp=decomp)
+                             temperature=temperature, decomp=decomp, task=task)
         if early_attr is not None:
             try:
                 rec.stability = cross_checkpoint_stability(
@@ -179,9 +181,12 @@ def main(argv=None):
                     lambda _out, c=cell, s=split_kind: run_cell(c, cfg, s, log, ts),
                 )
                 rows.append(res.payload["row"])
-                detail = (f"acc={res.payload['row']['acc']:.2f} "
-                          f"gt_auroc={res.payload['row'].get('gt_auroc')} "
-                          f"n={res.payload['n_eval']}"
+                row = res.payload["row"]
+                if row.get("task") == "graph-regression":
+                    headline = f"rmse={row.get('rmse'):.3f} r2={res.payload['train'].get('test_r2'):.3f}"
+                else:
+                    headline = f"acc={row['acc']:.2f} gt_auroc={row.get('gt_auroc')}"
+                detail = (f"{headline} n={res.payload['n_eval']}"
                           + (" (capped)" if res.payload.get("capped") else "")
                           + (" [cached]" if res.cached else ""))
                 ledger.record({**cell, "split": split_kind}, "done", detail)

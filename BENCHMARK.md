@@ -20,6 +20,9 @@
 | dataset | backbone | attributor | split | n_mol | gt_auroc | occ_spearman | stability | motif_top1_share | fidelity_plus | fidelity_minus | sparsity |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | BBBP | GINE | IntegratedGradients | scaffold | 20 | — | -0.613 | 0.887 | 0.862 | -0.095 | -0.175 | 0.773 |
+| ESOL | GINE | GNNExplainer | scaffold | 20 | — | -0.770 | 0.968 | 0.828 | -0.798 | -1.288 | 0.772 |
+| ESOL | GINE | IntegratedGradients | scaffold | 20 | — | -0.798 | 0.804 | 0.834 | -1.044 | -1.235 | 0.731 |
+| FreeSolv | GINE | IntegratedGradients | scaffold | 20 | — | -0.582 | 0.943 | 0.782 | -0.543 | -0.922 | 0.738 |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.132 | -0.880 | 0.716 | 0.993 | 0.002 | 0.012 | 0.771 |
 | MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.130 | 0.268 | 0.929 | 0.992 | 0.189 | 0.247 | 0.771 |
 | MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.203 | 0.175 | 0.745 | 0.989 | 0.123 | 0.228 | 0.767 |
@@ -30,6 +33,12 @@
 | MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.356 | 0.191 | 0.885 | 0.985 | 0.263 | 0.312 | 0.768 |
 
 ## Paired attributor comparisons (Wilcoxon, shared molecules)
+
+**ESOL · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | IntegratedGradients | 19 | 0.000 | 0.139 |
 
 **MUTAG · GINE · scaffold split** (metric: occ_spearman)
 

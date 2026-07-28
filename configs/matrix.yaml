@@ -36,3 +36,7 @@ cells:
   - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
   # Tier-2 real molecular task (no GT)
   - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}
+  # Tier-2 regression (RMSE/MAE/R2; audit in output space)
+  - {dataset: ESOL,     backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: ESOL,     backbone: GINE,     attributor: GNNExplainer}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: IntegratedGradients}

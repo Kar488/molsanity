@@ -64,6 +64,7 @@ def occlusion_faithfulness(
     decomp: MotifDecomposition,
     target: int,
     salient_quantile: float = 0.8,
+    task: str = "graph-classification",
 ) -> dict:
     from scipy.stats import spearmanr
 
@@ -92,8 +93,14 @@ def occlusion_faithfulness(
 
     from ..models.calibration import softmax_1d
 
-    def target_prob(row):
-        return float(softmax_1d(row)[target])
+    if task == "graph-regression":
+        # Regression: work directly in (standardised) output space — softmax over
+        # a single scalar output is meaningless. "Fidelity" = predicted-value shift.
+        def target_prob(row):
+            return float(row[target])
+    else:
+        def target_prob(row):
+            return float(softmax_1d(row)[target])
 
     base_logit = logits[0, target]
     motif_logits = logits[1 : 1 + len(motifs), target]

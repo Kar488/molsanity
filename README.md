@@ -16,10 +16,12 @@ Built **on top of** PyTorch Geometric, Captum, and RDKit — canonical
 implementations are wrapped, never reimplemented.
 
 > Status: **audit matrix live** — 5 backbones (GINE/GCN/GAT/MPNN/AttentiveFP) ×
-> 5 attributors (IG/Saliency/InputXGradient/GuidedBackprop/GNNExplainer) ×
-> Tier-1 (MUTAG) + Tier-2 (BBBP/BACE) datasets, with validated numbers in
-> [`RESULTS.md`](RESULTS.md) and a head-to-head [`BENCHMARK.md`](BENCHMARK.md).
-> See [`TASKS.md`](TASKS.md) for what remains.
+> 6 attributors (IG/Saliency/InputXGradient/GuidedBackprop/GNNExplainer/PGExplainer)
+> × Tier-1 exact-GT (SynthMotifs) + quasi-GT (MUTAG) + Tier-2 classification &
+> **regression** (BBBP/ESOL/FreeSolv/Lipophilicity), with validated numbers in
+> [`RESULTS.md`](RESULTS.md), a head-to-head [`BENCHMARK.md`](BENCHMARK.md), and
+> publication figures in [`results_figures/`](results_figures/). See
+> [`TASKS.md`](TASKS.md) for what remains.
 
 ## Install
 

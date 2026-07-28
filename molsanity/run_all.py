@@ -72,8 +72,12 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     )
     temperature = train_res.temperature
 
+    # PGExplainer is parametric and needs the training graphs to fit its mask MLP.
+    train_graphs = [dataset[i] for i in split.train] if attributor_name == "PGExplainer" else None
     attributor = build_attributor(
         attributor_name, model, task=task, ig_steps=budget.get("ig_steps", 25),
+        train_graphs=train_graphs, pg_epochs=budget.get("pg_epochs", 30),
+        seed=cfg["seed"],
     )
 
     # Early-checkpoint model + attributor for cross-checkpoint stability.
@@ -84,8 +88,12 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         payload = torch.load(train_res.early_ckpt_path, map_location="cpu", weights_only=False)
         early_model.load_state_dict(payload["state_dict"])
         early_model.eval()
-        early_attr = build_attributor(attributor_name, early_model, task=task,
-                                      ig_steps=budget.get("ig_steps", 25))
+        early_attr = build_attributor(
+            attributor_name, early_model, task=task,
+            ig_steps=budget.get("ig_steps", 25),
+            train_graphs=train_graphs, pg_epochs=budget.get("pg_epochs", 30),
+            seed=cfg["seed"],
+        )
 
     eval_idx = list(split.test)
     cap = budget.get("max_eval_molecules")

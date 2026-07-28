@@ -29,11 +29,13 @@
 | MUTAG | GINE | GNNExplainer | scaffold | 20 | 0.491 | 0.279 | 0.986 | 0.987 | 0.113 | 0.278 | 0.771 |
 | MUTAG | GINE | InputXGradient | scaffold | 20 | 0.042 | 0.398 | 0.816 | 0.998 | 0.251 | 0.225 | 0.771 |
 | MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.540 | 0.414 | 0.728 | 0.979 | 0.252 | 0.245 | 0.771 |
+| MUTAG | GINE | PGExplainer | scaffold | 20 | 0.401 | 0.118 | 0.839 | 1.000 | 0.026 | 0.294 | 0.755 |
 | MUTAG | GINE | Saliency | scaffold | 20 | 0.026 | 0.376 | 0.931 | 0.997 | 0.267 | 0.230 | 0.771 |
 | MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.356 | 0.191 | 0.885 | 0.985 | 0.263 | 0.312 | 0.768 |
 | SynthMotifs | GINE | GNNExplainer | scaffold | 20 | 0.498 | -0.017 | 0.934 | 0.043 | 0.101 | 0.099 | 0.800 |
 | SynthMotifs | GINE | InputXGradient | scaffold | 20 | 0.964 | 0.014 | 0.692 | 0.220 | 0.114 | 0.102 | 0.795 |
 | SynthMotifs | GINE | IntegratedGradients | scaffold | 20 | 0.742 | 0.073 | 0.656 | 0.225 | 0.109 | 0.100 | 0.792 |
+| SynthMotifs | GINE | PGExplainer | scaffold | 20 | 0.360 | 0.106 | 0.701 | 0.393 | 0.064 | 0.126 | 0.787 |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 |
 
 ## Paired attributor comparisons (Wilcoxon, shared molecules)
@@ -50,10 +52,14 @@
 | --- | --- | --- | --- | --- |
 | GNNExplainer | InputXGradient | 20 | -0.036 | 0.198 |
 | GNNExplainer | IntegratedGradients | 20 | -0.018 | 0.152 |
+| GNNExplainer | PGExplainer | 20 | 0.200 | 0.020 |
 | GNNExplainer | Saliency | 20 | -0.036 | 0.233 |
 | InputXGradient | IntegratedGradients | 20 | 0.000 | 1.000 |
+| InputXGradient | PGExplainer | 20 | 0.468 | 0.052 |
 | InputXGradient | Saliency | 20 | 0.000 | 0.102 |
+| IntegratedGradients | PGExplainer | 20 | 0.468 | 0.047 |
 | IntegratedGradients | Saliency | 20 | 0.000 | 0.206 |
+| PGExplainer | Saliency | 20 | -0.468 | 0.063 |
 
 **SynthMotifs · GINE · scaffold split** (metric: occ_spearman)
 
@@ -61,8 +67,12 @@
 | --- | --- | --- | --- | --- |
 | GNNExplainer | InputXGradient | 20 | 0.206 | 0.648 |
 | GNNExplainer | IntegratedGradients | 20 | 0.124 | 0.368 |
+| GNNExplainer | PGExplainer | 20 | -0.147 | 0.097 |
 | GNNExplainer | Saliency | 20 | 0.001 | 0.648 |
 | InputXGradient | IntegratedGradients | 20 | -0.024 | 0.198 |
+| InputXGradient | PGExplainer | 20 | -0.055 | 0.430 |
 | InputXGradient | Saliency | 20 | 0.013 | 0.927 |
+| IntegratedGradients | PGExplainer | 20 | -0.102 | 0.784 |
 | IntegratedGradients | Saliency | 20 | 0.094 | 0.123 |
+| PGExplainer | Saliency | 20 | -0.026 | 0.546 |
 

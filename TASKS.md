@@ -45,8 +45,11 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] Backbones: GCN, GAT, MPNN, AttentiveFP (registry, shared forward)
 - [x] Attributors: GNNExplainer + gradient family (Saliency, InputXGradient,
       GuidedBackprop, Deconvolution) via Captum adapter
-- [!] Attributors PGExplainer / SubgraphX: PGExplainer needs a trained parametric
-      explainer (future); SubgraphX needs DIG, which is **not installed** here.
+- [x] Attributor PGExplainer: parametric explainer wrapped (trains a mask MLP on
+      the training graphs; edge→node aggregation; BN-frozen model copy so training
+      can't corrupt predictions; reproducible). Distinct profile: most faithful
+      (occ≈0.93) yet near-chance GT on MUTAG, and does not flip on SynthMotifs.
+- [!] Attributor SubgraphX: needs DIG, which is **not installed** here (blocked).
 - [x] Datasets Tier-2: BBBP, BACE wired + verified (MoleculeNet). ESOL/FreeSolv/
       Lipophilicity are regression — need a regression head/metrics (future).
 - [!] Datasets Tier-3 (TDC): ClinTox/SIDER/DILI/hERG — PyTDC not installed;

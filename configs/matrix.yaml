@@ -5,6 +5,7 @@ seed: 0
 budget:
   epochs: 30
   ig_steps: 15
+  pg_epochs: 20
   max_eval_molecules: 20
 
 split:
@@ -39,6 +40,8 @@ cells:
   - {dataset: MUTAG, backbone: GINE,        attributor: Saliency}
   - {dataset: MUTAG, backbone: GINE,        attributor: InputXGradient}
   - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: MUTAG, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: PGExplainer}
   # Tier-2 real molecular task (no GT)
   - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}
   # Tier-2 regression (RMSE/MAE/R2; audit in output space)

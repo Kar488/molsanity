@@ -39,18 +39,33 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] `python -m molsanity.run_all` entrypoint + `make all`
 
 ## Milestone 4 — Broaden matrix (after slice verified)
-- [ ] Backbones: GCN, GAT, MPNN, AttentiveFP
-- [ ] Attributors: GNNExplainer, PGExplainer, Grad-CAM, SubgraphX
-- [ ] Datasets Tier-2: ESOL, FreeSolv, Lipophilicity, BBBP, BACE, Tox21
-- [ ] Datasets Tier-3 (TDC): ClinTox, SIDER, DILI, hERG
-- [ ] Cross-checkpoint stability, calibration linkage, regime stratification
-- [ ] Paired statistics (Wilcoxon, bootstrap CIs, effect sizes)
+- [x] Backbones: GCN, GAT, MPNN, AttentiveFP (registry, shared forward)
+- [x] Attributors: GNNExplainer + gradient family (Saliency, InputXGradient,
+      GuidedBackprop, Deconvolution) via Captum adapter
+- [!] Attributors PGExplainer / SubgraphX: PGExplainer needs a trained parametric
+      explainer (future); SubgraphX needs DIG, which is **not installed** here.
+- [x] Datasets Tier-2: BBBP, BACE wired + verified (MoleculeNet). ESOL/FreeSolv/
+      Lipophilicity are regression — need a regression head/metrics (future).
+- [!] Datasets Tier-3 (TDC): ClinTox/SIDER/DILI/hERG — PyTDC not installed;
+      loaders raise DatasetBlocked (skip+log). Tox21/SIDER are multi-task (future).
+- [x] Cross-checkpoint stability, calibration linkage, regime stratification
+- [x] Paired statistics (Wilcoxon, bootstrap CIs, fraction-positive)
 
 ## Milestone 5 — SOTA benchmarking & deliverables
-- [ ] Reproduce GraphXAI / GraphFramEx / DIG / MolFaith metrics in-repo
-- [ ] Head-to-head table
-- [ ] `paper/OUTLINE.md` + related-work matrix
-- [ ] Full README, LIMITATIONS.md
+- [x] Field-standard metrics (Fidelity± / sparsity) computed alongside MolSanity
+      metrics on the same molecules (comparability)
+- [ ] Reproduce full GraphXAI / GraphFramEx / DIG / MolFaith metric suites in-repo
+- [x] Head-to-head table (`BENCHMARK.md`) + paired attributor comparisons
+- [x] `paper/OUTLINE.md` + related-work matrix (`paper/RELATED_WORK.md`)
+- [x] README, LIMITATIONS.md kept current with validated numbers
+
+## Milestone 6 — Remaining for journal-ready
+- [ ] Regression datasets (ESOL/FreeSolv/Lipophilicity) + regression audit path
+- [ ] Multi-task datasets (Tox21, SIDER) label handling
+- [ ] PGExplainer (parametric) + SubgraphX (needs DIG)
+- [ ] ShapeGGen (GraphXAI) synthetic exact-GT
+- [ ] Stability ECDF + regime case-study composite figures
+- [ ] Full overnight `configs/full.yaml` run on GPU
 
 ## Blockers / notes
 - **BA-2Motifs**: PyG download source returns HTTP 403 in this environment.

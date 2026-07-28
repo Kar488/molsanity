@@ -9,7 +9,15 @@
 
 | dataset | backbone | attributor | split | n_mol | acc | gt_auroc | gt_auprc | motif_top1 | occ_spearman | occ_top1 | fid+ | fid- | sparsity | ece |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.600 | 0.218 | 0.159 | 0.981 | 0.576 | 0.800 | 0.271 | 0.270 | 0.770 | 0.323 |
+| BBBP | GINE | IntegratedGradients | scaffold | 20 | 1.000 | — | — | 0.862 | -0.613 | 0.000 | -0.095 | -0.175 | 0.773 | 0.015 |
+| MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.650 | 0.132 | 0.150 | 0.993 | -0.880 | 0.000 | 0.002 | 0.012 | 0.771 | 0.235 |
+| MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.750 | 0.130 | 0.151 | 0.992 | 0.268 | 0.600 | 0.189 | 0.247 | 0.771 | 0.155 |
+| MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.750 | 0.203 | 0.222 | 0.989 | 0.175 | 0.600 | 0.123 | 0.228 | 0.767 | 0.138 |
+| MUTAG | GINE | GNNExplainer | scaffold | 20 | 0.800 | 0.574 | 0.360 | 0.986 | 0.296 | 0.350 | 0.112 | 0.285 | 0.771 | 0.117 |
+| MUTAG | GINE | InputXGradient | scaffold | 20 | 0.800 | 0.042 | 0.134 | 0.998 | 0.398 | 0.350 | 0.251 | 0.225 | 0.771 | 0.117 |
+| MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.800 | 0.540 | 0.405 | 0.979 | 0.414 | 0.350 | 0.252 | 0.245 | 0.771 | 0.117 |
+| MUTAG | GINE | Saliency | scaffold | 20 | 0.800 | 0.026 | 0.131 | 0.997 | 0.376 | 0.350 | 0.267 | 0.230 | 0.771 | 0.117 |
+| MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.750 | 0.356 | 0.274 | 0.985 | 0.191 | 0.600 | 0.263 | 0.312 | 0.768 | 0.129 |
 
 ### Metric legend
 - **gt_auroc/gt_auprc**: attribution vs ground-truth motif mask (Tier-1 only; chance AUROC = 0.5). Below 0.5 means the attribution is *anti-aligned* with the known motif.

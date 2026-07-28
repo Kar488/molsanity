@@ -197,6 +197,15 @@ def main(argv=None):
                 update_results_md(rows)
             update_progress_md(ledger, config_name, ts, blockers)
 
+    # Head-to-head benchmark table over everything audited so far.
+    try:
+        from .benchmark import write_benchmark_md
+
+        info = write_benchmark_md(seed=cfg["seed"])
+        log.info("Wrote BENCHMARK.md (%s cells)", info.get("n_cells"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Benchmark table generation failed: %s", exc)
+
     counts = ledger.counts()
     log.info("=== Run complete: %s ===", counts)
     return 0

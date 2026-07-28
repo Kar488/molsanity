@@ -1,0 +1,44 @@
+# BENCHMARK.md — head-to-head audit matrix
+
+> Computed from per-molecule audit records under `artifacts/audit/`.
+> MolSanity metrics sit alongside the field-standard Fidelity±/sparsity
+> on the **same molecules**. GT AUROC is defined only where ground truth
+> exists (Tier-1). `—` = undefined/not-applicable, never a fabricated 0.
+
+## Attribution provenance
+
+- **gt_auroc** — MolSanity/GT
+- **occ_spearman** — MolSanity/faithfulness
+- **stability** — MolSanity/stability
+- **motif_top1_share** — MolSanity/coherence
+- **fidelity_plus** — field-standard
+- **fidelity_minus** — field-standard
+- **sparsity** — field-standard
+
+## Matrix
+
+| dataset | backbone | attributor | split | n_mol | gt_auroc | occ_spearman | stability | motif_top1_share | fidelity_plus | fidelity_minus | sparsity |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BBBP | GINE | IntegratedGradients | scaffold | 20 | — | -0.613 | 0.887 | 0.862 | -0.095 | -0.175 | 0.773 |
+| MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.132 | -0.880 | 0.716 | 0.993 | 0.002 | 0.012 | 0.771 |
+| MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.130 | 0.268 | 0.929 | 0.992 | 0.189 | 0.247 | 0.771 |
+| MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.203 | 0.175 | 0.745 | 0.989 | 0.123 | 0.228 | 0.767 |
+| MUTAG | GINE | GNNExplainer | scaffold | 20 | 0.574 | 0.296 | 0.880 | 0.986 | 0.112 | 0.285 | 0.771 |
+| MUTAG | GINE | InputXGradient | scaffold | 20 | 0.042 | 0.398 | 0.816 | 0.998 | 0.251 | 0.225 | 0.771 |
+| MUTAG | GINE | IntegratedGradients | scaffold | 20 | 0.540 | 0.414 | 0.728 | 0.979 | 0.252 | 0.245 | 0.771 |
+| MUTAG | GINE | Saliency | scaffold | 20 | 0.026 | 0.376 | 0.931 | 0.997 | 0.267 | 0.230 | 0.771 |
+| MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.356 | 0.191 | 0.885 | 0.985 | 0.263 | 0.312 | 0.768 |
+
+## Paired attributor comparisons (Wilcoxon, shared molecules)
+
+**MUTAG · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | InputXGradient | 20 | -0.029 | 0.245 |
+| GNNExplainer | IntegratedGradients | 20 | -0.029 | 0.152 |
+| GNNExplainer | Saliency | 20 | -0.029 | 0.300 |
+| InputXGradient | IntegratedGradients | 20 | 0.000 | 1.000 |
+| InputXGradient | Saliency | 20 | 0.000 | 0.102 |
+| IntegratedGradients | Saliency | 20 | 0.000 | 0.206 |
+

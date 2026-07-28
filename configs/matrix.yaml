@@ -1,0 +1,38 @@
+# Matrix config — a broad-but-tractable run (minutes, CPU). Reduced, HONEST
+# budget (labelled as such in reports): fewer epochs / IG steps / eval molecules
+# than configs/full.yaml. Populates RESULTS.md + BENCHMARK.md across the matrix.
+seed: 0
+budget:
+  epochs: 30
+  ig_steps: 15
+  max_eval_molecules: 20
+
+split:
+  kind: scaffold
+  frac_train: 0.8
+  frac_val: 0.1
+
+model:
+  hidden_channels: 32
+  num_layers: 3
+  dropout: 0.5
+  pool: mean
+
+train:
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: 32
+
+cells:
+  # MUTAG (ground-truth) × backbones (IG)
+  - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # MUTAG × GINE × attributors (head-to-head, paired on shared molecules)
+  - {dataset: MUTAG, backbone: GINE,        attributor: Saliency}
+  - {dataset: MUTAG, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
+  # Tier-2 real molecular task (no GT)
+  - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}

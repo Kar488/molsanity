@@ -15,9 +15,11 @@ DIG, and MolFaith.
 Built **on top of** PyTorch Geometric, Captum, and RDKit — canonical
 implementations are wrapped, never reimplemented.
 
-> Status: **first vertical slice complete** — MUTAG × GINE × Integrated
-> Gradients, end to end, with validated numbers in [`RESULTS.md`](RESULTS.md).
-> The matrix broadens from here (see [`TASKS.md`](TASKS.md)).
+> Status: **audit matrix live** — 5 backbones (GINE/GCN/GAT/MPNN/AttentiveFP) ×
+> 5 attributors (IG/Saliency/InputXGradient/GuidedBackprop/GNNExplainer) ×
+> Tier-1 (MUTAG) + Tier-2 (BBBP/BACE) datasets, with validated numbers in
+> [`RESULTS.md`](RESULTS.md) and a head-to-head [`BENCHMARK.md`](BENCHMARK.md).
+> See [`TASKS.md`](TASKS.md) for what remains.
 
 ## Install
 
@@ -49,21 +51,27 @@ Every run writes a manifest (`artifacts/run_manifest.json`) with seed, library
 versions, git rev, and hardware for reproducibility. Stages are idempotent: each
 writes a `.done` marker with a config hash, so finished work is never redone.
 
-## First result (MUTAG × GINE × Integrated Gradients, scaffold split)
+## Headline result — **faithfulness is not correctness**
 
-The slice surfaces MolSanity's central distinction — **faithfulness is not
-correctness**:
+MolSanity's central distinction is that an attribution can faithfully track the
+model yet fail to recover the true motif. On MUTAG under a **scaffold split**
+(numbers below are from `configs/matrix.yaml`, a reduced-budget run — all in
+[`RESULTS.md`](RESULTS.md) / [`BENCHMARK.md`](BENCHMARK.md)):
 
-- IG attributions are **faithful to the model** (occlusion Spearman ≈ 0.58,
-  top-1 motif agreement 0.80) …
-- … yet they **do not recover the ground-truth nitro motif** — attribution-vs-GT
-  AUROC ≈ **0.22**, i.e. *anti-aligned* (chance = 0.5). The model, under scaffold
-  shift, leans on the fused-aromatic core rather than the mutagenic NO₂ group,
-  and IG faithfully reports that.
+- **Attributor choice changes ground-truth localisation by >0.5 AUROC at
+  near-equal faithfulness.** On GINE, Saliency and InputXGradient are *faithful*
+  (occlusion Spearman ≈ 0.38 / 0.40) yet strongly **anti-aligned with the nitro
+  ground truth** (GT AUROC ≈ **0.03 / 0.04**, chance = 0.5) — faithful-but-wrong.
+  Integrated Gradients (0.54) and GNNExplainer (0.57) recover the motif far
+  better at similar faithfulness. A faithfulness-only benchmark would rate all
+  four as fine; MolSanity's ground-truth view separates them.
+- **Backbone matters too.** With IG, ground-truth localisation ranges from GINE
+  0.54 → MPNN 0.36 → GCN 0.20 → GAT/AttentiveFP ≈ 0.13 (anti-aligned); AttentiveFP
+  is even *anti-faithful* (occlusion ≈ −0.88). Reliability is model-dependent.
 
-See the exact numbers in [`RESULTS.md`](RESULTS.md) and the ground-truth
-validation figure under `artifacts/figures/`. (MUTAG's motif "ground truth" is a
-chemically motivated nitro-group *proxy*, clearly labelled as such — see
+See the ground-truth validation figure under `results_figures/` and
+`artifacts/figures/`. (MUTAG's motif "ground truth" is a chemically motivated
+nitro-group *proxy*, clearly labelled as such — see
 [`LIMITATIONS.md`](LIMITATIONS.md). Exact ground truth comes from the synthetic
 Tier-1 sets.)
 

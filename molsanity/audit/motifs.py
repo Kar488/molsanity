@@ -79,9 +79,23 @@ def _brics_fragments(mol) -> list[list[int]]:
 
 
 def decompose(data, mol=None) -> MotifDecomposition:
-    """Full motif decomposition for a MUTAG-style graph."""
+    """Full motif decomposition for a molecular graph (dataset-agnostic).
+
+    Uses SMILES when available, else MUTAG-style reconstruction. If no valid
+    mol is available or its atom count disagrees with the graph, falls back to
+    per-atom singleton motifs over ``data.num_nodes`` so the audit still runs.
+    """
+    from ..data.chem import mol_from_data
+
+    n_nodes = int(data.num_nodes)
     if mol is None:
-        mol, _ = graph_to_mol(data)
+        mol, _ = mol_from_data(data)
+    if mol is None or mol.GetNumAtoms() != n_nodes:
+        return MotifDecomposition(
+            motifs=[[i] for i in range(n_nodes)],
+            motif_types=["atom"] * n_nodes, num_atoms=n_nodes,
+            meta={"fallback": "singleton-atoms"},
+        )
     n = mol.GetNumAtoms()
 
     motifs: list[list[int]] = []

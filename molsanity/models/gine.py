@@ -52,6 +52,9 @@ class GINE(nn.Module):
         )
 
     def forward(self, x, edge_index, edge_attr, batch, node_mask=None):
+        x = x.float()
+        if edge_attr is not None:
+            edge_attr = edge_attr.float()
         if node_mask is not None:
             # Broadcast a per-node scalar (or per-feature) multiplier onto inputs.
             x = x * node_mask
@@ -67,6 +70,9 @@ class GINE(nn.Module):
 
     @torch.no_grad()
     def embed(self, x, edge_index, edge_attr, batch):
+        x = x.float()
+        if edge_attr is not None:
+            edge_attr = edge_attr.float()
         h = self.node_encoder(x)
         e = self.edge_encoder(edge_attr) if edge_attr is not None else None
         for conv, bn in zip(self.convs, self.bns):

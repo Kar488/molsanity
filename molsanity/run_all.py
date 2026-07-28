@@ -34,10 +34,12 @@ def _load_config(path: str) -> dict:
 
 def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     """Run one audit cell end to end. Returns a dict with agg + train + row."""
+    import torch
+
     from . import data as dataio
     from .attributors import build_attributor
-    from .audit import aggregate_records, audit_molecule
-    from .models import train_gine
+    from .audit import aggregate_records, audit_molecule, cross_checkpoint_stability
+    from .models import build_backbone, train_model
     from .viz import ground_truth_validation_figure, molecule_attribution_svg
 
     dataset_name = cell["dataset"]
@@ -45,13 +47,9 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     attributor_name = cell["attributor"]
     cell_id = f"{dataset_name}__{backbone}__{attributor_name}__{split_kind}"
 
-    if backbone != "GINE":
-        raise NotImplementedError(f"backbone '{backbone}' not yet wired (Milestone 4)")
-    if attributor_name != "IntegratedGradients":
-        raise NotImplementedError(f"attributor '{attributor_name}' not yet wired (Milestone 4)")
-
     loaded = dataio.load_dataset(dataset_name)  # raises DatasetBlocked -> skipped
     dataset = loaded.dataset
+    n_classes = int(loaded.spec.extras.get("num_classes", 2))
 
     split = dataio.make_split(
         dataset, kind=split_kind,
@@ -60,17 +58,31 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     )
 
     budget = cfg.get("budget", {})
-    model_cfg = {**cfg["model"], "task": "graph-classification", "out_channels": 2}
+    model_cfg = {**cfg["model"], "task": "graph-classification", "out_channels": n_classes}
     train_cfg = {**cfg["train"], "epochs": budget.get("epochs", 100)}
+    epochs = train_cfg["epochs"]
+    early_epoch = max(1, epochs // 5)  # early checkpoint for stability
 
-    model, train_res = train_gine(
+    model, train_res = train_model(
         dataset, split, model_cfg, train_cfg,
         ckpt_dir=Path("artifacts/checkpoints") / dataset_name, seed=cfg["seed"],
+        backbone=backbone, save_intermediate_epoch=early_epoch,
     )
+    temperature = train_res.temperature
 
     attributor = build_attributor(
         attributor_name, model, ig_steps=budget.get("ig_steps", 25),
     )
+
+    # Early-checkpoint model + attributor for cross-checkpoint stability.
+    early_model = None
+    early_attr = None
+    if train_res.early_ckpt_path and Path(train_res.early_ckpt_path).exists():
+        early_model = build_backbone(backbone, dataset[0], model_cfg)
+        payload = torch.load(train_res.early_ckpt_path, map_location="cpu", weights_only=False)
+        early_model.load_state_dict(payload["state_dict"])
+        early_model.eval()
+        early_attr = build_attributor(attributor_name, early_model, ig_steps=budget.get("ig_steps", 25))
 
     eval_idx = list(split.test)
     cap = budget.get("max_eval_molecules")
@@ -82,7 +94,15 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         g = dataset[i]
         g.graph_id = i
         attribution = attributor.attribute(g)
-        records.append(audit_molecule(model, g, attribution, dataset_name))
+        rec = audit_molecule(model, g, attribution, dataset_name, temperature=temperature)
+        if early_model is not None:
+            try:
+                rec.stability = cross_checkpoint_stability(
+                    early_model, model, early_attr, attributor, g, dataset_name
+                )
+            except Exception:
+                pass
+        records.append(rec)
 
     agg = aggregate_records(records, seed=cfg["seed"])
 

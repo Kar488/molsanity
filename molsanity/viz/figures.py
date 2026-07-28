@@ -99,12 +99,15 @@ def molecule_attribution_svg(
     """High-res RDKit SVG: atoms coloured by attribution, GT motif circled."""
     from rdkit.Chem.Draw import rdMolDraw2D
 
-    from ..data.chem import graph_to_mol
+    from ..data.chem import mol_from_data
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    mol, _ = graph_to_mol(data)
+    mol, _ = mol_from_data(data)
+    if mol is None or mol.GetNumAtoms() != int(data.num_nodes):
+        log.info("Skipping molecule SVG (no aligned mol for %s)", out_path.name)
+        return None
     a = np.abs(np.asarray(node_attr, dtype=np.float64))
     rng = a.max() - a.min()
     norm = (a - a.min()) / rng if rng > 0 else np.zeros_like(a)

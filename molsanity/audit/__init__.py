@@ -3,7 +3,14 @@ from .coherence import coherence_battery, gini, salient_cc_fraction, top_k_mass
 from .groundtruth import attribution_gt_scores
 from .motifs import MotifDecomposition, decompose, motif_scores, primary_motif_share
 from .occlusion import occlusion_faithfulness
+from .regime import (
+    assign_regime,
+    calibration_linkage,
+    confidence_from_logits,
+    stratify_by_regime,
+)
 from .run import MoleculeAuditRecord, aggregate_records, audit_molecule
+from .stability import cross_checkpoint_stability, motif_attr_vector
 from .stats import bootstrap_ci, paired_wilcoxon, summarise, wilcoxon_vs_zero
 
 __all__ = [
@@ -11,6 +18,9 @@ __all__ = [
     "attribution_gt_scores",
     "MotifDecomposition", "decompose", "motif_scores", "primary_motif_share",
     "occlusion_faithfulness",
+    "assign_regime", "confidence_from_logits", "stratify_by_regime",
+    "calibration_linkage",
+    "cross_checkpoint_stability", "motif_attr_vector",
     "MoleculeAuditRecord", "audit_molecule", "aggregate_records",
     "bootstrap_ci", "paired_wilcoxon", "summarise", "wilcoxon_vs_zero",
 ]

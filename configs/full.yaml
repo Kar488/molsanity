@@ -1,12 +1,11 @@
-# Full config — overnight matrix. Broaden only after the slice is verified.
-# Cells for not-yet-implemented backbones/attributors/datasets are attempted and
-# gracefully skipped+logged (never aborting the run) until wired in later
-# milestones.
+# Full config — overnight matrix. Cells for unreachable data (e.g. BA-2Motifs
+# HTTP 403 here, or TDC before it is installed) are attempted and gracefully
+# skipped+logged, never aborting the run.
 seed: 0
 budget:
-  epochs: 150
+  epochs: 100
   ig_steps: 50
-  max_eval_molecules: null   # audit the full evaluation set
+  max_eval_molecules: 100    # cap audited molecules per cell (labelled in reports)
 
 split:
   kind: scaffold
@@ -27,11 +26,24 @@ train:
 # Also run a random-split reference for in-distribution comparison.
 extra_splits: [random]
 
+# Matrix: datasets × backbones × attributors.
+# Tier-1 MUTAG (quasi-GT) carries the ground-truth accuracy metric; Tier-2
+# (BBBP, BACE) exercise coherence / faithfulness / stability / calibration on
+# real molecular property tasks. Broaden further by adding rows.
 cells:
-  # --- Tier 1 (implemented) ---
-  - {dataset: MUTAG,      backbone: GINE, attributor: IntegratedGradients}
-  - {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
-  # --- Broadening (wired in later milestones; skipped+logged until then) ---
-  - {dataset: BBBP,       backbone: GINE, attributor: IntegratedGradients}
-  - {dataset: BACE,       backbone: GINE, attributor: IntegratedGradients}
-  - {dataset: ClinTox,    backbone: GINE, attributor: IntegratedGradients}
+  # MUTAG (ground-truth localisation) × all backbones × all attributors
+  - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: GINE,        attributor: Saliency}
+  - {dataset: MUTAG, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # Tier-2 real molecular tasks (no GT; coherence/faithfulness/stability/calib)
+  - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: BBBP,  backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: BACE,  backbone: GINE,        attributor: IntegratedGradients}
+  # Attempted; skipped+logged where the data source is unreachable in this env.
+  - {dataset: BA-2Motifs, backbone: GINE,   attributor: IntegratedGradients}
+  - {dataset: ClinTox,    backbone: GINE,   attributor: IntegratedGradients}

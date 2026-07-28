@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 
 import numpy as np
 
-from ..data.chem import graph_to_mol
+from ..data.chem import mol_from_data
 from ..data.groundtruth import ground_truth_mask, has_ground_truth
 from ..utils import get_logger
 from .coherence import coherence_battery
@@ -43,17 +43,35 @@ class MoleculeAuditRecord:
     sparsity: float = float("nan")
     n_motifs: int = 0
     n_atoms: int = 0
+    confidence: float = float("nan")
+    regime: str = "unknown"
+    stability: float = float("nan")
 
 
-def audit_molecule(model, data, attribution, dataset_name: str) -> MoleculeAuditRecord:
+def audit_molecule(model, data, attribution, dataset_name: str,
+                   temperature: float = 1.0, tau: float = 0.8) -> MoleculeAuditRecord:
+    import torch
+
+    from .regime import assign_regime, confidence_from_logits
+
     node_attr = attribution.node_attr
     target = attribution.target
     pred = attribution.meta.get("pred", target)
     label = int(data.y.view(-1)[0]) if hasattr(data, "y") else -1
 
-    mol, _ = graph_to_mol(data)
+    mol, _ = mol_from_data(data)
     decomp = decompose(data, mol=mol)
     edge_index = data.edge_index.cpu().numpy()
+
+    # Calibrated confidence + regime.
+    device = next(model.parameters()).device
+    model.eval()
+    with torch.no_grad():
+        batch = torch.zeros(data.num_nodes, dtype=torch.long, device=device)
+        logits = model(data.x.to(device), data.edge_index.to(device),
+                       data.edge_attr.to(device) if data.edge_attr is not None else None,
+                       batch).cpu().numpy()[0]
+    _, confidence = confidence_from_logits(logits, temperature)
 
     rec = MoleculeAuditRecord(
         graph_id=attribution.graph_id,
@@ -62,6 +80,8 @@ def audit_molecule(model, data, attribution, dataset_name: str) -> MoleculeAudit
         correct=int(pred == label),
         target=int(target),
         n_atoms=int(data.num_nodes),
+        confidence=confidence,
+        regime=assign_regime(confidence, int(pred == label), tau=tau),
     )
 
     coh = coherence_battery(node_attr, edge_index, decomp)
@@ -93,12 +113,29 @@ def aggregate_records(records: list[MoleculeAuditRecord], seed: int = 0) -> dict
     def col(name):
         return np.array([getattr(r, name) for r in records], dtype=np.float64)
 
+    from .regime import calibration_linkage, stratify_by_regime
+
     metrics = [
         "gt_auroc", "gt_auprc", "atom_gini", "top20_mass", "salient_cc_frac",
         "motif_top1_share", "occ_spearman", "occ_top1_agreement",
-        "fidelity_plus", "fidelity_minus", "sparsity",
+        "fidelity_plus", "fidelity_minus", "sparsity", "stability", "confidence",
     ]
     agg = {m: summarise(col(m), name=m, seed=seed) for m in metrics}
     agg["n_molecules"] = len(records)
     agg["accuracy"] = float(np.mean([r.correct for r in records])) if records else float("nan")
+
+    # Regime stratification of the key reliability metrics.
+    agg["regime_counts"] = {
+        r: sum(1 for rec in records if rec.regime == r)
+        for r in ("confident_correct", "confident_error", "borderline")
+    }
+    agg["regime_stratified"] = {
+        m: stratify_by_regime(records, m)
+        for m in ("gt_auroc", "occ_spearman", "stability")
+    }
+    # Calibration linkage (confidence-calibration vs attribution reliability).
+    agg["calibration_linkage"] = {
+        m: calibration_linkage(records, reliability_metric=m)
+        for m in ("occ_spearman", "gt_auroc")
+    }
     return agg

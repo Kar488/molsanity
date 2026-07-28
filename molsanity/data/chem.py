@@ -129,3 +129,31 @@ def mol_to_smiles(mol) -> Optional[str]:
         return Chem.MolToSmiles(mol)
     except Exception:
         return None
+
+
+def mol_from_data(data):
+    """Return an RDKit mol for a graph, dataset-agnostically.
+
+    Datasets that carry a ``smiles`` attribute (e.g. MoleculeNet) parse it
+    directly; otherwise we fall back to MUTAG-style reconstruction from
+    one-hot atom/bond labels. Returns ``(mol_or_None, source)``.
+    """
+    from rdkit import Chem
+
+    _silence_rdkit()
+    smi = getattr(data, "smiles", None)
+    if isinstance(smi, str) and smi:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is not None and mol.GetNumAtoms() == int(data.num_nodes):
+            return mol, "smiles"
+        # Atom count mismatch (e.g. explicit Hs / salts): keep mol but flag it.
+        if mol is not None:
+            return mol, "smiles_mismatch"
+    # Fallback: MUTAG-style one-hot reconstruction (needs 7-dim atom one-hot).
+    try:
+        if data.x is not None and data.x.size(1) == len(MUTAG_ATOMS):
+            mol, _ = graph_to_mol(data)
+            return mol, "reconstructed"
+    except Exception:
+        pass
+    return None, "none"

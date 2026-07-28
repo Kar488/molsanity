@@ -63,7 +63,11 @@ def scaffold_split(
     scaffold_to_idx: dict[str, list[int]] = defaultdict(list)
     for i in range(len(dataset)):
         scaf = _murcko_scaffold_smiles(dataset[i])
-        scaffold_to_idx[scaf].append(i)
+        # Molecules with no Murcko scaffold (acyclic) get unique buckets so they
+        # distribute across splits instead of collapsing into one giant group
+        # that would starve the test set.
+        key = scaf if scaf else f"__acyclic_{i}"
+        scaffold_to_idx[key].append(i)
 
     # Deterministic ordering: by group size desc, then scaffold string.
     groups = sorted(scaffold_to_idx.values(), key=lambda g: (-len(g), min(g)))
@@ -71,13 +75,23 @@ def scaffold_split(
     n = len(dataset)
     n_train, n_val = int(frac_train * n), int(frac_val * n)
     train, val, test = [], [], []
+    # Standard MoleculeNet scaffold assignment: fill train, then val, then test
+    # by *current count* (not fit-check), so no split is starved of examples.
     for group in groups:
-        if len(train) + len(group) <= n_train:
+        if len(train) < n_train:
             train.extend(group)
-        elif len(val) + len(group) <= n_val:
+        elif len(val) < n_val:
             val.extend(group)
         else:
             test.extend(group)
+
+    # Safety net: if a split is empty (pathological grouping), rebalance by
+    # moving whole groups from the largest split. Keeps the split deterministic.
+    if not test or not val:
+        pool = sorted(train + val + test)
+        n_tr, n_va = int(frac_train * n), int(frac_val * n)
+        train, val, test = pool[:n_tr], pool[n_tr:n_tr + n_va], pool[n_tr + n_va:]
+        log.warning("Scaffold split had an empty partition; applied index-based rebalance.")
 
     log.info(
         "Scaffold split: %d scaffolds -> train %d / val %d / test %d",

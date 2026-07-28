@@ -15,8 +15,8 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 from ..utils import get_device, get_logger, hash_config
+from .backbones import build_backbone
 from .calibration import TemperatureScaler, expected_calibration_error, softmax_np
-from .gine import build_model
 
 log = get_logger()
 
@@ -33,6 +33,8 @@ class TrainResult:
     test_ece: float
     epochs_run: int
     config_hash: str
+    backbone: str = "GINE"
+    early_ckpt_path: str | None = None
     history: list = field(default_factory=list)
 
 
@@ -66,15 +68,22 @@ def _binary_metrics(logits: torch.Tensor, labels: torch.Tensor) -> tuple[float, 
     return acc, auc
 
 
-def train_gine(
+def train_model(
     dataset,
     split,
     model_cfg: dict,
     train_cfg: dict,
     ckpt_dir: str | Path,
     seed: int = 0,
+    backbone: str = "GINE",
+    save_intermediate_epoch: int | None = None,
 ) -> tuple[torch.nn.Module, TrainResult]:
-    """Train (or load) a GINE on the given split. Idempotent by config hash."""
+    """Train (or load) a backbone on the given split. Idempotent by config hash.
+
+    ``save_intermediate_epoch`` additionally snapshots the model at that epoch
+    (an *early* checkpoint) so the audit can measure cross-checkpoint stability
+    between an early and the final model.
+    """
     from ..utils import set_global_seed
 
     set_global_seed(seed)
@@ -82,11 +91,15 @@ def train_gine(
     ckpt_dir = Path(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-    cfg_hash = hash_config({"model": model_cfg, "train": train_cfg, "split": split.kind, "seed": seed})
-    ckpt_path = ckpt_dir / f"gine_{cfg_hash}.pt"
+    cfg_hash = hash_config(
+        {"model": model_cfg, "train": train_cfg, "split": split.kind,
+         "seed": seed, "backbone": backbone}
+    )
+    ckpt_path = ckpt_dir / f"{backbone.lower()}_{cfg_hash}.pt"
+    early_ckpt_path = ckpt_dir / f"{backbone.lower()}_{cfg_hash}_early.pt"
 
     sample = dataset[0]
-    model = build_model(sample, model_cfg).to(device)
+    model = build_backbone(backbone, sample, model_cfg).to(device)
 
     if ckpt_path.exists():
         payload = torch.load(ckpt_path, map_location=device, weights_only=False)
@@ -128,6 +141,13 @@ def train_gine(
         if val_acc > best_val:
             best_val, best_epoch = val_acc, epoch
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        if save_intermediate_epoch is not None and epoch == save_intermediate_epoch:
+            torch.save(
+                {"state_dict": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
+                 "epoch": epoch},
+                early_ckpt_path,
+            )
+            log.info("Saved early checkpoint @epoch %d -> %s", epoch, early_ckpt_path.name)
 
     if best_state is not None:
         model.load_state_dict(best_state)
@@ -154,10 +174,18 @@ def train_gine(
         test_acc=test_acc, test_auc=test_auc,
         temperature=temperature,
         val_ece=val_ece, test_ece=test_ece,
-        epochs_run=epochs, config_hash=cfg_hash, history=history,
+        epochs_run=epochs, config_hash=cfg_hash, backbone=backbone,
+        early_ckpt_path=str(early_ckpt_path) if early_ckpt_path.exists() else None,
+        history=history,
     )
 
     payload = {"state_dict": model.state_dict(), **res.__dict__}
     torch.save(payload, ckpt_path)
     log.info("Saved checkpoint %s | test_acc=%.3f test_auc=%.3f T=%.3f", ckpt_path.name, test_acc, test_auc, temperature)
     return model, res
+
+
+def train_gine(dataset, split, model_cfg, train_cfg, ckpt_dir, seed=0, **kw):
+    """Back-compat alias: train the GINE backbone."""
+    return train_model(dataset, split, model_cfg, train_cfg, ckpt_dir, seed=seed,
+                       backbone="GINE", **kw)

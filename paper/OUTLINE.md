@@ -77,6 +77,9 @@ confidence/correctness regime stratification, across backbones and datasets.
 | Fig. 1 schematic | (hand-drawn) | — |
 | Fig. GT validation | `viz.ground_truth_validation_figure` | `artifacts/figures/<cell>/gt_validation.pdf` |
 | Case-study molecule | `viz.molecule_attribution_svg` | `artifacts/figures/<cell>/case_molecule.svg` |
+| Fig. GT-by-attributor bar | `viz.attributor_gt_bar` | `results_figures/summary/attributor_gt_bar.pdf` |
+| Fig. faithfulness/stability ECDF | `viz.faithfulness_stability_ecdf` | `results_figures/summary/faithfulness_stability_ecdf.pdf` |
+| Fig. regime stratification | `viz.regime_stratification_figure` | `results_figures/summary/regime_stratification.pdf` |
 | Table 1 related work | `paper/RELATED_WORK.md` | committed |
 | Results matrix | `run_all` → `RESULTS.md` | committed |
 | Head-to-head + paired stats | `benchmark.write_benchmark_md` | `BENCHMARK.md` |

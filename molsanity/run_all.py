@@ -218,6 +218,15 @@ def main(argv=None):
     except Exception as exc:  # noqa: BLE001
         log.warning("Benchmark table generation failed: %s", exc)
 
+    # Cross-matrix publication figures (GT bar, faithfulness/stability ECDFs, regimes).
+    try:
+        from .viz import make_summary_figures
+
+        made = make_summary_figures()
+        log.info("Wrote %d summary figure(s)", len(made))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Summary figure generation failed: %s", exc)
+
     counts = ledger.counts()
     log.info("=== Run complete: %s ===", counts)
     return 0

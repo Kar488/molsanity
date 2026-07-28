@@ -106,8 +106,12 @@ def _ecdf_panel(ax, cells, metric, dataset="MUTAG", split="scaffold", xlabel="")
 
 
 def _regime_panel(ax, cells, split="scaffold"):
-    regimes = ["confident_correct", "confident_error", "borderline"]
-    labels = ["conf.\ncorrect", "conf.\nerror", "border-\nline"]
+    """Compact dumbbell: GT AUROC vs occlusion faithfulness per populated regime."""
+    from matplotlib.lines import Line2D
+
+    regimes = ["confident_correct", "borderline", "confident_error"]
+    labels = {"confident_correct": "confident\ncorrect",
+              "borderline": "borderline", "confident_error": "confident\nerror"}
     pooled = {r: {"gt": [], "occ": []} for r in regimes}
     for cid, recs in cells.items():
         if _parse_cell_id(cid)["split"] != split:
@@ -122,19 +126,26 @@ def _regime_panel(ax, cells, split="scaffold"):
         v = [z for z in v if np.isfinite(z)]
         return float(np.mean(v)) if v else np.nan
     counts = {r: len([z for z in pooled[r]["occ"] if np.isfinite(z)]) for r in regimes}
-    gt = [mean(pooled[r]["gt"]) for r in regimes]
-    occ = [mean(pooled[r]["occ"]) for r in regimes]
-    x = np.arange(3); w = 0.34
-    ax.bar(x - w / 2, gt, w, color=METRIC_COLORS["gt"], label="GT AUROC",
-           edgecolor="white", linewidth=0.7, zorder=3)
-    ax.bar(x + w / 2, occ, w, color=METRIC_COLORS["occ"], label="Occl. ρ",
-           edgecolor="white", linewidth=0.7, zorder=3)
-    ax.axhline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1); ax.axhline(0, color="#c4c4be", lw=0.9, zorder=1)
-    ax.tick_params(axis="x", length=0)
-    ax.set_xticks(x); ax.set_xticklabels([f"{l}\n(n={counts[r]})" for l, r in zip(labels, regimes)], fontsize=7)
-    ax.set_ylabel("mean reliability", fontsize=8)
-    ax.legend(fontsize=6.5, loc="lower left")
-    ax.grid(axis="x", visible=False)
+    order = [r for r in regimes if counts[r] > 0]
+    y = np.arange(len(order))[::-1]
+
+    ax.axvline(0.0, color="#d7d7d1", lw=1.0, zorder=1)
+    ax.axvline(0.5, color=GREY, ls=(0, (4, 3)), lw=1.0, zorder=1)
+    for yi, r in zip(y, order):
+        g, o = mean(pooled[r]["gt"]), mean(pooled[r]["occ"])
+        ax.plot([g, o], [yi, yi], color="#cfcfc8", lw=2.2, zorder=2, solid_capstyle="round")
+        ax.scatter([g], [yi], s=90, color=METRIC_COLORS["gt"], zorder=4, edgecolor="white", linewidth=1.0)
+        ax.scatter([o], [yi], s=90, color=METRIC_COLORS["occ"], zorder=4, edgecolor="white", linewidth=1.0)
+    ax.set_yticks(y)
+    ax.set_yticklabels([f"{labels[r].replace(chr(10),' ')}\n(n={counts[r]})" for r in order], fontsize=7.5)
+    ax.set_ylim(-0.6, len(order) - 0.2)
+    ax.tick_params(axis="y", length=0)
+    ax.set_xlabel("mean reliability", fontsize=8)
+    ax.grid(axis="y", visible=False)
+    ax.spines["left"].set_visible(False)
+    handles = [Line2D([0], [0], marker="o", color="none", markerfacecolor=METRIC_COLORS["gt"], markersize=7, label="GT AUROC"),
+               Line2D([0], [0], marker="o", color="none", markerfacecolor=METRIC_COLORS["occ"], markersize=7, label="Occl. ρ")]
+    ax.legend(handles=handles, fontsize=6.5, loc="lower right", frameon=False, handletextpad=0.2)
 
 
 def results_composite(out_path="artifacts/figures/_summary/results_composite") -> dict | None:

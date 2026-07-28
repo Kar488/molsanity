@@ -157,41 +157,72 @@ def regime_stratification_figure(cells: dict, out_path, split="scaffold") -> dic
     gt = [_mean(pooled[r]["gt_auroc"]) for r in regimes]
     occ = [_mean(pooled[r]["occ_spearman"]) for r in regimes]
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.0))
-    x = np.arange(len(regimes))
-    w = 0.32
-    b1 = ax.bar(x - w / 2, gt, w, color=METRIC_COLORS["gt"], label="GT AUROC",
-                edgecolor="white", linewidth=0.8, zorder=3)
-    b2 = ax.bar(x + w / 2, occ, w, color=METRIC_COLORS["occ"], label="Occlusion ρ",
-                edgecolor="white", linewidth=0.8, zorder=3)
+    # Dumbbell plot: one row per (populated) regime; a dot for GT AUROC and a dot
+    # for occlusion faithfulness joined by a thin connector. Reads as a designed
+    # comparison, not a chunky grouped bar; empty regimes (n=0) are dropped.
+    from matplotlib.lines import Line2D
+
+    order = [r for r in ["confident_correct", "borderline", "confident_error"]
+             if counts[r] > 0]
+    label_of = dict(zip(regimes, reg_labels))
+    dropped = [r for r in regimes if counts[r] == 0]
+
+    fig, ax = plt.subplots(figsize=(7.0, 0.9 * len(order) + 1.9))
+    y = np.arange(len(order))[::-1]  # first regime at top
 
     finite = [v for v in gt + occ if np.isfinite(v)] or [0.0]
-    top = max(0.5, max(finite)) + 0.16
-    bottom = min(0.0, min(finite)) - 0.16
-    ax.set_ylim(bottom, top)
-    ax.axhline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1)
-    ax.text(-0.42, 0.505, "chance", color=GREY, fontsize=7,
-            va="bottom", ha="left", style="italic")
-    ax.axhline(0, color="#c4c4be", lw=0.9, zorder=1)
+    lo_x, hi_x = min(0.0, min(finite)) - 0.12, max(0.5, max(finite)) + 0.12
+    ax.set_xlim(lo_x, hi_x)
 
-    for bars, vals in [(b1, gt), (b2, occ)]:
-        for bar, v in zip(bars, vals):
-            if not np.isfinite(v):
-                continue
-            off, va = (0.02, "bottom") if v >= 0 else (-0.02, "top")
-            ax.text(bar.get_x() + bar.get_width() / 2, v + off, f"{v:.2f}",
-                    ha="center", va=va, fontsize=8, color=MUTED_INK)
+    # Reference lines behind everything.
+    ax.axvline(0.0, color="#d7d7d1", lw=1.0, zorder=1)
+    ax.axvline(0.5, color=GREY, ls=(0, (4, 3)), lw=1.0, zorder=1)
+    ax.text(0.5, len(order) - 0.42, "chance", color=GREY, fontsize=7.5,
+            ha="center", va="bottom", style="italic")
 
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"{lab}\n(n={counts[r]})" for lab, r in zip(reg_labels, regimes)])
-    ax.tick_params(axis="x", length=0)
-    ax.set_ylabel("Mean reliability")
-    ax.set_title(f"Attribution reliability by confidence/correctness regime "
-                 f"· {split} split, pooled", fontsize=9.5, color=INK)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 0.98), ncol=1,
-              handlelength=1.1, handleheight=1.1, borderpad=0.6,
-              frameon=True, framealpha=0.95, edgecolor="#e2e2dd", fontsize=8)
-    ax.margins(x=0.12)
+    for yi, r in zip(y, order):
+        g, o = dict(zip(regimes, gt))[r], dict(zip(regimes, occ))[r]
+        ax.plot([g, o], [yi, yi], color="#cfcfc8", lw=2.4, zorder=2,
+                solid_capstyle="round")
+        ax.scatter([g], [yi], s=150, color=METRIC_COLORS["gt"], zorder=4,
+                   edgecolor="white", linewidth=1.2)
+        ax.scatter([o], [yi], s=150, color=METRIC_COLORS["occ"], zorder=4,
+                   edgecolor="white", linewidth=1.2)
+        # value labels on the outer side of each dot
+        lefti, righti = (g, o) if g <= o else (o, g)
+        lcol = METRIC_COLORS["gt"] if g <= o else METRIC_COLORS["occ"]
+        rcol = METRIC_COLORS["occ"] if g <= o else METRIC_COLORS["gt"]
+        ax.text(lefti - 0.025, yi, f"{lefti:.2f}", ha="right", va="center",
+                fontsize=8.5, color=lcol, fontweight="medium")
+        ax.text(righti + 0.025, yi, f"{righti:.2f}", ha="left", va="center",
+                fontsize=8.5, color=rcol, fontweight="medium")
+
+    ax.set_yticks(y)
+    ax.set_yticklabels([f"{label_of[r].replace(chr(10), ' ')}\n(n={counts[r]})" for r in order],
+                       fontsize=9)
+    ax.set_ylim(-0.6, len(order) - 0.15)
+    ax.tick_params(axis="y", length=0)
+    ax.set_xlabel("Mean reliability")
+    ax.grid(axis="y", visible=False)
+    ax.grid(axis="x", visible=True)
+    ax.spines["left"].set_visible(False)
+
+    sub = f"{split} split · pooled across classification cells"
+    if dropped:
+        sub += f" · {', '.join(label_of[r].replace(chr(10), ' ') for r in dropped)} regime empty (n=0)"
+    ax.set_title("Attribution reliability by confidence/correctness regime",
+                 fontsize=11, color=INK, loc="left", pad=22)
+    ax.text(0.0, 1.055, sub, transform=ax.transAxes, fontsize=8, color=MUTED_INK,
+            ha="left", va="bottom")
+
+    handles = [
+        Line2D([0], [0], marker="o", color="none", markerfacecolor=METRIC_COLORS["gt"],
+               markersize=9, label="GT AUROC (correctness)"),
+        Line2D([0], [0], marker="o", color="none", markerfacecolor=METRIC_COLORS["occ"],
+               markersize=9, label="Occlusion ρ (faithfulness)"),
+    ]
+    ax.legend(handles=handles, loc="lower right", bbox_to_anchor=(1.0, -0.02),
+              ncol=2, frameon=False, fontsize=8, handletextpad=0.3, columnspacing=1.2)
     fig.tight_layout()
     return save_vector(fig, Path(out_path))
 

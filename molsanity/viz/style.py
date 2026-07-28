@@ -64,6 +64,28 @@ def short(name: str) -> str:
     return SHORT.get(name, name)
 
 
+_FONTS_REGISTERED = False
+
+
+def _register_fonts():
+    """Register the bundled Inter font family (falls back gracefully)."""
+    global _FONTS_REGISTERED
+    if _FONTS_REGISTERED:
+        return
+    import glob
+    import os
+
+    from matplotlib import font_manager as fm
+
+    here = os.path.join(os.path.dirname(__file__), "fonts")
+    for f in glob.glob(os.path.join(here, "*.ttf")):
+        try:
+            fm.fontManager.addfont(f)
+        except Exception:
+            pass
+    _FONTS_REGISTERED = True
+
+
 def apply_style():
     """Set global matplotlib rcParams for a clean, publication-grade look."""
     import matplotlib
@@ -71,11 +93,14 @@ def apply_style():
     matplotlib.use("Agg")
     import matplotlib as mpl
 
+    _register_fonts()
     mpl.rcParams.update({
         "figure.dpi": 150,
         "savefig.dpi": 400,
         "font.family": "sans-serif",
-        "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica"],
+        # Inter (bundled) → Liberation Sans/Arial (Arial-metric) → last-resort default.
+        "font.sans-serif": ["Inter", "Liberation Sans", "Arial", "Helvetica",
+                            "DejaVu Sans"],
         "font.size": 9,
         "axes.titlesize": 10,
         "axes.labelsize": 9,

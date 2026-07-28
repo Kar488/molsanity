@@ -45,6 +45,9 @@ molsanity = "molsanity.run_all:main"
 [tool.setuptools.packages.find]
 include = ["molsanity*"]
 
+[tool.setuptools.package-data]
+"molsanity.viz" = ["fonts/*.ttf"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

@@ -13,6 +13,7 @@ import numpy as np
 
 from ..utils import get_logger
 from .style import (
+    AXIS_GREY,
     GREY,
     INK,
     METRIC_COLORS,
@@ -76,8 +77,8 @@ def attributor_gt_bar(cells: dict, out_path, dataset="MUTAG", split="scaffold") 
             style="italic")
     for yi, mval, h in zip(y, means, hi):
         ax.text(mval + h + 0.03, yi, f"{mval:.2f}", va="center", ha="left",
-                fontsize=8, color=MUTED_INK)
-    ax.set_yticks(y); ax.set_yticklabels(labels)
+                fontsize=9.5, color=INK, fontweight="semibold")
+    ax.set_yticks(y); ax.set_yticklabels(labels, color=INK)
     ax.tick_params(axis="y", length=0)
     ax.set_ylim(-0.95, len(labels) - 0.3)
     ax.set_xlim(0, 1.15)
@@ -167,62 +168,61 @@ def regime_stratification_figure(cells: dict, out_path, split="scaffold") -> dic
     label_of = dict(zip(regimes, reg_labels))
     dropped = [r for r in regimes if counts[r] == 0]
 
-    fig, ax = plt.subplots(figsize=(7.0, 0.9 * len(order) + 1.9))
+    fig, ax = plt.subplots(figsize=(8.4, 1.15 * len(order) + 2.2))
     y = np.arange(len(order))[::-1]  # first regime at top
 
     finite = [v for v in gt + occ if np.isfinite(v)] or [0.0]
-    lo_x, hi_x = min(0.0, min(finite)) - 0.12, max(0.5, max(finite)) + 0.12
+    lo_x, hi_x = min(0.0, min(finite)) - 0.16, max(0.5, max(finite)) + 0.16
     ax.set_xlim(lo_x, hi_x)
 
     # Reference lines behind everything.
-    ax.axvline(0.0, color="#d7d7d1", lw=1.0, zorder=1)
-    ax.axvline(0.5, color=GREY, ls=(0, (4, 3)), lw=1.0, zorder=1)
-    ax.text(0.5, len(order) - 0.42, "chance", color=GREY, fontsize=7.5,
-            ha="center", va="bottom", style="italic")
+    ax.axvline(0.0, color="#c2c2bb", lw=1.1, zorder=1)
+    ax.axvline(0.5, color=AXIS_GREY, ls=(0, (4, 3)), lw=1.1, zorder=1)
+    ax.text(0.5, len(order) - 0.36, "chance (0.5)", color=MUTED_INK, fontsize=9,
+            ha="center", va="bottom")
 
     for yi, r in zip(y, order):
         g, o = dict(zip(regimes, gt))[r], dict(zip(regimes, occ))[r]
-        ax.plot([g, o], [yi, yi], color="#cfcfc8", lw=2.4, zorder=2,
+        ax.plot([g, o], [yi, yi], color="#b9b9b1", lw=3.0, zorder=2,
                 solid_capstyle="round")
-        ax.scatter([g], [yi], s=150, color=METRIC_COLORS["gt"], zorder=4,
-                   edgecolor="white", linewidth=1.2)
-        ax.scatter([o], [yi], s=150, color=METRIC_COLORS["occ"], zorder=4,
-                   edgecolor="white", linewidth=1.2)
-        # value labels on the outer side of each dot
+        ax.scatter([g], [yi], s=230, color=METRIC_COLORS["gt"], zorder=4,
+                   edgecolor="white", linewidth=1.5)
+        ax.scatter([o], [yi], s=230, color=METRIC_COLORS["occ"], zorder=4,
+                   edgecolor="white", linewidth=1.5)
+        # Value labels on the outer side of each dot, in dark ink (readable;
+        # the coloured dot beside them carries the identity).
         lefti, righti = (g, o) if g <= o else (o, g)
-        lcol = METRIC_COLORS["gt"] if g <= o else METRIC_COLORS["occ"]
-        rcol = METRIC_COLORS["occ"] if g <= o else METRIC_COLORS["gt"]
-        ax.text(lefti - 0.025, yi, f"{lefti:.2f}", ha="right", va="center",
-                fontsize=8.5, color=lcol, fontweight="medium")
-        ax.text(righti + 0.025, yi, f"{righti:.2f}", ha="left", va="center",
-                fontsize=8.5, color=rcol, fontweight="medium")
+        ax.text(lefti - 0.028, yi, f"{lefti:.2f}", ha="right", va="center",
+                fontsize=10.5, color=INK, fontweight="semibold")
+        ax.text(righti + 0.028, yi, f"{righti:.2f}", ha="left", va="center",
+                fontsize=10.5, color=INK, fontweight="semibold")
 
     ax.set_yticks(y)
-    ax.set_yticklabels([f"{label_of[r].replace(chr(10), ' ')}\n(n={counts[r]})" for r in order],
-                       fontsize=9)
-    ax.set_ylim(-0.6, len(order) - 0.15)
+    ax.set_yticklabels([f"{label_of[r].replace(chr(10), ' ')}  (n={counts[r]})" for r in order],
+                       fontsize=11, color=INK, fontweight="medium")
+    ax.set_ylim(-0.7, len(order) - 0.1)
     ax.tick_params(axis="y", length=0)
     ax.set_xlabel("Mean reliability")
     ax.grid(axis="y", visible=False)
     ax.grid(axis="x", visible=True)
     ax.spines["left"].set_visible(False)
 
-    sub = f"{split} split · pooled across classification cells"
+    sub = f"GT localisation vs occlusion faithfulness · {split} split · pooled"
     if dropped:
-        sub += f" · {', '.join(label_of[r].replace(chr(10), ' ') for r in dropped)} regime empty (n=0)"
-    ax.set_title("Attribution reliability by confidence/correctness regime",
-                 fontsize=11, color=INK, loc="left", pad=22)
-    ax.text(0.0, 1.055, sub, transform=ax.transAxes, fontsize=8, color=MUTED_INK,
+        sub += " · confident-error empty (n=0)"
+    ax.set_title("Attribution reliability by regime",
+                 fontsize=13, color=INK, loc="left", pad=26, fontweight="semibold")
+    ax.text(0.0, 1.05, sub, transform=ax.transAxes, fontsize=9.5, color=MUTED_INK,
             ha="left", va="bottom")
 
     handles = [
         Line2D([0], [0], marker="o", color="none", markerfacecolor=METRIC_COLORS["gt"],
-               markersize=9, label="GT AUROC (correctness)"),
+               markersize=11, label="GT AUROC (correctness)"),
         Line2D([0], [0], marker="o", color="none", markerfacecolor=METRIC_COLORS["occ"],
-               markersize=9, label="Occlusion ρ (faithfulness)"),
+               markersize=11, label="Occlusion ρ (faithfulness)"),
     ]
-    ax.legend(handles=handles, loc="lower right", bbox_to_anchor=(1.0, -0.02),
-              ncol=2, frameon=False, fontsize=8, handletextpad=0.3, columnspacing=1.2)
+    ax.legend(handles=handles, loc="lower right", bbox_to_anchor=(1.0, -0.04),
+              ncol=1, frameon=False, fontsize=9.5, handletextpad=0.4)
     fig.tight_layout()
     return save_vector(fig, Path(out_path))
 

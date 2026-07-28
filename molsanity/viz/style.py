@@ -21,8 +21,9 @@ METRIC_COLORS = {
     "occ": "#c77f2a",      # occlusion faithfulness
     "fidelity": "#6a8d3a",
 }
-INK = "#22222a"
-MUTED_INK = "#5c5c66"
+INK = "#1a1a20"       # near-black for values, titles, primary text
+MUTED_INK = "#40404a"  # dark grey for axis labels / secondary text (still high-contrast)
+AXIS_GREY = "#8d8d88"  # axis frame / ticks — visible, not washed out
 
 # Fixed entity -> colour. New entities append; never reorder (identity is stable).
 ATTRIBUTOR_COLORS = {
@@ -101,34 +102,36 @@ def apply_style():
         # Inter (bundled) → Liberation Sans/Arial (Arial-metric) → last-resort default.
         "font.sans-serif": ["Inter", "Liberation Sans", "Arial", "Helvetica",
                             "DejaVu Sans"],
-        "font.size": 9,
-        "axes.titlesize": 10,
-        "axes.labelsize": 9,
-        "axes.titleweight": "regular",   # bold titles read heavy; keep them light
+        "font.size": 10.5,
+        "axes.titlesize": 11.5,
+        "axes.labelsize": 10.5,
+        "axes.titleweight": "semibold",
         "axes.titlepad": 8,
+        "axes.titlecolor": INK,
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.spines.left": True,
         "axes.spines.bottom": True,
-        "axes.linewidth": 0.7,
-        "axes.edgecolor": "#b4b4ae",     # light frame, not black
+        "axes.linewidth": 0.9,
+        "axes.edgecolor": AXIS_GREY,
         "axes.labelcolor": INK,
+        "axes.labelweight": "medium",
         "axes.axisbelow": True,           # grid BEHIND bars/marks (key fix)
         "axes.grid": True,
         "axes.grid.axis": "y",
-        "grid.color": "#ececE8",
-        "grid.linewidth": 0.7,
-        "xtick.color": "#b4b4ae",
-        "ytick.color": "#b4b4ae",
+        "grid.color": "#e3e3de",
+        "grid.linewidth": 0.8,
+        "xtick.color": AXIS_GREY,
+        "ytick.color": AXIS_GREY,
         "xtick.labelcolor": MUTED_INK,
         "ytick.labelcolor": MUTED_INK,
-        "xtick.labelsize": 8,
-        "ytick.labelsize": 8,
-        "xtick.major.width": 0.7,
-        "ytick.major.width": 0.7,
-        "xtick.major.size": 3,
-        "ytick.major.size": 3,
-        "legend.fontsize": 7.5,
+        "xtick.labelsize": 9.5,
+        "ytick.labelsize": 9.5,
+        "xtick.major.width": 0.9,
+        "ytick.major.width": 0.9,
+        "xtick.major.size": 3.5,
+        "ytick.major.size": 3.5,
+        "legend.fontsize": 9,
         "legend.frameon": False,
         "lines.linewidth": 1.9,
         "lines.solid_capstyle": "round",

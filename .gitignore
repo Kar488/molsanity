@@ -1,0 +1,29 @@
+# Data & artifacts (regenerated; not committed except small manifests/results)
+# Root-level only, so the molsanity/data package is NOT ignored.
+/data/
+/artifacts/
+/logs/
+*.ckpt
+*.pt
+*.pth
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.ipynb_checkpoints/
+
+# Keep committed figures/results explicitly (see below)
+!RESULTS.md

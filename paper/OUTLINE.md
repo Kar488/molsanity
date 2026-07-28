@@ -81,6 +81,9 @@ confidence/correctness regime stratification, across backbones and datasets.
 | Fig. faithfulness/stability ECDF | `viz.faithfulness_stability_ecdf` | `results_figures/summary/faithfulness_stability_ecdf.pdf` |
 | Fig. regime stratification | `viz.regime_stratification_figure` | `results_figures/summary/regime_stratification.pdf` |
 | Fig. attributor × molecule grid (signature) | `viz.make_case_study_grid` | `results_figures/summary/molgrid_{MUTAG,SynthMotifs}.pdf` |
+| Fig. faithfulness–correctness joint scatter | `viz.faithfulness_correctness_joint` | `results_figures/summary/joint_faithful_correct.pdf` |
+| Fig. per-molecule GT raincloud | `viz.raincloud_gt` | `results_figures/summary/raincloud_gt_MUTAG.pdf` |
+| Fig. cross-dataset GT heatmap | `viz.results_heatmap` | `results_figures/summary/heatmap_gt.pdf` |
 
 All figures use one house style (`viz/style.py`): a colourblind-safe categorical
 palette with each attributor/backbone bound to a fixed hue across every panel,

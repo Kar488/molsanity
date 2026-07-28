@@ -256,6 +256,27 @@ def make_summary_figures(out_dir="artifacts/figures/_summary") -> dict:
         except Exception as exc:  # noqa: BLE001
             log.warning("Summary figure %s failed: %s", name, exc)
 
+    # Richer statistical forms: joint faithfulness/correctness scatter, raincloud
+    # of per-molecule GT AUROC, and the cross-dataset GT heatmap.
+    try:
+        from .richforms import (
+            faithfulness_correctness_joint,
+            raincloud_gt,
+            results_heatmap,
+        )
+
+        for name, fn in [
+            ("joint_faithful_correct", lambda: faithfulness_correctness_joint(cells, out_dir / "joint_faithful_correct")),
+            ("raincloud_gt_MUTAG", lambda: raincloud_gt(cells, out_dir / "raincloud_gt_MUTAG")),
+            ("heatmap_gt", lambda: results_heatmap(cells, out_dir / "heatmap_gt")),
+        ]:
+            info = fn()
+            if info:
+                made[name] = info
+                log.info("Wrote rich figure: %s", info["pdf"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Rich-form figure generation failed: %s", exc)
+
     # Assembled multi-panel composite (Nature-style Figure 2).
     try:
         from .composite import results_composite

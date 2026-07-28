@@ -27,6 +27,7 @@ cells:
   # SynthMotifs: EXACT node ground truth (validates the audit itself)
   - {dataset: SynthMotifs, backbone: GINE,  attributor: IntegratedGradients}
   - {dataset: SynthMotifs, backbone: GINE,  attributor: Saliency}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: InputXGradient}
   - {dataset: SynthMotifs, backbone: GINE,  attributor: GNNExplainer}
   # MUTAG (quasi-GT) × backbones (IG)
   - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}

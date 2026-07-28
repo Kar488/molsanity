@@ -32,6 +32,7 @@
 | MUTAG | GINE | Saliency | scaffold | 20 | 0.026 | 0.376 | 0.931 | 0.997 | 0.267 | 0.230 | 0.771 |
 | MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.356 | 0.191 | 0.885 | 0.985 | 0.263 | 0.312 | 0.768 |
 | SynthMotifs | GINE | GNNExplainer | scaffold | 20 | 0.498 | -0.017 | 0.934 | 0.043 | 0.101 | 0.099 | 0.800 |
+| SynthMotifs | GINE | InputXGradient | scaffold | 20 | 0.964 | 0.014 | 0.692 | 0.220 | 0.114 | 0.102 | 0.795 |
 | SynthMotifs | GINE | IntegratedGradients | scaffold | 20 | 0.742 | 0.073 | 0.656 | 0.225 | 0.109 | 0.100 | 0.792 |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 |
 
@@ -58,7 +59,10 @@
 
 | method A | method B | n | median Δ(A−B) | p-value |
 | --- | --- | --- | --- | --- |
+| GNNExplainer | InputXGradient | 20 | 0.206 | 0.648 |
 | GNNExplainer | IntegratedGradients | 20 | 0.124 | 0.368 |
 | GNNExplainer | Saliency | 20 | 0.001 | 0.648 |
+| InputXGradient | IntegratedGradients | 20 | -0.024 | 0.198 |
+| InputXGradient | Saliency | 20 | 0.013 | 0.927 |
 | IntegratedGradients | Saliency | 20 | 0.094 | 0.123 |
 

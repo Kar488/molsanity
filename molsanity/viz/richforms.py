@@ -188,11 +188,16 @@ def raincloud_gt(cells, out_path, dataset="MUTAG", backbone="GINE", split="scaff
 
 
 def results_heatmap(cells, out_path, split="scaffold") -> dict | None:
-    """Attributor × dataset heatmap of mean GT AUROC (classification, GINE)."""
+    """Attributor × dataset heatmap of mean GT AUROC (classification, GINE).
+
+    YlGnBu colour scheme (pale = weak, deep navy = strong) with crisp white cell
+    dividers and contrast-aware value labels — the chance level (0.5) is marked on
+    the colour bar.
+    """
     apply_style()
     import matplotlib.pyplot as plt
     from matplotlib import colormaps
-    from matplotlib.colors import TwoSlopeNorm
+    from matplotlib.colors import Normalize
 
     datasets, attributors, vals = set(), set(), {}
     for cid, recs in cells.items():
@@ -214,28 +219,48 @@ def results_heatmap(cells, out_path, split="scaffold") -> dict | None:
             if (d, a) in vals:
                 M[i, j] = vals[(d, a)]
 
-    fig, ax = plt.subplots(figsize=(1.5 * len(ds) + 2.6, 0.72 * len(at) + 1.8))
-    cmap = colormaps["RdYlBu"]
-    norm = TwoSlopeNorm(vmin=0.0, vcenter=0.5, vmax=1.0)
-    im = ax.imshow(M, cmap=cmap, norm=norm, aspect="auto")
+    cmap = colormaps["YlGnBu"]
+    norm = Normalize(vmin=0.0, vmax=1.0)
+
+    fig, ax = plt.subplots(figsize=(1.7 * len(ds) + 3.0, 0.82 * len(at) + 1.9))
+    # Draw each cell as a white-bordered rectangle (crisp dividers), missing cells
+    # rendered as a light neutral tile so the matrix stays complete-looking.
     for i in range(len(at)):
         for j in range(len(ds)):
-            if np.isfinite(M[i, j]):
-                ax.text(j, i, f"{M[i, j]:.2f}", ha="center", va="center",
-                        fontsize=10.5, color=INK, fontweight="semibold")
-    ax.set_xticks(range(len(ds))); ax.set_xticklabels(ds, fontsize=10, color=INK)
-    ax.set_yticks(range(len(at))); ax.set_yticklabels([short(a) for a in at], fontsize=10, color=INK)
+            v = M[i, j]
+            if np.isfinite(v):
+                rgba = cmap(norm(v))
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor=rgba,
+                                           edgecolor="white", linewidth=3.5, zorder=2))
+                lum = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
+                txt = "white" if lum < 0.55 else INK
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=13,
+                        color=txt, fontweight="semibold", zorder=3)
+            else:
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor="#f0f0ec",
+                                           edgecolor="white", linewidth=3.5, zorder=2))
+                ax.text(j, i, "–", ha="center", va="center", fontsize=13,
+                        color="#b4b4ae", zorder=3)
+
+    ax.set_xlim(-0.5, len(ds) - 0.5); ax.set_ylim(len(at) - 0.5, -0.5)
+    ax.set_xticks(range(len(ds))); ax.set_xticklabels(ds, fontsize=11, color=INK)
+    ax.set_yticks(range(len(at))); ax.set_yticklabels([short(a) for a in at], fontsize=11, color=INK)
     ax.tick_params(length=0)
-    ax.grid(which="major", visible=False)
+    ax.grid(False)
+    ax.set_aspect("auto")
     for s in ax.spines.values():
         s.set_visible(False)
-    ax.set_xticks(np.arange(len(ds) + 1) - 0.5, minor=True)
-    ax.set_yticks(np.arange(len(at) + 1) - 0.5, minor=True)
-    ax.grid(which="minor", color="white", linewidth=2.5)
-    ax.tick_params(which="minor", length=0)
-    cbar = fig.colorbar(im, ax=ax, fraction=0.045, pad=0.03)
-    cbar.set_label("mean GT AUROC", fontsize=9)
-    cbar.ax.axhline(0.5, color=INK, lw=1)
+
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm); sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, fraction=0.05, pad=0.04)
+    cbar.set_label("mean ground-truth AUROC", fontsize=9.5, labelpad=20)
+    cbar.ax.axhline(0.5, color="#c0392b", lw=1.6)
+    cbar.set_ticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    cbar.set_ticklabels(["0.0", "0.25", "0.5\nchance", "0.75", "1.0"])
+    cbar.ax.tick_params(length=0, labelsize=8)
+    cbar.outline.set_visible(False)
+
     ax.set_title("Ground-truth localisation across datasets — GINE",
-                 fontsize=12, loc="left", pad=12, fontweight="semibold")
+                 fontsize=12.5, loc="left", pad=12, fontweight="semibold")
+    fig.tight_layout()
     return save_vector(fig, Path(out_path))

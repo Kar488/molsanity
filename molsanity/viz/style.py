@@ -11,8 +11,18 @@ from pathlib import Path
 
 # Validated categorical palette (light surface). Order is fixed.
 PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#4a3aa7"]
-GREY = "#8a8a86"
-GT_GREEN = "#008300"
+GREY = "#9a9a95"
+GT_GREEN = "#2f9e6f"  # refined teal-green for the ground-truth motif outline
+
+# Dedicated, sophisticated colours for *metric* comparisons (not entity encoding):
+# a steel blue + warm ochre pair reads as journal-grade, not primary-bright.
+METRIC_COLORS = {
+    "gt": "#3b6ea5",       # ground-truth AUROC
+    "occ": "#c77f2a",      # occlusion faithfulness
+    "fidelity": "#6a8d3a",
+}
+INK = "#22222a"
+MUTED_INK = "#5c5c66"
 
 # Fixed entity -> colour. New entities append; never reorder (identity is stable).
 ATTRIBUTOR_COLORS = {
@@ -63,32 +73,42 @@ def apply_style():
 
     mpl.rcParams.update({
         "figure.dpi": 150,
-        "savefig.dpi": 300,
+        "savefig.dpi": 400,
         "font.family": "sans-serif",
         "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica"],
         "font.size": 9,
         "axes.titlesize": 10,
         "axes.labelsize": 9,
-        "axes.titleweight": "bold",
+        "axes.titleweight": "regular",   # bold titles read heavy; keep them light
+        "axes.titlepad": 8,
         "axes.spines.top": False,
         "axes.spines.right": False,
-        "axes.linewidth": 0.8,
-        "axes.edgecolor": "#3a3a38",
-        "axes.labelcolor": "#1a1a19",
+        "axes.spines.left": True,
+        "axes.spines.bottom": True,
+        "axes.linewidth": 0.7,
+        "axes.edgecolor": "#b4b4ae",     # light frame, not black
+        "axes.labelcolor": INK,
+        "axes.axisbelow": True,           # grid BEHIND bars/marks (key fix)
         "axes.grid": True,
-        "grid.color": "#e6e6e2",
-        "grid.linewidth": 0.6,
-        "xtick.color": "#3a3a38",
-        "ytick.color": "#3a3a38",
+        "axes.grid.axis": "y",
+        "grid.color": "#ececE8",
+        "grid.linewidth": 0.7,
+        "xtick.color": "#b4b4ae",
+        "ytick.color": "#b4b4ae",
+        "xtick.labelcolor": MUTED_INK,
+        "ytick.labelcolor": MUTED_INK,
         "xtick.labelsize": 8,
         "ytick.labelsize": 8,
-        "xtick.major.width": 0.8,
-        "ytick.major.width": 0.8,
+        "xtick.major.width": 0.7,
+        "ytick.major.width": 0.7,
+        "xtick.major.size": 3,
+        "ytick.major.size": 3,
         "legend.fontsize": 7.5,
         "legend.frameon": False,
-        "lines.linewidth": 2.0,
+        "lines.linewidth": 1.9,
         "lines.solid_capstyle": "round",
-        "text.color": "#1a1a19",
+        "patch.linewidth": 0.0,
+        "text.color": INK,
         "figure.facecolor": "white",
         "axes.facecolor": "white",
         "svg.fonttype": "none",

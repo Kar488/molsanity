@@ -12,7 +12,17 @@ from pathlib import Path
 import numpy as np
 
 from ..utils import get_logger
-from .style import GREY, GT_GREEN, apply_style, attributor_color, backbone_color, panel_label, save_vector, short
+from .style import (
+    GREY,
+    METRIC_COLORS,
+    MUTED_INK,
+    apply_style,
+    attributor_color,
+    backbone_color,
+    panel_label,
+    save_vector,
+    short,
+)
 from .summary import _col, _ecdf, _parse_cell_id
 
 log = get_logger()
@@ -37,10 +47,12 @@ def _gt_bar(ax, cells, dataset, split="scaffold"):
     lo = [max(0, r[1]["mean"] - r[1]["lo"]) for r in rows]
     hi = [max(0, r[1]["hi"] - r[1]["mean"]) for r in rows]
     ax.barh(y, means, xerr=[lo, hi], color=[attributor_color(r[0]) for r in rows],
-            height=0.64, capsize=2.5, error_kw={"lw": 0.9, "ecolor": "#3a3a38"})
-    ax.axvline(0.5, color=GREY, ls="--", lw=1)
+            height=0.6, capsize=2.2, edgecolor="white", linewidth=0.7,
+            error_kw={"lw": 0.8, "ecolor": MUTED_INK}, zorder=3)
+    ax.axvline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1)
     for yi, mv, h in zip(y, means, hi):
-        ax.text(mv + h + 0.03, yi, f"{mv:.2f}", va="center", fontsize=7)
+        ax.text(mv + h + 0.03, yi, f"{mv:.2f}", va="center", fontsize=7, color=MUTED_INK)
+    ax.tick_params(axis="y", length=0)
     ax.set_yticks(y); ax.set_yticklabels([short(r[0]) for r in rows], fontsize=7.5)
     ax.set_xlim(0, 1.18); ax.set_xlabel("GT AUROC", fontsize=8)
     ax.set_title(f"{dataset}", fontsize=9)
@@ -66,10 +78,12 @@ def _backbone_bar(ax, cells, dataset="MUTAG", attributor="IntegratedGradients", 
     lo = [max(0, r[1]["mean"] - r[1]["lo"]) for r in rows]
     hi = [max(0, r[1]["hi"] - r[1]["mean"]) for r in rows]
     ax.barh(y, means, xerr=[lo, hi], color=[backbone_color(r[0]) for r in rows],
-            height=0.64, capsize=2.5, error_kw={"lw": 0.9, "ecolor": "#3a3a38"})
-    ax.axvline(0.5, color=GREY, ls="--", lw=1)
+            height=0.6, capsize=2.2, edgecolor="white", linewidth=0.7,
+            error_kw={"lw": 0.8, "ecolor": MUTED_INK}, zorder=3)
+    ax.axvline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1)
     for yi, mv, h in zip(y, means, hi):
-        ax.text(mv + h + 0.03, yi, f"{mv:.2f}", va="center", fontsize=7)
+        ax.text(mv + h + 0.03, yi, f"{mv:.2f}", va="center", fontsize=7, color=MUTED_INK)
+    ax.tick_params(axis="y", length=0)
     ax.set_yticks(y); ax.set_yticklabels([r[0] for r in rows], fontsize=7.5)
     ax.set_xlim(0, 1.18); ax.set_xlabel("GT AUROC", fontsize=8)
     ax.set_title(f"{dataset} · {short(attributor)} · by backbone", fontsize=9)
@@ -110,10 +124,13 @@ def _regime_panel(ax, cells, split="scaffold"):
     counts = {r: len([z for z in pooled[r]["occ"] if np.isfinite(z)]) for r in regimes}
     gt = [mean(pooled[r]["gt"]) for r in regimes]
     occ = [mean(pooled[r]["occ"]) for r in regimes]
-    x = np.arange(3); w = 0.38
-    ax.bar(x - w / 2, gt, w, color=attributor_color("IntegratedGradients"), label="GT AUROC")
-    ax.bar(x + w / 2, occ, w, color=GT_GREEN, label="Occl. ρ")
-    ax.axhline(0.5, color=GREY, ls="--", lw=1); ax.axhline(0, color="#3a3a38", lw=0.7)
+    x = np.arange(3); w = 0.34
+    ax.bar(x - w / 2, gt, w, color=METRIC_COLORS["gt"], label="GT AUROC",
+           edgecolor="white", linewidth=0.7, zorder=3)
+    ax.bar(x + w / 2, occ, w, color=METRIC_COLORS["occ"], label="Occl. ρ",
+           edgecolor="white", linewidth=0.7, zorder=3)
+    ax.axhline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1); ax.axhline(0, color="#c4c4be", lw=0.9, zorder=1)
+    ax.tick_params(axis="x", length=0)
     ax.set_xticks(x); ax.set_xticklabels([f"{l}\n(n={counts[r]})" for l, r in zip(labels, regimes)], fontsize=7)
     ax.set_ylabel("mean reliability", fontsize=8)
     ax.legend(fontsize=6.5, loc="lower left")

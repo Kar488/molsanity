@@ -14,7 +14,9 @@ import numpy as np
 from ..utils import get_logger
 from .style import (
     GREY,
-    GT_GREEN,
+    INK,
+    METRIC_COLORS,
+    MUTED_INK,
     apply_style,
     attributor_color,
     panel_label,
@@ -64,21 +66,26 @@ def attributor_gt_bar(cells: dict, out_path, dataset="MUTAG", split="scaffold") 
     lo = [max(0.0, r[1]["mean"] - r[1]["lo"]) for r in rows]
     hi = [max(0.0, r[1]["hi"] - r[1]["mean"]) for r in rows]
 
-    fig, ax = plt.subplots(figsize=(6.2, 3.3))
+    fig, ax = plt.subplots(figsize=(6.4, 3.4))
     y = np.arange(len(labels))
-    ax.barh(y, means, xerr=[lo, hi], color=colors, alpha=0.92, capsize=3,
-            error_kw={"lw": 1, "ecolor": "#3a3a38"}, height=0.66)
-    ax.axvline(0.5, color=GREY, ls="--", lw=1)
-    ax.text(0.5, -0.75, "chance", color=GREY, fontsize=7.5, ha="center", va="top")
+    ax.barh(y, means, xerr=[lo, hi], color=colors, capsize=2.5,
+            edgecolor="white", linewidth=0.8,
+            error_kw={"lw": 0.9, "ecolor": MUTED_INK}, height=0.62, zorder=3)
+    ax.axvline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1)
+    ax.text(0.5, -0.78, "chance", color=GREY, fontsize=7.5, ha="center", va="top",
+            style="italic")
     for yi, mval, h in zip(y, means, hi):
-        ax.text(mval + h + 0.025, yi, f"{mval:.2f}", va="center", ha="left",
-                fontsize=8, color="#1a1a19")
+        ax.text(mval + h + 0.03, yi, f"{mval:.2f}", va="center", ha="left",
+                fontsize=8, color=MUTED_INK)
     ax.set_yticks(y); ax.set_yticklabels(labels)
-    ax.set_ylim(-0.9, len(labels) - 0.35)
+    ax.tick_params(axis="y", length=0)
+    ax.set_ylim(-0.95, len(labels) - 0.3)
     ax.set_xlim(0, 1.15)
-    ax.set_xlabel("Ground-truth AUROC (mean ± 95% CI)")
-    ax.set_title(f"{dataset} · GINE · attribution vs ground truth ({split} split)")
+    ax.grid(axis="x", visible=True)
     ax.grid(axis="y", visible=False)
+    ax.set_xlabel("Ground-truth AUROC (mean ± 95% CI)")
+    ax.set_title(f"{dataset} · GINE · attribution vs ground truth · {split} split",
+                 fontsize=9.5, color=INK)
     fig.tight_layout()
     return save_vector(fig, Path(out_path))
 
@@ -150,45 +157,41 @@ def regime_stratification_figure(cells: dict, out_path, split="scaffold") -> dic
     gt = [_mean(pooled[r]["gt_auroc"]) for r in regimes]
     occ = [_mean(pooled[r]["occ_spearman"]) for r in regimes]
 
-    fig, ax = plt.subplots(figsize=(6.4, 3.8))
+    fig, ax = plt.subplots(figsize=(6.6, 4.0))
     x = np.arange(len(regimes))
-    w = 0.38
-    b1 = ax.bar(x - w / 2, gt, w, color=attributor_color("IntegratedGradients"),
-                label="GT AUROC")
-    b2 = ax.bar(x + w / 2, occ, w, color=GT_GREEN, label="Occlusion Spearman")
+    w = 0.32
+    b1 = ax.bar(x - w / 2, gt, w, color=METRIC_COLORS["gt"], label="GT AUROC",
+                edgecolor="white", linewidth=0.8, zorder=3)
+    b2 = ax.bar(x + w / 2, occ, w, color=METRIC_COLORS["occ"], label="Occlusion ρ",
+                edgecolor="white", linewidth=0.8, zorder=3)
 
     finite = [v for v in gt + occ if np.isfinite(v)] or [0.0]
-    top = max(0.5, max(finite)) + 0.14
-    bottom = min(0.0, min(finite)) - 0.14
+    top = max(0.5, max(finite)) + 0.16
+    bottom = min(0.0, min(finite)) - 0.16
     ax.set_ylim(bottom, top)
-    ax.axhline(0.5, color=GREY, ls="--", lw=1)
-    ax.text(len(regimes) - 1 + 0.30, 0.512, "chance", color=GREY, fontsize=7,
-            va="bottom", ha="right")
-    ax.axhline(0, color="#3a3a38", lw=0.8)
+    ax.axhline(0.5, color=GREY, ls=(0, (4, 3)), lw=0.9, zorder=1)
+    ax.text(-0.42, 0.505, "chance", color=GREY, fontsize=7,
+            va="bottom", ha="left", style="italic")
+    ax.axhline(0, color="#c4c4be", lw=0.9, zorder=1)
 
-    # Value labels sit just outside the bar on the zero-facing side, so they
-    # never reach the axis edge / x tick labels.
     for bars, vals in [(b1, gt), (b2, occ)]:
         for bar, v in zip(bars, vals):
             if not np.isfinite(v):
                 continue
-            if v >= 0:
-                ax.text(bar.get_x() + bar.get_width() / 2, v + 0.015, f"{v:.2f}",
-                        ha="center", va="bottom", fontsize=7.5)
-            else:
-                ax.text(bar.get_x() + bar.get_width() / 2, v - 0.015, f"{v:.2f}",
-                        ha="center", va="top", fontsize=7.5)
+            off, va = (0.02, "bottom") if v >= 0 else (-0.02, "top")
+            ax.text(bar.get_x() + bar.get_width() / 2, v + off, f"{v:.2f}",
+                    ha="center", va=va, fontsize=8, color=MUTED_INK)
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"{lab}\n(n={counts[r]})" for lab, r in zip(reg_labels, regimes)])
+    ax.tick_params(axis="x", length=0)
     ax.set_ylabel("Mean reliability")
-    ax.set_title(f"Attribution reliability by regime ({split} split, pooled)")
-    ax.grid(axis="x", visible=False)
-    # Compact legend in the empty middle column (confident_error is ~n=0), where
-    # there are no bars to overlap.
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 0.99), ncol=1,
-              frameon=True, framealpha=0.9, edgecolor="none", fontsize=7.5)
-    ax.margins(x=0.10)
+    ax.set_title(f"Attribution reliability by confidence/correctness regime "
+                 f"· {split} split, pooled", fontsize=9.5, color=INK)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 0.98), ncol=1,
+              handlelength=1.1, handleheight=1.1, borderpad=0.6,
+              frameon=True, framealpha=0.95, edgecolor="#e2e2dd", fontsize=8)
+    ax.margins(x=0.12)
     fig.tight_layout()
     return save_vector(fig, Path(out_path))
 

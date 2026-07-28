@@ -44,7 +44,18 @@ cells:
   - {dataset: SynthMotifs, backbone: GINE,  attributor: PGExplainer}
   # Tier-2 real molecular task (no GT)
   - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}
-  # Tier-2 regression (RMSE/MAE/R2; audit in output space)
+  # (BBBP GINE below is kept as one documented degenerate example — reduced-budget
+  # scaffold folds on imbalanced BBBP collapse to a majority-class predictor;
+  # meaningful Tier-2 classification needs the full budget + a balanced split.
+  # See LIMITATIONS.md. The regression breadth below is the model-agnostic story.)
+  # Tier-2 regression × backbones (RMSE/MAE/R2; audit in output space)
   - {dataset: ESOL,     backbone: GINE,     attributor: IntegratedGradients}
   - {dataset: ESOL,     backbone: GINE,     attributor: GNNExplainer}
+  - {dataset: ESOL,     backbone: GCN,      attributor: IntegratedGradients}
+  - {dataset: ESOL,     backbone: GAT,      attributor: IntegratedGradients}
   - {dataset: FreeSolv, backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: IntegratedGradients}
+  # Random-split (in-distribution) reference vs the scaffold-shift regime
+  - {dataset: MUTAG, backbone: GINE, attributor: IntegratedGradients, split: random}
+  - {dataset: MUTAG, backbone: GINE, attributor: Saliency,            split: random}
+  - {dataset: SynthMotifs, backbone: GINE, attributor: IntegratedGradients, split: random}

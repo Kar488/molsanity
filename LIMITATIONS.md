@@ -26,6 +26,20 @@ current alongside RESULTS.md.
   skipped and logged, never faked.
 - TDC (Tier-3) datasets are wired in a later milestone.
 
+## Tier-2 classification under reduced-budget scaffold split
+
+- **Degenerate models on imbalanced classification (BBBP, BACE).** Under the
+  reduced `matrix.yaml` budget (30 epochs, hidden 32), Bemis–Murcko scaffold
+  splits on the class-imbalanced BBBP/BACE produce near-single-class test folds,
+  and the model collapses to a majority-class predictor (test accuracy ≈ 1.0 but
+  ROC-AUC undefined). The audit still *runs*, but attributions of a constant
+  predictor are not scientifically meaningful, so these cells are **not featured**
+  (one BBBP·GINE cell is retained as a documented example). Meaningful Tier-2
+  classification needs the overnight `full.yaml` budget **and** a class-aware
+  scaffold split — tracked in `TASKS.md`. The meaningful Tier-2 results at this
+  budget are the **regression** tasks (ESOL/FreeSolv/Lipophilicity), where models
+  reach honest R² (e.g. ESOL ≈ 0.67–0.69 across backbones).
+
 ## Methods
 
 - The first slice audits a single attributor (Integrated Gradients). Additional

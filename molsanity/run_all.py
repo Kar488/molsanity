@@ -179,7 +179,10 @@ def main(argv=None):
     from .data import DatasetBlocked
 
     for cell in cfg["cells"]:
-        for split_kind in split_kinds:
+        # A cell may pin its own split(s) (e.g. a random-split reference row);
+        # otherwise it runs on the config's split list.
+        cell_splits = cell.get("splits") or ([cell["split"]] if cell.get("split") else split_kinds)
+        for split_kind in cell_splits:
             cell_id = f"{cell['dataset']}__{cell['backbone']}__{cell['attributor']}__{split_kind}"
             stage_cfg = {"cell": cell, "split": split_kind, "budget": cfg.get("budget"),
                          "model": cfg["model"], "train": cfg["train"], "seed": cfg["seed"]}

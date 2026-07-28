@@ -1,10 +1,10 @@
 # PROGRESS.md — MolSanity rolling progress
 
-_Last run: `matrix.yaml` @ 20260728_222255._
+_Last run: `matrix.yaml` @ 20260728_223211._
 
 ## Cell tally
 
-- done: **18**  · failed: **0**  · skipped/blocked: **0**
+- done: **24**  · failed: **0**  · skipped/blocked: **0**
 
 ## Cells (dataset × backbone × attributor)
 
@@ -22,12 +22,18 @@ _Last run: `matrix.yaml` @ 20260728_222255._
 | MUTAG | GINE | Saliency | done | acc=0.80 gt_auroc=0.02649591149591149 n=20 (capped) [cached] |
 | MUTAG | GINE | InputXGradient | done | acc=0.80 gt_auroc=0.04156961774608832 n=20 (capped) [cached] |
 | MUTAG | GINE | GNNExplainer | done | acc=0.80 gt_auroc=0.4913560404736875 n=20 (capped) [cached] |
-| MUTAG | GINE | PGExplainer | done | acc=0.80 gt_auroc=0.40073704073704075 n=20 (capped) |
-| SynthMotifs | GINE | PGExplainer | done | acc=1.00 gt_auroc=0.3598 n=20 (capped) |
+| MUTAG | GINE | PGExplainer | done | acc=0.80 gt_auroc=0.40073704073704075 n=20 (capped) [cached] |
+| SynthMotifs | GINE | PGExplainer | done | acc=1.00 gt_auroc=0.3598 n=20 (capped) [cached] |
 | BBBP | GINE | IntegratedGradients | done | acc=1.00 gt_auroc=nan n=20 (capped) [cached] |
 | ESOL | GINE | IntegratedGradients | done | rmse=1.132 r2=0.671 n=20 (capped) [cached] |
 | ESOL | GINE | GNNExplainer | done | rmse=1.132 r2=0.671 n=20 (capped) [cached] |
+| ESOL | GCN | IntegratedGradients | done | rmse=1.142 r2=0.665 n=20 (capped) [cached] |
+| ESOL | GAT | IntegratedGradients | done | rmse=1.092 r2=0.694 n=20 (capped) [cached] |
 | FreeSolv | GINE | IntegratedGradients | done | rmse=2.347 r2=0.614 n=20 (capped) [cached] |
+| Lipophilicity | GINE | IntegratedGradients | done | rmse=0.932 r2=0.402 n=20 (capped) [cached] |
+| MUTAG | GINE | IntegratedGradients | done | acc=0.70 gt_auroc=0.07456587530116943 n=20 (capped) [cached] |
+| MUTAG | GINE | Saliency | done | acc=0.70 gt_auroc=0.022415595025889145 n=20 (capped) [cached] |
+| SynthMotifs | GINE | IntegratedGradients | done | acc=1.00 gt_auroc=0.5896 n=20 (capped) [cached] |
 
 ## Blockers
 

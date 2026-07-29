@@ -27,6 +27,7 @@ HEADLINE_METRICS = [
     ("fidelity_plus", "field-standard"),
     ("fidelity_minus", "field-standard"),
     ("sparsity", "field-standard"),
+    ("characterization", "GraphFramEx"),
 ]
 
 

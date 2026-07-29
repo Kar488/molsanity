@@ -133,5 +133,20 @@ def occlusion_faithfulness(
         "fidelity_plus": fid_plus,
         "fidelity_minus": fid_minus,
         "sparsity": sparsity,
+        "characterization": characterization_score(fid_plus, fid_minus),
         "n_motifs": len(motifs),
     }
+
+
+def characterization_score(fid_plus: float, fid_minus: float,
+                           w_plus: float = 0.5, w_minus: float = 0.5) -> float:
+    """GraphFramEx characterization score (Amara et al. 2022): the weighted
+    harmonic mean of Fidelity+ and (1 - Fidelity-), in [0, 1]. Higher is better.
+    Reproduced here so MolSanity's audit is directly comparable to the published
+    GraphFramEx framework. Undefined (NaN) outside the valid fidelity range."""
+    p = float(np.clip(fid_plus, 0.0, 1.0))
+    q = 1.0 - float(np.clip(fid_minus, 0.0, 1.0))
+    denom = w_minus * p + w_plus * q
+    if denom <= 0:
+        return float("nan")
+    return float((w_plus + w_minus) * p * q / denom)

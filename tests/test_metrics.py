@@ -56,3 +56,18 @@ def test_fraction_positive_and_paired():
     assert fraction_positive(np.array([1.0, -1.0, 2.0])) == 2 / 3
     res = paired_wilcoxon(np.array([2.0, 3, 4, 5, 6]), np.array([1.0, 1, 1, 1, 1]))
     assert res["n"] == 5
+
+
+def test_characterization_score():
+    from molsanity.audit.occlusion import characterization_score
+    import numpy as np
+    # perfect: fid+ = 1 (removing salient collapses prob), fid- = 0 (non-salient irrelevant)
+    assert abs(characterization_score(1.0, 0.0) - 1.0) < 1e-9
+    # worst: fid+ = 0, fid- = 1
+    assert characterization_score(0.0, 1.0) != characterization_score(0.0, 1.0) or \
+           characterization_score(0.0, 1.0) == 0.0  # NaN or 0 (degenerate)
+    # monotonic-ish: higher fid+ (lower fid-) → higher score
+    assert characterization_score(0.8, 0.1) > characterization_score(0.3, 0.4)
+    # clips out-of-range inputs
+    s = characterization_score(1.5, -0.5)
+    assert 0.0 <= s <= 1.0

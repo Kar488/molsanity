@@ -54,11 +54,15 @@ def scaffold_split(
     frac_train: float = 0.8,
     frac_val: float = 0.1,
     seed: int = 0,
+    labels=None,
 ) -> Split:
     """Deterministic Bemis-Murcko scaffold split.
 
     Largest scaffold groups are placed first (standard MoleculeNet behaviour) so
-    the test set is dominated by rarer, unseen scaffolds — the shift regime.
+    the test set is dominated by rarer, unseen scaffolds — the shift regime. When
+    ``labels`` are provided (classification), a deterministic post-hoc pass moves
+    whole scaffold groups from train so every fold contains every class (no
+    scaffold leakage) — otherwise imbalanced datasets yield single-class folds.
     """
     scaffold_to_idx: dict[str, list[int]] = defaultdict(list)
     for i in range(len(dataset)):
@@ -93,6 +97,9 @@ def scaffold_split(
         train, val, test = pool[:n_tr], pool[n_tr:n_tr + n_va], pool[n_tr + n_va:]
         log.warning("Scaffold split had an empty partition; applied index-based rebalance.")
 
+    if labels is not None:
+        train, val, test = _ensure_class_coverage(train, val, test, groups, labels)
+
     log.info(
         "Scaffold split: %d scaffolds -> train %d / val %d / test %d",
         len(groups), len(train), len(val), len(test),
@@ -100,11 +107,52 @@ def scaffold_split(
     return Split(sorted(train), sorted(val), sorted(test), kind="scaffold")
 
 
+def _ensure_class_coverage(train, val, test, groups, labels):
+    """Guarantee every fold contains every class, moving *whole* scaffold groups
+    from train (no scaffold leakage). Deterministic. For imbalanced classification
+    under scaffold split, folds can otherwise be single-class (AUC undefined)."""
+    labels = {i: int(labels[i]) for i in range(len(labels))}
+    classes = sorted(set(labels.values()))
+    if len(classes) < 2:
+        return train, val, test
+
+    idx_to_group = {}
+    for gi, g in enumerate(groups):
+        for i in g:
+            idx_to_group[i] = gi
+
+    def classes_in(fold):
+        return set(labels[i] for i in fold)
+
+    train_s, val_s, test_s = set(train), set(val), set(test)
+    for fold_s, name in ((val_s, "val"), (test_s, "test")):
+        for c in classes:
+            if c in classes_in(fold_s):
+                continue
+            # Find the smallest train scaffold group that contains class c.
+            candidate_groups = sorted(
+                {idx_to_group[i] for i in train_s if labels[i] == c},
+                key=lambda gi: (len(groups[gi]), min(groups[gi])),
+            )
+            if not candidate_groups:
+                continue
+            gi = candidate_groups[0]
+            members = [i for i in groups[gi] if i in train_s]
+            for i in members:
+                train_s.discard(i)
+                fold_s.add(i)
+            log.info("class-aware split: moved scaffold group (%d mols, class %s) "
+                     "from train to %s for coverage", len(members), c, name)
+
+    return sorted(train_s), sorted(val_s), sorted(test_s)
+
+
 def random_split(
     dataset,
     frac_train: float = 0.8,
     frac_val: float = 0.1,
     seed: int = 0,
+    labels=None,  # accepted for a uniform make_split signature; unused here
 ) -> Split:
     """Deterministic random split (in-distribution reference)."""
     n = len(dataset)

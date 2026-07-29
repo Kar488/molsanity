@@ -42,6 +42,20 @@ def test_nitro_ground_truth(mutag):
     assert n_with == len(mutag)
 
 
+def test_class_aware_scaffold_split_covers_all_classes():
+    """Every fold must contain every class when labels are provided, without
+    changing MUTAG's split (which already has both classes in each fold)."""
+    ld = data.load_dataset("MUTAG")
+    labels = [int(ld.dataset[i].y.view(-1)[0]) for i in range(len(ld))]
+    s = data.make_split(ld.dataset, kind="scaffold", labels=labels)
+    for fold in (s.train, s.val, s.test):
+        classes = {int(ld.dataset[i].y.view(-1)[0]) for i in fold}
+        assert classes == {0, 1}
+    # MUTAG folds already had both classes, so labels must not change the split.
+    s_nolabel = data.make_split(ld.dataset, kind="scaffold")
+    assert s.test == s_nolabel.test
+
+
 def test_scaffold_split_deterministic_and_partitions(mutag):
     s1 = data.make_split(mutag.dataset, kind="scaffold")
     s2 = data.make_split(mutag.dataset, kind="scaffold")

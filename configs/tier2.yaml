@@ -1,0 +1,34 @@
+# Tier-2 config — real molecular classification at a budget where models learn
+# (30 epochs is enough for MUTAG/synthetic but not for the larger MoleculeNet
+# sets). Class-aware scaffold split guarantees both classes in every fold.
+seed: 0
+budget:
+  epochs: 120
+  ig_steps: 25
+  pg_epochs: 30
+  max_eval_molecules: 40
+
+split:
+  kind: scaffold
+  frac_train: 0.8
+  frac_val: 0.1
+
+model:
+  hidden_channels: 64
+  num_layers: 3
+  dropout: 0.5
+  pool: mean
+
+train:
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: 64
+
+cells:
+  # Tier-2 classification × backbones (now with valid both-class folds)
+  - {dataset: BBBP, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: BACE, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: BACE, backbone: GCN,         attributor: IntegratedGradients}

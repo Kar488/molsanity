@@ -53,10 +53,15 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     task = loaded.spec.task
     n_out = 1 if task == "graph-regression" else int(loaded.spec.extras.get("num_classes", 2))
 
+    # For classification, pass labels so the scaffold split guarantees every fold
+    # contains every class (imbalanced datasets otherwise yield single-class folds).
+    labels = None
+    if task == "graph-classification":
+        labels = [int(dataset[i].y.view(-1)[0]) for i in range(len(dataset))]
     split = dataio.make_split(
         dataset, kind=split_kind,
         frac_train=cfg["split"]["frac_train"], frac_val=cfg["split"]["frac_val"],
-        seed=cfg["seed"],
+        seed=cfg["seed"], labels=labels,
     )
 
     budget = cfg.get("budget", {})

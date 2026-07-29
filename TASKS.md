@@ -50,17 +50,18 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
       can't corrupt predictions; reproducible). Distinct profile: most faithful
       (occ≈0.93) yet near-chance GT on MUTAG, and does not flip on SynthMotifs.
 - [!] Attributor SubgraphX: needs DIG, which is **not installed** here (blocked).
-- [x] Datasets Tier-2: BBBP, BACE wired + verified (MoleculeNet). ESOL/FreeSolv/
-      Lipophilicity are regression — need a regression head/metrics (future).
-- [!] Datasets Tier-3 (TDC): ClinTox/SIDER/DILI/hERG — PyTDC not installed;
-      loaders raise DatasetBlocked (skip+log). Tox21/SIDER are multi-task (future).
+- [x] Datasets Tier-2: BBBP, BACE (classification) + ESOL/FreeSolv/Lipophilicity
+      (regression) wired, audited on non-degenerate models (BBBP AUC 0.81/0.89).
+- [x] Datasets Tier-3: ClinTox (AUC 0.82), SIDER, Tox21 rehomed to MoleculeNet as
+      single-task views (no TDC needed). DILI/hERG remain TDC-blocked (skip+log).
 - [x] Cross-checkpoint stability, calibration linkage, regime stratification
 - [x] Paired statistics (Wilcoxon, bootstrap CIs, fraction-positive)
 
 ## Milestone 5 — SOTA benchmarking & deliverables
-- [x] Field-standard metrics (Fidelity± / sparsity) computed alongside MolSanity
-      metrics on the same molecules (comparability)
-- [ ] Reproduce full GraphXAI / GraphFramEx / DIG / MolFaith metric suites in-repo
+- [x] Field-standard metrics (Fidelity± / sparsity) + **GraphFramEx characterization
+      score** computed alongside MolSanity metrics on the same molecules
+- [ ] Reproduce full GraphXAI / DIG / MolFaith metric suites in-repo (PyG
+      `unfaithfulness` available; wiring it per-cell is the remaining piece)
 - [x] Head-to-head table (`BENCHMARK.md`) + paired attributor comparisons
 - [x] `paper/OUTLINE.md` + related-work matrix (`paper/RELATED_WORK.md`)
 - [x] README, LIMITATIONS.md kept current with validated numbers
@@ -73,8 +74,12 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
       whole scaffold groups, no leakage) — fixes degenerate imbalanced Tier-2
 - [x] Multi-task datasets (Tox21, SIDER): single-task views (task 0), NaN-filtered,
       SMILES-retained; loadable via MoleculeNet (no TDC needed)
-- [ ] PGExplainer (parametric) + SubgraphX (needs DIG)
-- [ ] ShapeGGen (GraphXAI) synthetic exact-GT
+- [x] PGExplainer (parametric) wired; SubgraphX still needs DIG (blocked)
+- [x] Class-weighted loss + AUC model-selection (opt-in) for imbalanced Tier-2/3
+- [x] Random-split (in-distribution) references alongside scaffold shift
+- [x] `configs/full.yaml` = complete overnight sweep (44 cells × 2 splits)
+- [ ] Overnight `full.yaml` run on GPU (incl. Tox21 5.8k) for publication scale
+- [ ] ShapeGGen (GraphXAI) synthetic exact-GT — GraphXAI not installable here
 - [x] Publication figures: house style (validated CVD-safe palette, fixed entity
       colours, panel letters, inline labels); GT-by-attributor bars, faithfulness/
       stability ECDFs, regime stratification, and the signature attributor ×

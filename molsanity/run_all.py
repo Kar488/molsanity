@@ -236,6 +236,16 @@ def main(argv=None):
     except Exception as exc:  # noqa: BLE001
         log.warning("Benchmark table generation failed: %s", exc)
 
+    # Faithfulness-only-vs-ground-truth selection test (in-distribution vs shift).
+    # Only writes if the referenced GT cells have been audited; skips quietly.
+    try:
+        from .benchmark.faithfulness_vs_truth import write_report
+
+        write_report(seed=cfg["seed"])
+        log.info("Wrote BENCHMARK_GT.md (faithfulness-vs-ground-truth)")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("BENCHMARK_GT generation failed: %s", exc)
+
     # Cross-matrix publication figures (GT bar, faithfulness/stability ECDFs, regimes).
     try:
         from .viz import make_summary_figures

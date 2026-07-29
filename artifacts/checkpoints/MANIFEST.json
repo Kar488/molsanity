@@ -465,6 +465,21 @@
     "temperature": 0.6385893225669861
   },
   {
+    "dataset": "SynthMotifsXL",
+    "backbone": "GINE",
+    "task": "graph-classification",
+    "config_hash": "cd068a5382ce1f70",
+    "path": "artifacts/checkpoints/SynthMotifsXL/gine_cd068a5382ce1f70.pt",
+    "has_early": true,
+    "epochs_run": 40,
+    "test_acc": 1.0,
+    "test_auc": 1.0,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.00021058320999145508,
+    "temperature": 0.3399679660797119
+  },
+  {
     "dataset": "Tox21",
     "backbone": "GINE",
     "task": "graph-classification",

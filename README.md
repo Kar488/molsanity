@@ -81,6 +81,16 @@ model yet fail to recover the true motif. On MUTAG under a **scaffold split**
   *opposite* order to MUTAG under scaffold shift, where Saliency was worst (0.03).
   No single attributor is "best"; reliability is regime-dependent, which is
   exactly what the audit is built to surface.
+- **A faithfulness-only benchmark picks the wrong attributor under shift —
+  quantified** ([`BENCHMARK_GT.md`](BENCHMARK_GT.md)). Ranking attributors by a
+  field-standard fidelity metric recovers the ground-truth-best method
+  *in-distribution* (SynthMotifsXL, n≈120: rank corr ρ(faithfulness, GT) ≈
+  0.77–0.94, no mismatch) but **fails under scaffold shift**: on MUTAG,
+  GraphFramEx's *characterisation* score selects Saliency (GT AUROC **0.03**) and
+  *Fidelity+* selects GuidedBackprop (0.11), while the ground truth's best is
+  Integrated Gradients (**0.54**) — paired Wilcoxon **p < 0.001**, and ρ collapses
+  to ≈ **−0.4**. Faithfulness stops predicting correctness in exactly the regime
+  drug discovery operates in; the ground-truth + shift audit is what catches it.
 
 See the ground-truth validation figure under `results_figures/` and
 `artifacts/figures/`. (MUTAG's motif "ground truth" is a chemically motivated

@@ -44,3 +44,31 @@ def test_paired_comparison_on_shared_molecules():
         assert c["median_diff"] > 0
     else:
         assert c["median_diff"] < 0
+
+
+def test_faithfulness_vs_truth_flags_mismatch(tmp_path):
+    """A synthetic cell where a faithfulness metric is anti-aligned with GT must
+    be flagged as a mismatch (the core BENCHMARK_GT claim), on shared molecules."""
+    import json
+
+    from molsanity.benchmark.faithfulness_vs_truth import analyse
+
+    root = tmp_path / "audit"
+    # Attributor A: high faithfulness, LOW ground truth (faithful-but-wrong).
+    # Attributor B: low faithfulness, HIGH ground truth (the GT-best).
+    def recs(occ, gt):
+        return [{"graph_id": i, "occ_spearman": occ, "fidelity_plus": occ,
+                 "characterization": occ, "gt_auroc": gt} for i in range(8)]
+
+    # Three attributors so the Spearman rank correlation is defined (needs >=3).
+    for name, occ, gt in [("A", 0.9, 0.10), ("B", 0.1, 0.90), ("C", 0.5, 0.50)]:
+        d = root / f"DS__GINE__{name}__scaffold"
+        d.mkdir(parents=True)
+        (d / "records.json").write_text(json.dumps(recs(occ, gt)))
+
+    res = analyse("DS", "GINE", "scaffold", root=root)
+    assert res["gt_best"] == "B"
+    fp = next(s for s in res["selections"] if s["faithfulness_metric"] == "fidelity_plus")
+    assert fp["faithfulness_pick"] == "A"          # faithfulness picks the wrong one
+    assert fp["mismatch"] is True
+    assert res["rank_correlation"]["fidelity_plus"]["rho"] < 0  # anti-aligned

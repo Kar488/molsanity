@@ -58,6 +58,12 @@
 | SynthMotifs | GINE | PGExplainer | scaffold | 20 | 1.000 | 1.000 | 0.360 | 0.220 | 0.393 | 0.106 | 0.000 | 0.064 | 0.126 | 0.787 | 0.000 |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 1.000 | 1.000 | 0.983 | 0.935 | 0.199 | 0.022 | 0.050 | 0.123 | 0.074 | 0.778 | 0.000 |
 | SynthMotifs | MPNN | IntegratedGradients | scaffold | 20 | 0.850 | 0.910 | 0.807 | 0.400 | 0.224 | -0.104 | 0.300 | 0.041 | 0.030 | 0.798 | 0.267 |
+| SynthMotifsXL | GINE | GNNExplainer | random | 120 | 1.000 | 1.000 | 0.501 | 0.259 | 0.041 | 0.033 | 0.167 | 0.364 | 0.472 | 0.800 | 0.000 |
+| SynthMotifsXL | GINE | GuidedBackprop | random | 120 | 1.000 | 1.000 | 1.000 | 0.998 | 0.164 | 0.529 | 0.517 | 0.495 | 0.006 | 0.800 | 0.000 |
+| SynthMotifsXL | GINE | InputXGradient | random | 120 | 1.000 | 1.000 | 0.989 | 0.958 | 0.239 | 0.393 | 0.150 | 0.493 | 0.089 | 0.798 | 0.000 |
+| SynthMotifsXL | GINE | IntegratedGradients | random | 120 | 1.000 | 1.000 | 0.987 | 0.945 | 0.257 | 0.403 | 0.375 | 0.493 | 0.021 | 0.797 | 0.000 |
+| SynthMotifsXL | GINE | PGExplainer | random | 120 | 1.000 | 1.000 | 0.269 | 0.165 | 0.389 | -0.227 | 0.000 | 0.050 | 0.487 | 0.773 | 0.000 |
+| SynthMotifsXL | GINE | Saliency | random | 120 | 1.000 | 1.000 | 0.990 | 0.962 | 0.214 | 0.424 | 0.150 | 0.492 | 0.127 | 0.798 | 0.000 |
 | Tox21 | GINE | GNNExplainer | scaffold | 30 | 1.000 | 0.827 | — | — | 0.719 | 0.010 | 0.367 | -0.066 | -0.061 | 0.786 | 0.054 |
 | Tox21 | GINE | InputXGradient | scaffold | 30 | 1.000 | 0.827 | — | — | 0.704 | -0.409 | 0.167 | -0.075 | -0.060 | 0.780 | 0.054 |
 | Tox21 | GINE | IntegratedGradients | scaffold | 30 | 1.000 | 0.827 | — | — | 0.713 | -0.339 | 0.200 | -0.080 | -0.062 | 0.779 | 0.054 |

@@ -1,0 +1,37 @@
+# Statistically-powered exact-ground-truth head-to-head (CPU).
+# SynthMotifsXL (600 graphs) with a 20% test fold -> ~120 molecules carrying
+# EXACT node ground truth, audited by every attributor on the SAME molecules.
+# Purpose: test whether a faithfulness-only ranking (what SOTA evaluation
+# frameworks emit) selects the same attributor the exact ground truth does.
+# Random (in-distribution) split: the claim is about attributor correctness vs
+# faithfulness on shared molecules, not about scaffold shift.
+seed: 0
+budget:
+  epochs: 40
+  ig_steps: 25
+  pg_epochs: 30
+  max_eval_molecules: 200   # audit the whole test fold
+
+split:
+  kind: random
+  frac_train: 0.7
+  frac_val: 0.1
+
+model:
+  hidden_channels: 32
+  num_layers: 3
+  dropout: 0.5
+  pool: mean
+
+train:
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: 32
+
+cells:
+  - {dataset: SynthMotifsXL, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: SynthMotifsXL, backbone: GINE, attributor: Saliency}
+  - {dataset: SynthMotifsXL, backbone: GINE, attributor: InputXGradient}
+  - {dataset: SynthMotifsXL, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: SynthMotifsXL, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: SynthMotifsXL, backbone: GINE, attributor: PGExplainer}

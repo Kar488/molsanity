@@ -63,6 +63,21 @@ MANIFEST: dict[str, DatasetSpec] = {
         ),
         extras={"num_graphs": 200, "num_nodes": 25},
     ),
+    "SynthMotifsXL": DatasetSpec(
+        name="SynthMotifsXL",
+        tier=1,
+        task="graph-classification",
+        source="Synthetic (PyG ExplainerDataset: BA base + house/cycle motif)",
+        licence="Synthetic / generated offline",
+        loader="synthmotifs",
+        has_ground_truth=True,
+        notes=(
+            "Larger exact-GT twin of SynthMotifs (600 graphs) for a statistically "
+            "powered head-to-head: with a 20% test fold this yields ~120 molecules "
+            "with exact node ground truth per attributor, enough for paired tests."
+        ),
+        extras={"num_graphs": 600, "num_nodes": 25},
+    ),
     "ShapeGGen": DatasetSpec(
         name="ShapeGGen",
         tier=1,

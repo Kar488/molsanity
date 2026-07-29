@@ -87,6 +87,12 @@
 | SynthMotifs | GINE | PGExplainer | scaffold | 20 | 0.360 | 0.106 | 0.701 | 0.393 | 0.064 | 0.126 | 0.787 | 0.106 | — |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 | 0.197 | 0.042 |
 | SynthMotifs | MPNN | IntegratedGradients | scaffold | 20 | 0.807 | -0.104 | 0.894 | 0.224 | 0.041 | 0.030 | 0.798 | 0.262 | 0.132 |
+| SynthMotifsXL | GINE | GNNExplainer | random | 120 | 0.501 | 0.033 | 0.571 | 0.041 | 0.364 | 0.472 | 0.800 | 0.209 | 0.635 |
+| SynthMotifsXL | GINE | GuidedBackprop | random | 120 | 1.000 | 0.529 | 0.753 | 0.164 | 0.495 | 0.006 | 0.800 | 0.599 | 0.639 |
+| SynthMotifsXL | GINE | InputXGradient | random | 120 | 0.989 | 0.393 | 0.732 | 0.239 | 0.493 | 0.089 | 0.798 | 0.529 | 0.634 |
+| SynthMotifsXL | GINE | IntegratedGradients | random | 120 | 0.987 | 0.403 | 0.670 | 0.257 | 0.493 | 0.021 | 0.797 | 0.595 | 0.639 |
+| SynthMotifsXL | GINE | PGExplainer | random | 120 | 0.269 | -0.227 | 0.657 | 0.389 | 0.050 | 0.487 | 0.773 | 0.037 | — |
+| SynthMotifsXL | GINE | Saliency | random | 120 | 0.990 | 0.424 | 0.632 | 0.214 | 0.492 | 0.127 | 0.798 | 0.496 | 0.637 |
 | Tox21 | GINE | GNNExplainer | scaffold | 30 | — | 0.010 | 1.000 | 0.719 | -0.066 | -0.061 | 0.786 | 0.002 | 0.171 |
 | Tox21 | GINE | InputXGradient | scaffold | 30 | — | -0.409 | 0.809 | 0.704 | -0.075 | -0.060 | 0.780 | 0.001 | 0.211 |
 | Tox21 | GINE | IntegratedGradients | scaffold | 30 | — | -0.339 | 0.664 | 0.713 | -0.080 | -0.062 | 0.779 | 0.001 | 0.211 |
@@ -245,6 +251,26 @@
 | IntegratedGradients | PGExplainer | 20 | -0.102 | 0.784 |
 | IntegratedGradients | Saliency | 20 | 0.094 | 0.123 |
 | PGExplainer | Saliency | 20 | -0.026 | 0.546 |
+
+**SynthMotifsXL · GINE · random split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | GuidedBackprop | 120 | -0.534 | 0.000 |
+| GNNExplainer | InputXGradient | 120 | -0.370 | 0.000 |
+| GNNExplainer | IntegratedGradients | 120 | -0.420 | 0.000 |
+| GNNExplainer | PGExplainer | 120 | 0.278 | 0.000 |
+| GNNExplainer | Saliency | 120 | -0.398 | 0.000 |
+| GuidedBackprop | InputXGradient | 120 | 0.126 | 0.000 |
+| GuidedBackprop | IntegratedGradients | 120 | 0.101 | 0.000 |
+| GuidedBackprop | PGExplainer | 120 | 0.807 | 0.000 |
+| GuidedBackprop | Saliency | 120 | 0.093 | 0.000 |
+| InputXGradient | IntegratedGradients | 120 | -0.022 | 0.205 |
+| InputXGradient | PGExplainer | 120 | 0.656 | 0.000 |
+| InputXGradient | Saliency | 120 | -0.025 | 0.000 |
+| IntegratedGradients | PGExplainer | 120 | 0.684 | 0.000 |
+| IntegratedGradients | Saliency | 120 | -0.015 | 0.140 |
+| PGExplainer | Saliency | 120 | -0.689 | 0.000 |
 
 **Tox21 · GINE · scaffold split** (metric: occ_spearman)
 

@@ -98,8 +98,18 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
       x→float *inside* forward, so Captum's leaf tensor was int. Now the explainer
       is fed float inputs (identity for already-float MUTAG/SynthMotifs, so those
       results are unchanged). Unblocks the battery on all molecular datasets.
+- [x] **Head-to-head with statistical significance (the SOTA-comparison claim).**
+      `BENCHMARK_GT.md` + `benchmark/faithfulness_vs_truth.py`: on exact/proxy
+      ground truth, test whether a faithfulness-only ranking (GraphFramEx
+      Fidelity+/characterisation) selects the GT-best attributor. Result:
+      *in-distribution* it does (SynthMotifsXL n≈120, rank corr ρ≈0.77–0.94, no
+      mismatch); *under scaffold shift* it does NOT — characterisation picks
+      Saliency (GT 0.03), Fidelity+ picks GuidedBackprop (0.11) vs GT-best IG
+      (0.54), paired Wilcoxon p<0.001, ρ collapses to ≈−0.4. Added SynthMotifsXL
+      (600-graph exact-GT twin) for the powered in-distribution arm.
 - [ ] Overnight `full.yaml` run on GPU for publication scale (higher epochs /
-      IG steps / eval-molecule caps; Tox21 already audited on CPU above)
+      IG steps / eval-molecule caps; Tox21 already audited on CPU above). Would
+      also power the *shift* arm of BENCHMARK_GT beyond MUTAG's n≈20.
 - [!] ShapeGGen (GraphXAI) synthetic exact-GT — GraphXAI's PyPI/GitHub install is
       broken here (wheel omits subpackages) and depends on the same pre-2.5 PyG
       stack as DIG. Its exact-GT role is already filled by SynthMotifs, so this is

@@ -6,7 +6,7 @@
 > `config_hash`; a re-run of `run_all` with the matching config recomputes
 > the same hash, hits this file as a cache, and resumes without retraining.
 
-**34 checkpoints** (22 classification · 7 regression) · 32 with an `_early` intermediate (for cross-checkpoint stability).
+**35 checkpoints** (23 classification · 7 regression) · 33 with an `_early` intermediate (for cross-checkpoint stability).
 
 | dataset | backbone | task | config_hash | epochs | test_acc | test_auc | test_rmse | test_r2 | test_ece | temp | early |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -41,6 +41,7 @@
 | SynthMotifs | GINE | cls | `c98efc007771f38d` | 30 | 1.0000 | 1.0000 | — | — | 0.0000 | — | — |
 | SynthMotifs | GINE | cls | `fa8282f200d66ed5` | 30 | 1.0000 | 1.0000 | — | — | 0.0012 | 0.1000 | ✓ |
 | SynthMotifs | MPNN | cls | `b081bf00c1007482` | 30 | 0.8500 | 0.9100 | — | — | 0.2667 | 0.6386 | ✓ |
+| SynthMotifsXL | GINE | cls | `cd068a5382ce1f70` | 40 | 1.0000 | 1.0000 | — | — | 0.0002 | 0.3400 | ✓ |
 | Tox21 | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.9422 | 0.8272 | — | — | 0.0537 | 0.1000 | ✓ |
 | hERG | GCN | cls | `f402512b13fb46af` | 60 | 0.6667 | 0.8024 | — | — | 0.0980 | 2.4816 | ✓ |
 | hERG | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.7121 | 0.7838 | — | — | 0.0702 | 0.6842 | ✓ |

@@ -180,15 +180,74 @@ def _load_shapeggen(spec: DatasetSpec) -> LoadedDataset:
     raise DatasetBlocked("ShapeGGen loader not yet wired (Milestone 4).")
 
 
+_TDC_GROUPS = {
+    "Tox": "single_pred.Tox",
+    "ADME": "single_pred.ADME",
+    "HTS": "single_pred.HTS",
+}
+
+
 def _load_tdc(spec: DatasetSpec) -> LoadedDataset:
+    """Load a Therapeutics Data Commons single-prediction task.
+
+    TDC serves SMILES + a binary label; we featurise with the *same* PyG
+    ``from_smiles`` encoding MoleculeNet uses (x: 9-dim, edge_attr: 3-dim), so
+    the backbones are drop-in compatible. Molecules RDKit cannot parse are
+    skipped and counted. Blocked-tolerant: a missing PyTDC or an unreachable
+    download raises :class:`DatasetBlocked` so the run logs it and continues.
+    """
     try:
-        import tdc  # noqa: F401
+        from tdc import single_pred  # noqa: F401
+        from torch_geometric.utils import from_smiles
     except Exception as exc:  # blocked-tolerant
         raise DatasetBlocked(
             f"{spec.name} requires PyTDC which is not installed ({exc}). "
             "Skipping and logging per Hard Rule 4."
         ) from exc
-    raise DatasetBlocked(f"{spec.name} TDC loader not yet wired (Milestone 4).")
+
+    import torch
+
+    group = spec.extras["tdc_group"]
+    tdc_name = spec.extras["tdc_name"]
+    if group not in _TDC_GROUPS:
+        raise DatasetBlocked(f"Unsupported TDC group '{group}' for {spec.name}.")
+
+    cache_dir = DATA_ROOT / spec.name
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        loader_cls = getattr(single_pred, group)
+        df = loader_cls(name=tdc_name, path=str(cache_dir / "tdc")).get_data()
+    except Exception as exc:  # network / server / gating — stay blocked-tolerant
+        raise DatasetBlocked(
+            f"{spec.name}: TDC fetch failed ({exc}). Skipping per Hard Rule 4."
+        ) from exc
+
+    graphs = []
+    n_skipped = 0
+    for idx, row in enumerate(df.itertuples(index=False)):
+        smiles = getattr(row, "Drug")
+        label = int(getattr(row, "Y"))
+        try:
+            g = from_smiles(smiles)
+        except Exception:
+            n_skipped += 1
+            continue
+        if g.x is None or g.num_nodes == 0 or g.edge_index.numel() == 0:
+            n_skipped += 1
+            continue
+        g.y = torch.tensor([[label]], dtype=torch.long)
+        g.smiles = smiles
+        graphs.append(g)
+    if not graphs:
+        raise DatasetBlocked(f"{spec.name}: no parseable molecules from TDC.")
+    if n_skipped:
+        log.info("%s: skipped %d unparseable molecules", spec.name, n_skipped)
+
+    checksum = _verify_or_record_checksum(spec, graphs, cache_dir)
+    prov = _write_provenance(spec, graphs, cache_dir, checksum)
+    log.info("Loaded %s (TDC %s/%s): %d graphs, checksum %s",
+             spec.name, group, tdc_name, len(graphs), checksum[:12])
+    return LoadedDataset(spec, graphs, prov)
 
 
 _LOADERS = {

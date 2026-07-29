@@ -37,3 +37,8 @@ cells:
   - {dataset: SIDER,   backbone: GCN,  attributor: IntegratedGradients}
   - {dataset: SIDER,   backbone: GINE, attributor: GNNExplainer}
   - {dataset: ClinTox, backbone: GINE, attributor: IntegratedGradients}
+  # Tier-3 Therapeutics Data Commons (TDC): DILI (balanced), hERG (imbalanced)
+  - {dataset: DILI, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: DILI, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: hERG, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: hERG, backbone: GCN,  attributor: IntegratedGradients}

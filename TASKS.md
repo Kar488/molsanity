@@ -49,11 +49,15 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
       the training graphs; edge→node aggregation; BN-frozen model copy so training
       can't corrupt predictions; reproducible). Distinct profile: most faithful
       (occ≈0.93) yet near-chance GT on MUTAG, and does not flip on SynthMotifs.
-- [!] Attributor SubgraphX: needs DIG, which is **not installed** here (blocked).
+- [!] Attributor SubgraphX: DIG installs but **cannot import** here — it needs the
+      pre-2.5 PyG `torch_sparse` compiled extension, which has no wheel for torch
+      2.13 and won't build. Adapter slot stays blocked-tolerant (KeyError note).
 - [x] Datasets Tier-2: BBBP, BACE (classification) + ESOL/FreeSolv/Lipophilicity
       (regression) wired, audited on non-degenerate models (BBBP AUC 0.81/0.89).
 - [x] Datasets Tier-3: ClinTox (AUC 0.82), SIDER, Tox21 rehomed to MoleculeNet as
-      single-task views (no TDC needed). DILI/hERG remain TDC-blocked (skip+log).
+      single-task views. **DILI/hERG now wired via PyTDC** (`_load_tdc`,
+      `from_smiles` featurisation): DILI GINE acc 0.80/AUC 0.82 (balanced),
+      hERG GCN acc 0.90/AUC 0.80 (and notably faithful, occ_spearman 0.71).
 - [x] Cross-checkpoint stability, calibration linkage, regime stratification
 - [x] Paired statistics (Wilcoxon, bootstrap CIs, fraction-positive)
 
@@ -78,8 +82,12 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] Class-weighted loss + AUC model-selection (opt-in) for imbalanced Tier-2/3
 - [x] Random-split (in-distribution) references alongside scaffold shift
 - [x] `configs/full.yaml` = complete overnight sweep (44 cells × 2 splits)
+- [x] DILI/hERG (Therapeutics Data Commons) wired via PyTDC — see Milestone 4.
 - [ ] Overnight `full.yaml` run on GPU (incl. Tox21 5.8k) for publication scale
-- [ ] ShapeGGen (GraphXAI) synthetic exact-GT — GraphXAI not installable here
+- [!] ShapeGGen (GraphXAI) synthetic exact-GT — GraphXAI's PyPI/GitHub install is
+      broken here (wheel omits subpackages) and depends on the same pre-2.5 PyG
+      stack as DIG. Its exact-GT role is already filled by SynthMotifs, so this is
+      redundant, not a gap.
 - [x] Publication figures: house style (validated CVD-safe palette, fixed entity
       colours, panel letters, inline labels); GT-by-attributor bars, faithfulness/
       stability ECDFs, regime stratification, and the signature attributor ×
@@ -89,7 +97,13 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 ## Blockers / notes
 - **BA-2Motifs**: PyG download source returns HTTP 403 in this environment.
   Loader + ground-truth extractor are implemented; blocked on data fetch only.
-- ShapeGGen (GraphXAI) install may be heavy; treat as blocked-tolerant.
-- TDC (PyTDC) not yet installed; wire in Milestone 4.
+- **SubgraphX (DIG) / ShapeGGen (GraphXAI)**: both need the pre-2.5 PyG
+  `torch_sparse`/`torch_scatter` compiled extensions; no wheel exists for the
+  torch 2.13 here and source builds hang/fail. DIG installs but can't import;
+  GraphXAI's wheel is broken. Kept blocked-tolerant; ShapeGGen's exact-GT role is
+  covered by SynthMotifs.
+- **TDC (PyTDC)**: installed and wired (DILI, hERG). Install needs a minimal
+  footprint (`pip install --no-deps PyTDC` + `huggingface_hub`/`httpx`) because
+  the full dependency set conflicts with the pinned numpy/rdkit here.
 - MUTAG ground truth is a nitro-motif *proxy* (documented in LIMITATIONS.md),
   not annotator labels; exact GT comes from synthetic Tier-1 sets.

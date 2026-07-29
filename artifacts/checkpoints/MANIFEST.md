@@ -6,7 +6,7 @@
 > `config_hash`; a re-run of `run_all` with the matching config recomputes
 > the same hash, hits this file as a cache, and resumes without retraining.
 
-**22 checkpoints** (12 classification · 5 regression) · 20 with an `_early` intermediate (for cross-checkpoint stability).
+**25 checkpoints** (15 classification · 5 regression) · 23 with an `_early` intermediate (for cross-checkpoint stability).
 
 | dataset | backbone | task | config_hash | epochs | test_acc | test_auc | test_rmse | test_r2 | test_ece | temp | early |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -15,6 +15,7 @@
 | BBBP | GINE | cls | `05214876020f04c9` | 30 | 0.9951 | 0.0293 | — | — | 0.0049 | 0.1000 | ✓ |
 | BBBP | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.9223 | 0.8049 | — | — | 0.0595 | 0.2396 | ✓ |
 | ClinTox | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.5270 | 0.8198 | — | — | 0.2072 | 2.2650 | ✓ |
+| DILI | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.7708 | 0.8243 | — | — | 0.1415 | 0.8707 | ✓ |
 | ESOL | GAT | reg | `cdb06eb6b69eb9ab` | 30 | — | — | 1.0918 | 0.6938 | — | 1.0000 | ✓ |
 | ESOL | GCN | reg | `302aa04adf197a30` | 30 | — | — | 1.1417 | 0.6651 | — | 1.0000 | ✓ |
 | ESOL | GINE | reg | `6c6fd91aefed2f88` | 30 | — | — | 1.1319 | 0.6709 | — | 1.0000 | ✓ |
@@ -32,3 +33,5 @@
 | SynthMotifs | GINE | cls | `05214876020f04c9` | 30 | 1.0000 | 1.0000 | — | — | 0.0000 | — | ✓ |
 | SynthMotifs | GINE | cls | `c98efc007771f38d` | 30 | 1.0000 | 1.0000 | — | — | 0.0000 | — | — |
 | SynthMotifs | GINE | cls | `fa8282f200d66ed5` | 30 | 1.0000 | 1.0000 | — | — | 0.0012 | 0.1000 | ✓ |
+| hERG | GCN | cls | `f402512b13fb46af` | 60 | 0.6667 | 0.8024 | — | — | 0.0980 | 2.4816 | ✓ |
+| hERG | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.7121 | 0.7838 | — | — | 0.0702 | 0.6842 | ✓ |

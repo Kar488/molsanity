@@ -92,6 +92,44 @@ def test_single_task_view_multitask():
     assert isinstance(getattr(g, "smiles", None), str) and g.smiles
 
 
+def test_tdc_loader_featurises_compatibly(monkeypatch):
+    """DILI/hERG (TDC) must featurise SMILES with the *same* encoding as
+    MoleculeNet (x: 9-dim, edge_attr: 3-dim) so the backbones are drop-in.
+
+    Network-free: we stub TDC's fetch with a tiny in-memory frame, so the test
+    exercises the SMILES->graph + labelling path without downloading.
+    """
+    import pandas as pd
+
+    from molsanity.data import datasets as dsmod
+
+    pytest.importorskip("tdc")
+    df = pd.DataFrame({
+        "Drug_ID": ["a", "b", "c"],
+        "Drug": ["c1ccccc1", "CCO", "not_a_smiles"],  # last is unparseable
+        "Y": [1, 0, 1],
+    })
+
+    class _FakeLoader:
+        def __init__(self, name, path):
+            pass
+
+        def get_data(self):
+            return df
+
+    import tdc.single_pred as sp
+    monkeypatch.setattr(sp, "Tox", _FakeLoader, raising=False)
+
+    ld = dsmod._load_tdc(data.get_spec("DILI"))
+    # The unparseable SMILES is skipped; 2 valid molecules remain.
+    assert len(ld) == 2
+    g = ld.dataset[0]
+    # MoleculeNet-compatible feature dims + single binary label per graph.
+    assert tuple(g.x.shape[1:]) == (9,) and tuple(g.edge_attr.shape[1:]) == (3,)
+    assert tuple(g.y.shape) == (1, 1)
+    assert {int(ld.dataset[i].y.view(-1)[0]) for i in range(len(ld))} <= {0, 1}
+
+
 def test_synth_motifs_exact_ground_truth():
     ld = data.load_dataset("SynthMotifs")
     assert len(ld) == 200

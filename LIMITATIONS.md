@@ -22,9 +22,17 @@ current alongside RESULTS.md.
   non-molecular** synthetic task (BA base + house/cycle motif); it validates the
   audit machinery, not chemical generalisation. Molecular ground truth remains
   the MUTAG nitro *proxy* until BA-2Motifs/ShapeGGen are reachable.
-- ShapeGGen (GraphXAI) is an optional heavy dependency; if unavailable it is
-  skipped and logged, never faked.
-- TDC (Tier-3) datasets are wired in a later milestone.
+- **DILI / hERG (Therapeutics Data Commons)** are wired via PyTDC and audited
+  (DILI GINE acc 0.80/AUC 0.82; hERG GCN acc 0.90/AUC 0.80). They carry **no node
+  ground truth** (gt_auroc is "—"), so they extend the coherence/faithfulness/
+  calibration battery to real ADMET-toxicity endpoints but not the GT-localisation
+  axis — that axis stays anchored on SynthMotifs (exact) and the MUTAG proxy.
+- **SubgraphX (DIG) and ShapeGGen (GraphXAI)** could not be installed in this
+  environment: both depend on the pre-2.5 PyG `torch_sparse`/`torch_scatter`
+  compiled extensions, for which no wheel exists at torch 2.13 (source builds
+  hang). DIG installs but fails to import; GraphXAI's wheel omits its subpackages.
+  Both are kept blocked-tolerant and logged, never faked — and ShapeGGen's
+  exact-GT role is already met by the offline SynthMotifs generator.
 
 ## Tier-2 classification under reduced-budget scaffold split
 

@@ -96,13 +96,23 @@ checksum). Provenance is logged per dataset to `data/<name>/provenance.json`.
 | 2 | **BBBP, BACE** (classification); **ESOL, FreeSolv, Lipophilicity** (regression) | MoleculeNet (PyG) | ✅ audited |
 | 2 | Tox21 | MoleculeNet (PyG) | ✅ loadable (single-task); deferred to overnight (5.8k) |
 | 3 | **ClinTox** (clinical-trial toxicity), **SIDER** (side effects) | MoleculeNet single-task views | ✅ audited |
-| 3 | DILI, hERG | Therapeutics Data Commons | ⚠ skip+log (PyTDC not installed) |
+| 3 | **DILI** (drug-induced liver injury), **hERG** (cardiotoxicity) | Therapeutics Data Commons (PyTDC) | ✅ audited |
 
 Multi-task panels (Tox21 12-task, SIDER 27-task, ClinTox 2-task) are audited as
 single-task binary views. Imbalanced classification uses a **class-aware scaffold
-split** + inverse-frequency weighting so folds aren't single-class. Credential-gated
-ICU/EHR modalities (MIMIC, eICU, HiRID, AmsterdamUMCdb) are **out of scope**:
-referencing them is a no-op (skipped + logged), never a bypass attempt (Hard Rule 4).
+split** + inverse-frequency weighting so folds aren't single-class. TDC sets are
+featurised with the same PyG `from_smiles` encoding as MoleculeNet (x: 9-dim,
+edge_attr: 3-dim), so the backbones are drop-in; install with `pip install -e
+'.[tdc]'`. Credential-gated ICU/EHR modalities (MIMIC, eICU, HiRID,
+AmsterdamUMCdb) are **out of scope**: referencing them is a no-op (skipped +
+logged), never a bypass attempt (Hard Rule 4).
+
+Two synthetic/attributor extensions stay **honestly blocked** in this
+environment (logged in [`LIMITATIONS.md`](LIMITATIONS.md), not silently dropped):
+**SubgraphX** (DIG) and **ShapeGGen** (GraphXAI) both depend on the pre-2.5 PyG
+ecosystem (`torch_sparse`/`torch_scatter` compiled extensions), which has no wheel
+for the torch 2.13 here; DIG installs but cannot import, and GraphXAI's exact-GT
+role is already covered by the offline **SynthMotifs** generator.
 
 ## Layout
 

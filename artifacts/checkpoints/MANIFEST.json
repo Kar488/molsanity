@@ -75,6 +75,21 @@
     "temperature": 2.2649827003479004
   },
   {
+    "dataset": "DILI",
+    "backbone": "GINE",
+    "task": "graph-classification",
+    "config_hash": "77a73f3e6c4ad03f",
+    "path": "artifacts/checkpoints/DILI/gine_77a73f3e6c4ad03f.pt",
+    "has_early": true,
+    "epochs_run": 60,
+    "test_acc": 0.7708333333333334,
+    "test_auc": 0.8243478260869564,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.14149187753597897,
+    "temperature": 0.8707202076911926
+  },
+  {
     "dataset": "ESOL",
     "backbone": "GAT",
     "task": "graph-regression",
@@ -328,5 +343,35 @@
     "test_r2": NaN,
     "test_ece": 0.0012229084968566895,
     "temperature": 0.09999999403953552
+  },
+  {
+    "dataset": "hERG",
+    "backbone": "GCN",
+    "task": "graph-classification",
+    "config_hash": "f402512b13fb46af",
+    "path": "artifacts/checkpoints/hERG/gcn_f402512b13fb46af.pt",
+    "has_early": true,
+    "epochs_run": 60,
+    "test_acc": 0.6666666666666666,
+    "test_auc": 0.8024231127679403,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.09803758245525937,
+    "temperature": 2.4816336631774902
+  },
+  {
+    "dataset": "hERG",
+    "backbone": "GINE",
+    "task": "graph-classification",
+    "config_hash": "77a73f3e6c4ad03f",
+    "path": "artifacts/checkpoints/hERG/gine_77a73f3e6c4ad03f.pt",
+    "has_early": true,
+    "epochs_run": 60,
+    "test_acc": 0.7121212121212122,
+    "test_auc": 0.7837837837837839,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.0701535976294315,
+    "temperature": 0.6841880083084106
   }
 ]

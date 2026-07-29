@@ -26,6 +26,8 @@
 | BBBP | GINE | GNNExplainer | scaffold | 30 | — | -0.367 | 0.929 | 0.823 | 0.021 | -0.077 | 0.778 | 0.102 | 0.053 |
 | BBBP | GINE | IntegratedGradients | scaffold | 30 | — | -0.430 | 0.699 | 0.773 | 0.006 | -0.054 | 0.775 | 0.085 | 0.151 |
 | ClinTox | GINE | IntegratedGradients | scaffold | 30 | — | 0.085 | 0.859 | 0.724 | 0.356 | 0.356 | 0.755 | 0.246 | 0.386 |
+| DILI | GINE | GNNExplainer | scaffold | 30 | — | -0.044 | 0.949 | 0.826 | 0.080 | 0.154 | 0.782 | 0.109 | 0.110 |
+| DILI | GINE | IntegratedGradients | scaffold | 30 | — | -0.101 | 0.897 | 0.847 | 0.073 | 0.128 | 0.781 | 0.151 | 0.386 |
 | ESOL | GAT | IntegratedGradients | scaffold | 20 | — | -0.481 | 0.922 | 0.799 | -0.115 | -0.995 | 0.730 | 0.215 | — |
 | ESOL | GCN | IntegratedGradients | scaffold | 20 | — | -0.820 | 0.967 | 0.821 | -1.321 | -1.996 | 0.720 | 0.000 | — |
 | ESOL | GINE | GNNExplainer | scaffold | 20 | — | -0.770 | 0.968 | 0.828 | -0.798 | -1.288 | 0.772 | 0.000 | — |
@@ -52,6 +54,8 @@
 | SynthMotifs | GINE | IntegratedGradients | scaffold | 20 | 0.742 | 0.073 | 0.656 | 0.225 | 0.109 | 0.100 | 0.792 | 0.203 | 0.040 |
 | SynthMotifs | GINE | PGExplainer | scaffold | 20 | 0.360 | 0.106 | 0.701 | 0.393 | 0.064 | 0.126 | 0.787 | 0.106 | — |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 | 0.197 | 0.042 |
+| hERG | GCN | IntegratedGradients | scaffold | 30 | — | 0.711 | 0.910 | 0.665 | 0.589 | 0.590 | 0.776 | 0.368 | 0.641 |
+| hERG | GINE | IntegratedGradients | scaffold | 30 | — | 0.431 | 0.956 | 0.673 | 0.411 | 0.408 | 0.784 | 0.311 | 0.582 |
 
 ## Paired attributor comparisons (Wilcoxon, shared molecules)
 
@@ -60,6 +64,12 @@
 | method A | method B | n | median Δ(A−B) | p-value |
 | --- | --- | --- | --- | --- |
 | GNNExplainer | IntegratedGradients | 30 | 0.060 | 0.727 |
+
+**DILI · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | IntegratedGradients | 29 | 0.066 | 0.209 |
 
 **ESOL · GINE · scaffold split** (metric: occ_spearman)
 

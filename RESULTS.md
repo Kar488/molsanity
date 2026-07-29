@@ -14,6 +14,8 @@
 | BBBP | GINE | GNNExplainer | scaffold | 30 | 0.967 | 0.805 | — | — | 0.823 | -0.367 | 0.067 | 0.021 | -0.077 | 0.778 | 0.059 |
 | BBBP | GINE | IntegratedGradients | scaffold | 30 | 0.967 | 0.805 | — | — | 0.773 | -0.430 | 0.000 | 0.006 | -0.054 | 0.775 | 0.059 |
 | ClinTox | GINE | IntegratedGradients | scaffold | 30 | 0.567 | 0.820 | — | — | 0.724 | 0.085 | 0.633 | 0.356 | 0.356 | 0.755 | 0.207 |
+| DILI | GINE | GNNExplainer | scaffold | 30 | 0.800 | 0.824 | — | — | 0.826 | -0.044 | 0.433 | 0.080 | 0.154 | 0.782 | 0.141 |
+| DILI | GINE | IntegratedGradients | scaffold | 30 | 0.800 | 0.824 | — | — | 0.847 | -0.101 | 0.433 | 0.073 | 0.128 | 0.781 | 0.141 |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.650 | 0.967 | 0.132 | 0.150 | 0.993 | -0.880 | 0.000 | 0.002 | 0.012 | 0.771 | 0.235 |
 | MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.750 | 0.890 | 0.130 | 0.151 | 0.992 | 0.268 | 0.600 | 0.189 | 0.247 | 0.771 | 0.155 |
 | MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.750 | 0.912 | 0.203 | 0.222 | 0.989 | 0.175 | 0.600 | 0.123 | 0.228 | 0.767 | 0.138 |
@@ -34,6 +36,8 @@
 | SynthMotifs | GINE | IntegratedGradients | scaffold | 20 | 1.000 | 1.000 | 0.742 | 0.633 | 0.225 | 0.073 | 0.050 | 0.109 | 0.100 | 0.792 | 0.000 |
 | SynthMotifs | GINE | PGExplainer | scaffold | 20 | 1.000 | 1.000 | 0.360 | 0.220 | 0.393 | 0.106 | 0.000 | 0.064 | 0.126 | 0.787 | 0.000 |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 1.000 | 1.000 | 0.983 | 0.935 | 0.199 | 0.022 | 0.050 | 0.123 | 0.074 | 0.778 | 0.000 |
+| hERG | GCN | IntegratedGradients | scaffold | 30 | 0.900 | 0.802 | — | — | 0.665 | 0.711 | 0.867 | 0.589 | 0.590 | 0.776 | 0.098 |
+| hERG | GINE | IntegratedGradients | scaffold | 30 | 0.733 | 0.784 | — | — | 0.673 | 0.431 | 0.700 | 0.411 | 0.408 | 0.784 | 0.070 |
 
 ## Regression audit matrix
 

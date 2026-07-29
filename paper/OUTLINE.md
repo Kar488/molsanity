@@ -38,12 +38,20 @@ confidence/correctness regime stratification, across backbones and datasets.
 - 3.7 Aggregation: paired Wilcoxon, bootstrap 95% CIs, fraction-positive.
 
 ## 4. Experimental setup
-- Datasets: Tier-1 MUTAG/BA-2Motifs/ShapeGGen; Tier-2 MoleculeNet; Tier-3 TDC.
-- Backbones: GINE, GCN, GAT, MPNN, AttentiveFP (same head/calibration/splits).
-- Attributors: IG, Saliency, InputXGradient, GuidedBackprop, GNNExplainer
-  (PGExplainer/SubgraphX where DIG is available).
-- Splits: Bemis–Murcko scaffold (primary) + random (in-distribution reference).
-- Reproducibility: seeds, versions, hardware in every run manifest.
+- Datasets: Tier-1 exact-GT **SynthMotifs** (BA + house/cycle motif, generated
+  offline) and quasi-GT **MUTAG**; Tier-2 MoleculeNet classification (BBBP, BACE)
+  and regression (ESOL, FreeSolv, Lipophilicity); Tier-3 chemistry-meets-medicine
+  as single-task views (**ClinTox** CT_TOX, **SIDER**, **Tox21**). ShapeGGen /
+  TDC-native / BA-2Motifs download are gracefully skipped where unreachable.
+- Backbones: GINE, GCN, GAT, MPNN, AttentiveFP (shared head/calibration/splits).
+- Attributors: IG, Saliency, InputXGradient, GuidedBackprop, GNNExplainer,
+  **PGExplainer** (SubgraphX needs DIG, unavailable here).
+- Splits: **class-aware** Bemis–Murcko scaffold (primary; guarantees every fold
+  has every class without scaffold leakage) + random (in-distribution reference).
+  Imbalanced classification uses inverse-frequency class weighting + AUC model
+  selection.
+- Reproducibility: global seed; per-attribution seeding for stochastic explainers
+  (GNNExplainer/PGExplainer); versions + hardware in every run manifest.
 
 ## 5. Results (maps to artifacts)
 - 5.1 Ground-truth localisation — **Fig. `gt_validation`** + RESULTS.md GT AUROC.

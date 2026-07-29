@@ -23,6 +23,7 @@ train:
   lr: 0.001
   weight_decay: 0.0005
   batch_size: 64
+  class_weight: true   # inverse-frequency weighting for imbalanced Tier-2
 
 cells:
   # Tier-2 classification × backbones (now with valid both-class folds)
@@ -32,3 +33,8 @@ cells:
   - {dataset: BBBP, backbone: GINE,        attributor: GNNExplainer}
   - {dataset: BACE, backbone: GINE,        attributor: IntegratedGradients}
   - {dataset: BACE, backbone: GCN,         attributor: IntegratedGradients}
+  # Tier-3 chemistry-meets-medicine (single-task views of multi-task panels)
+  - {dataset: SIDER, backbone: GINE,       attributor: IntegratedGradients}
+  - {dataset: SIDER, backbone: GINE,       attributor: GNNExplainer}
+  - {dataset: SIDER, backbone: GCN,        attributor: IntegratedGradients}
+  - {dataset: Tox21, backbone: GINE,       attributor: IntegratedGradients}

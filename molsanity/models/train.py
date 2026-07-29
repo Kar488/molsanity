@@ -201,15 +201,34 @@ def train_model(
     else:
         y_mean, y_std = 0.0, 1.0
 
+        # Optional inverse-frequency class weighting for imbalanced datasets
+        # (opt-in via train.class_weight so balanced sets are numerically
+        # unchanged). Without it, imbalanced sets collapse to majority-class.
+        class_weight = None
+        if train_cfg.get("class_weight"):
+            import numpy as _np
+
+            train_y = _np.array([int(dataset[i].y.view(-1)[0]) for i in split.train])
+            n_out = int(model_cfg.get("out_channels", 2))
+            counts = _np.array([max(1, int((train_y == c).sum())) for c in range(n_out)])
+            w = counts.sum() / (n_out * counts)
+            class_weight = torch.tensor(w, dtype=torch.float, device=device)
+
         def loss_fn(out, batch):
-            return F.cross_entropy(out, batch.y.view(-1).long())
+            return F.cross_entropy(out, batch.y.view(-1).long(), weight=class_weight)
+
+        select_by_auc = bool(train_cfg.get("class_weight"))
 
         def eval_fn():
             vl, vy = _collect_outputs(model, val_loader, device)
-            acc, _ = _binary_metrics(vl, vy)
-            return acc, {"val_acc": acc}
+            acc, auc = _binary_metrics(vl, vy)
+            # For imbalanced (weighted) training, select by AUC (robust); for
+            # balanced sets keep accuracy selection so validated numbers are
+            # unchanged.
+            monitor = (auc if auc == auc else acc) if select_by_auc else acc
+            return monitor, {"val_acc": acc, "val_auc": auc}
 
-        better = lambda a, b: a > b  # higher accuracy is better
+        better = lambda a, b: a > b  # higher is better
 
     best_state, best_monitor, best_epoch, history = _train_epochs(
         model, opt, train_loader, val_loader, epochs, split, device,

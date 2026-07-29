@@ -9,7 +9,7 @@
 
 | dataset | backbone | attributor | split | n_mol | acc | gt_auroc | gt_auprc | motif_top1 | occ_spearman | occ_top1 | fid+ | fid- | sparsity | ece |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| BBBP | GINE | IntegratedGradients | scaffold | 20 | 1.000 | — | — | 0.862 | -0.613 | 0.000 | -0.095 | -0.175 | 0.773 | 0.015 |
+| BBBP | GINE | IntegratedGradients | scaffold | 40 | 0.975 | — | — | 0.793 | -0.181 | 0.025 | -0.022 | -0.015 | 0.771 | 0.003 |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.650 | 0.132 | 0.150 | 0.993 | -0.880 | 0.000 | 0.002 | 0.012 | 0.771 | 0.235 |
 | MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.750 | 0.130 | 0.151 | 0.992 | 0.268 | 0.600 | 0.189 | 0.247 | 0.771 | 0.155 |
 | MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.750 | 0.203 | 0.222 | 0.989 | 0.175 | 0.600 | 0.123 | 0.228 | 0.767 | 0.138 |

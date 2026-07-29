@@ -67,8 +67,12 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 
 ## Milestone 6 — Remaining for journal-ready
 - [x] Regression datasets (ESOL/FreeSolv/Lipophilicity) + regression audit path
-      (RMSE/MAE/R2 head, output-space occlusion; ESOL R2≈0.67, FreeSolv≈0.61)
-- [ ] Multi-task datasets (Tox21, SIDER) label handling
+      (RMSE/MAE/R2 head, output-space occlusion; ESOL R2≈0.67–0.69 across
+      GINE/GCN/GAT, FreeSolv≈0.61, Lipophilicity≈0.40)
+- [x] Class-aware scaffold split: guarantees every fold has every class (moves
+      whole scaffold groups, no leakage) — fixes degenerate imbalanced Tier-2
+- [x] Multi-task datasets (Tox21, SIDER): single-task views (task 0), NaN-filtered,
+      SMILES-retained; loadable via MoleculeNet (no TDC needed)
 - [ ] PGExplainer (parametric) + SubgraphX (needs DIG)
 - [ ] ShapeGGen (GraphXAI) synthetic exact-GT
 - [x] Publication figures: house style (validated CVD-safe palette, fixed entity

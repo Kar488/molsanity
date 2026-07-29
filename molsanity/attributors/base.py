@@ -116,8 +116,17 @@ class BaseExplainerAttributor:
             edge_attr=data.edge_attr, batch=batch,
         )
         node_attr, edge_attr = _unpack_masks(explanation, data.num_nodes)
+        meta = {"pred": pred, **self._extra_meta()}
+        # PyG-native unfaithfulness (KL between full vs top-k masked prediction) —
+        # a DIG/GraphFramEx-comparable faithfulness metric, captured inline.
+        try:
+            from torch_geometric.explain.metric import unfaithfulness
+
+            meta["unfaithfulness"] = float(unfaithfulness(self._explainer, explanation))
+        except Exception:
+            pass
         return Attribution(
             graph_id=int(getattr(data, "graph_id", -1)),
             node_attr=node_attr, edge_attr=edge_attr,
-            method=self.method, target=tgt, meta={"pred": pred, **self._extra_meta()},
+            method=self.method, target=tgt, meta=meta,
         )

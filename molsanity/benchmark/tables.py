@@ -28,6 +28,7 @@ HEADLINE_METRICS = [
     ("fidelity_minus", "field-standard"),
     ("sparsity", "field-standard"),
     ("characterization", "GraphFramEx"),
+    ("unfaithfulness", "PyG/DIG"),
 ]
 
 

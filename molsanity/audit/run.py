@@ -42,6 +42,7 @@ class MoleculeAuditRecord:
     fidelity_minus: float = float("nan")
     sparsity: float = float("nan")
     characterization: float = float("nan")
+    unfaithfulness: float = float("nan")
     n_motifs: int = 0
     n_atoms: int = 0
     confidence: float = float("nan")
@@ -109,6 +110,7 @@ def audit_molecule(model, data, attribution, dataset_name: str,
     rec.fidelity_minus = occ["fidelity_minus"]
     rec.sparsity = occ["sparsity"]
     rec.characterization = occ.get("characterization", float("nan"))
+    rec.unfaithfulness = float(attribution.meta.get("unfaithfulness", float("nan")))
     rec.n_motifs = occ["n_motifs"]
 
     if has_ground_truth(dataset_name):
@@ -132,7 +134,7 @@ def aggregate_records(records: list[MoleculeAuditRecord], seed: int = 0) -> dict
         "gt_auroc", "gt_auprc", "atom_gini", "top20_mass", "salient_cc_frac",
         "motif_top1_share", "occ_spearman", "occ_top1_agreement",
         "fidelity_plus", "fidelity_minus", "sparsity", "characterization",
-        "stability", "confidence",
+        "unfaithfulness", "stability", "confidence",
     ]
     agg = {m: summarise(col(m), name=m, seed=seed) for m in metrics}
     agg["n_molecules"] = len(records)

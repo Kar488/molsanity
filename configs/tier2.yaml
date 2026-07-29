@@ -1,12 +1,13 @@
-# Tier-2 config — real molecular classification at a budget where models learn
-# (30 epochs is enough for MUTAG/synthetic but not for the larger MoleculeNet
-# sets). Class-aware scaffold split guarantees both classes in every fold.
+# Tier-2/3 config — real molecular classification at a budget where models learn
+# (the reduced matrix.yaml budget is too low for MoleculeNet-scale sets). Uses the
+# class-aware scaffold split + inverse-frequency class weighting so imbalanced
+# sets don't collapse to a majority-class predictor. CPU-tractable (minutes-to-
+# tens-of-minutes); the large Tox21 (5.8k train) is left to the overnight run.
 seed: 0
 budget:
-  epochs: 120
+  epochs: 60
   ig_steps: 25
-  pg_epochs: 30
-  max_eval_molecules: 40
+  max_eval_molecules: 30
 
 split:
   kind: scaffold
@@ -23,20 +24,16 @@ train:
   lr: 0.001
   weight_decay: 0.0005
   batch_size: 64
-  class_weight: true   # inverse-frequency weighting for imbalanced Tier-2
+  class_weight: true   # inverse-frequency weighting for imbalanced Tier-2/3
 
 cells:
-  # Tier-2 classification × backbones (now with valid both-class folds)
-  - {dataset: BBBP, backbone: GINE,        attributor: IntegratedGradients}
-  - {dataset: BBBP, backbone: GCN,         attributor: IntegratedGradients}
-  - {dataset: BBBP, backbone: GAT,         attributor: IntegratedGradients}
-  - {dataset: BBBP, backbone: GINE,        attributor: GNNExplainer}
-  - {dataset: BACE, backbone: GINE,        attributor: IntegratedGradients}
-  - {dataset: BACE, backbone: GCN,         attributor: IntegratedGradients}
-  # Tier-3 chemistry-meets-medicine (single-task views of multi-task panels)
-  - {dataset: SIDER, backbone: GINE,       attributor: IntegratedGradients}
-  - {dataset: SIDER, backbone: GINE,       attributor: GNNExplainer}
-  - {dataset: SIDER, backbone: GCN,        attributor: IntegratedGradients}
-  - {dataset: Tox21, backbone: GINE,       attributor: IntegratedGradients}
-  - {dataset: ClinTox, backbone: GINE,     attributor: IntegratedGradients}
-  - {dataset: ClinTox, backbone: GINE,     attributor: GNNExplainer}
+  # Tier-2 classification (BBBP, BACE) — real molecular property tasks
+  - {dataset: BBBP, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GCN,  attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: BACE, backbone: GINE, attributor: IntegratedGradients}
+  # Tier-3 chemistry-meets-medicine (single-task views)
+  - {dataset: SIDER,   backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: SIDER,   backbone: GCN,  attributor: IntegratedGradients}
+  - {dataset: SIDER,   backbone: GINE, attributor: GNNExplainer}
+  - {dataset: ClinTox, backbone: GINE, attributor: IntegratedGradients}

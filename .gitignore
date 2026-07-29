@@ -1,8 +1,15 @@
 # Data & artifacts (regenerated; not committed except small manifests/results)
 # Root-level only, so the molsanity/data package is NOT ignored.
 /data/
-/artifacts/
 /logs/
+
+# Ignore artifacts/ contents, but COMMIT pretrained checkpoints so examiners can
+# resume / rerun the audit without retraining (see README "Pretrained
+# checkpoints"). The re-include at the bottom of this file wins over the *.pt /
+# *.pth globals because the last matching pattern decides in .gitignore.
+/artifacts/*
+!/artifacts/checkpoints/
+
 *.ckpt
 *.pt
 *.pth
@@ -27,3 +34,7 @@ venv/
 
 # Keep committed figures/results explicitly (see below)
 !RESULTS.md
+
+# Committed pretrained checkpoints (must be the LAST word so the *.pt/*.pth and
+# /artifacts/* rules above do not re-exclude them).
+!/artifacts/checkpoints/**

@@ -1,6 +1,6 @@
 # PROGRESS.md — MolSanity rolling progress
 
-_Last run: `tier2.yaml` @ 20260729_021314._
+_Last run: `tier2.yaml` @ 20260729_032834._
 
 ## Cell tally
 

@@ -19,7 +19,11 @@
 
 | dataset | backbone | attributor | split | n_mol | gt_auroc | occ_spearman | stability | motif_top1_share | fidelity_plus | fidelity_minus | sparsity |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| BBBP | GINE | IntegratedGradients | scaffold | 20 | — | -0.613 | 0.887 | 0.862 | -0.095 | -0.175 | 0.773 |
+| BACE | GINE | IntegratedGradients | scaffold | 30 | — | -0.252 | 0.386 | 0.884 | 0.074 | 0.202 | 0.780 |
+| BBBP | GCN | IntegratedGradients | scaffold | 30 | — | -0.316 | 0.883 | 0.781 | 0.005 | -0.096 | 0.773 |
+| BBBP | GINE | GNNExplainer | scaffold | 30 | — | -0.367 | 0.929 | 0.823 | 0.021 | -0.077 | 0.778 |
+| BBBP | GINE | IntegratedGradients | scaffold | 30 | — | -0.430 | 0.699 | 0.773 | 0.006 | -0.054 | 0.775 |
+| ClinTox | GINE | IntegratedGradients | scaffold | 30 | — | 0.085 | 0.859 | 0.724 | 0.356 | 0.356 | 0.755 |
 | ESOL | GAT | IntegratedGradients | scaffold | 20 | — | -0.481 | 0.922 | 0.799 | -0.115 | -0.995 | 0.730 |
 | ESOL | GCN | IntegratedGradients | scaffold | 20 | — | -0.820 | 0.967 | 0.821 | -1.321 | -1.996 | 0.720 |
 | ESOL | GINE | GNNExplainer | scaffold | 20 | — | -0.770 | 0.968 | 0.828 | -0.798 | -1.288 | 0.772 |
@@ -37,6 +41,9 @@
 | MUTAG | GINE | Saliency | random | 20 | 0.022 | 0.541 | 0.870 | 0.983 | 0.209 | 0.203 | 0.770 |
 | MUTAG | GINE | Saliency | scaffold | 20 | 0.026 | 0.376 | 0.931 | 0.997 | 0.267 | 0.230 | 0.771 |
 | MUTAG | MPNN | IntegratedGradients | scaffold | 20 | 0.356 | 0.191 | 0.885 | 0.985 | 0.263 | 0.312 | 0.768 |
+| SIDER | GCN | IntegratedGradients | scaffold | 30 | — | -0.512 | 0.893 | 0.843 | 0.014 | -0.059 | 0.716 |
+| SIDER | GINE | GNNExplainer | scaffold | 30 | — | 0.490 | 0.845 | 0.816 | 0.038 | 0.196 | 0.732 |
+| SIDER | GINE | IntegratedGradients | scaffold | 30 | — | 0.493 | 0.875 | 0.836 | 0.068 | 0.196 | 0.715 |
 | SynthMotifs | GINE | GNNExplainer | scaffold | 20 | 0.498 | -0.017 | 0.934 | 0.043 | 0.101 | 0.099 | 0.800 |
 | SynthMotifs | GINE | InputXGradient | scaffold | 20 | 0.964 | 0.014 | 0.692 | 0.220 | 0.114 | 0.102 | 0.795 |
 | SynthMotifs | GINE | IntegratedGradients | random | 20 | 0.590 | -0.026 | 0.753 | 0.194 | 0.102 | 0.211 | 0.785 |
@@ -45,6 +52,12 @@
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 |
 
 ## Paired attributor comparisons (Wilcoxon, shared molecules)
+
+**BBBP · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | IntegratedGradients | 30 | 0.060 | 0.727 |
 
 **ESOL · GINE · scaffold split** (metric: occ_spearman)
 
@@ -72,6 +85,12 @@
 | IntegratedGradients | PGExplainer | 20 | 0.468 | 0.047 |
 | IntegratedGradients | Saliency | 20 | 0.000 | 0.206 |
 | PGExplainer | Saliency | 20 | -0.468 | 0.063 |
+
+**SIDER · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | IntegratedGradients | 25 | 0.000 | 0.398 |
 
 **SynthMotifs · GINE · scaffold split** (metric: occ_spearman)
 

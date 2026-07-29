@@ -196,8 +196,10 @@ def main(argv=None):
                     f"cell_{cell_id}", stage_cfg,
                     lambda _out, c=cell, s=split_kind: run_cell(c, cfg, s, log, ts),
                 )
-                rows.append(res.payload["row"])
-                row = res.payload["row"]
+                # Rebuild the row from the stored agg + train payload so newly
+                # added columns (e.g. test AUC) populate for cached cells too.
+                row = results_row(cell, res.payload["agg"], res.payload["train"], split_kind)
+                rows.append(row)
                 if row.get("task") == "graph-regression":
                     headline = f"rmse={row.get('rmse'):.3f} r2={res.payload['train'].get('test_r2'):.3f}"
                 else:

@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 RESULTS_HEADER = [
-    "dataset", "backbone", "attributor", "split", "n_mol", "acc",
+    "dataset", "backbone", "attributor", "split", "n_mol", "acc", "auc",
     "gt_auroc", "gt_auprc", "motif_top1", "occ_spearman", "occ_top1",
     "fid+", "fid-", "sparsity", "ece",
 ]
@@ -51,6 +51,7 @@ def results_row(cell: dict, agg: dict, train_res: dict, split_kind: str) -> dict
         "split": split_kind,
         "n_mol": agg.get("n_molecules"),
         "acc": agg.get("accuracy"),
+        "auc": train_res.get("test_auc"),
         "gt_auroc": m("gt_auroc"),
         "gt_auprc": m("gt_auprc"),
         "motif_top1": m("motif_top1_share"),
@@ -109,9 +110,10 @@ def update_results_md(rows: list[dict], path: str | Path = "RESULTS.md", notes: 
         ]
     lines += [
         "### Metric legend",
-        "- **acc/gt_auroc/gt_auprc**: classification accuracy; attribution vs "
-        "ground-truth motif mask (Tier-1 only; chance AUROC = 0.5). Below 0.5 = "
-        "*anti-aligned* with the known motif.",
+        "- **acc/auc**: classification test accuracy / ROC-AUC (AUC is the honest "
+        "signal on imbalanced sets, where accuracy tracks the majority class). "
+        "**gt_auroc/gt_auprc**: attribution vs ground-truth motif mask (Tier-1 "
+        "only; chance AUROC = 0.5; below 0.5 = *anti-aligned* with the motif).",
         "- **rmse/mae/r2**: regression test-set error metrics (original units).",
         "- **motif_top1**: fraction of attribution mass in the single top RDKit "
         "motif. **occ_spearman/occ_top1**: occlusion-vs-attribution faithfulness.",

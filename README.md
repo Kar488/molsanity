@@ -20,7 +20,7 @@ implementations are wrapped, never reimplemented.
 > × Tier-1 exact-GT (SynthMotifs) + quasi-GT (MUTAG) + Tier-2 classification &
 > **regression** (BBBP/ESOL/FreeSolv/Lipophilicity), with validated numbers in
 > [`RESULTS.md`](RESULTS.md), a head-to-head [`BENCHMARK.md`](BENCHMARK.md), and
-> publication figures in [`results_figures/`](results_figures/). See
+> publication figures in [`figures/`](figures/INDEX.md). See
 > [`TASKS.md`](TASKS.md) for what remains.
 
 ## Install
@@ -92,11 +92,28 @@ model yet fail to recover the true motif. On MUTAG under a **scaffold split**
   to ≈ **−0.4**. Faithfulness stops predicting correctness in exactly the regime
   drug discovery operates in; the ground-truth + shift audit is what catches it.
 
-See the ground-truth validation figure under `results_figures/` and
-`artifacts/figures/`. (MUTAG's motif "ground truth" is a chemically motivated
-nitro-group *proxy*, clearly labelled as such — see
-[`LIMITATIONS.md`](LIMITATIONS.md). Exact ground truth comes from the synthetic
-Tier-1 sets.)
+The capstone figure for that last point is
+[`figures/key/dissociation.pdf`](figures/key/dissociation.pdf). (MUTAG's motif
+"ground truth" is a chemically motivated nitro-group *proxy*, clearly labelled as
+such — see [`LIMITATIONS.md`](LIMITATIONS.md). Exact ground truth comes from the
+synthetic Tier-1 sets.)
+
+## Figures
+
+Every generated figure lives in one browsable, committed folder —
+**[`figures/`](figures/INDEX.md)** — so the whole visual record is reviewable
+without running anything. All are vector **PDF + SVG**.
+
+| folder | contents |
+|---|---|
+| [`figures/key/`](figures/key/) | the headline figures the paper leads with (incl. the capstone `dissociation`) |
+| [`figures/summary/`](figures/summary/) | cross-matrix figures: GT heatmap, faithfulness/stability ECDFs, regime stratification, molecule grids |
+| [`figures/cells/`](figures/cells/) | one folder per audited cell (`dataset__backbone__attributor__split`) |
+| [`figures/INDEX.md`](figures/INDEX.md) | generated contents listing with a one-line description per figure |
+
+The pipeline writes figures to `artifacts/figures/` (regenerable) and mirrors
+them here at the end of every run; regenerate the mirror on demand with
+`python -m molsanity.viz.collect`.
 
 ## Dataset manifest & licences
 

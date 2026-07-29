@@ -255,6 +255,25 @@ def main(argv=None):
     except Exception as exc:  # noqa: BLE001
         log.warning("Summary figure generation failed: %s", exc)
 
+    # Capstone figure: faithfulness-vs-truth dissociation across the two regimes.
+    try:
+        from .viz.dissociation import make_dissociation_figure
+
+        make_dissociation_figure("artifacts/figures/_summary/dissociation")
+        log.info("Wrote dissociation figure")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Dissociation figure generation failed: %s", exc)
+
+    # Mirror every figure into the tracked, browsable figures/ folder + INDEX.md.
+    try:
+        from .viz.collect import collect_figures
+
+        info = collect_figures()
+        log.info("Collected figures -> figures/ (%d files, %d cells)",
+                 info["scanned"], info["n_cells"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Figure collection failed: %s", exc)
+
     counts = ledger.counts()
     log.info("=== Run complete: %s ===", counts)
     return 0

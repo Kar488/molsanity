@@ -35,6 +35,12 @@ venv/
 # Keep committed figures/results explicitly (see below)
 !RESULTS.md
 
+# figures/ is the single browsable home for every generated figure (vector
+# PDF+SVG, mirrored from artifacts/figures by molsanity.viz.collect). Tracked
+# on purpose so the visual record is reviewable without running the pipeline.
+!/figures/
+!/figures/**
+
 # Committed pretrained checkpoints (must be the LAST word so the *.pt/*.pth and
 # /artifacts/* rules above do not re-exclude them).
 !/artifacts/checkpoints/**

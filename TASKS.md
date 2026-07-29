@@ -107,6 +107,12 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
       Saliency (GT 0.03), Fidelity+ picks GuidedBackprop (0.11) vs GT-best IG
       (0.54), paired Wilcoxon p<0.001, ρ collapses to ≈−0.4. Added SynthMotifsXL
       (600-graph exact-GT twin) for the powered in-distribution arm.
+- [x] **Capstone figure + single figure home.** `figures/` is now the one
+      committed, browsable folder for every generated figure (key / summary /
+      per-cell + generated `INDEX.md`), mirrored from `artifacts/figures` at the
+      end of each run by `viz.collect`; the old partial `results_figures/` is
+      retired. Added `viz.dissociation` — the two-regime faithfulness-vs-truth
+      capstone (`figures/key/dissociation.pdf`).
 - [ ] Overnight `full.yaml` run on GPU for publication scale (higher epochs /
       IG steps / eval-molecule caps; Tox21 already audited on CPU above). Would
       also power the *shift* arm of BENCHMARK_GT beyond MUTAG's n≈20.

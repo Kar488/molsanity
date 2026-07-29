@@ -138,6 +138,14 @@ Results are deterministic given the seed in the config. To reproduce the slice:
 `python -m molsanity.run_all --config configs/smoke.yaml`. The CI workflow
 (`.github/workflows/pipeline.yml`) runs the smoke config + tests on every push.
 
+**Full-scale run on a free GPU.** The committed `RESULTS.md` is the reduced-budget
+CPU matrix (audit metrics on 20–30 molecules/cell). For publication-scale numbers
+(150 epochs, 50 IG steps, 100 audited molecules/cell, both splits), run
+`configs/full.yaml` on any GPU — it is auto-detected, no code change. A one-click
+Colab notebook (free T4 is sufficient) is in
+[`notebooks/molsanity_full_run_colab.ipynb`](notebooks/molsanity_full_run_colab.ipynb);
+the run is resumable from the committed checkpoints.
+
 ### Pretrained checkpoints (resume / rerun without retraining)
 
 The trained GNN backbones behind every featured `RESULTS.md` row are committed

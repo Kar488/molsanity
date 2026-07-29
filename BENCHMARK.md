@@ -45,9 +45,20 @@
 | ESOL | GAT | IntegratedGradients | scaffold | 20 | — | -0.481 | 0.922 | 0.799 | -0.115 | -0.995 | 0.730 | 0.215 | — |
 | ESOL | GCN | IntegratedGradients | scaffold | 20 | — | -0.820 | 0.967 | 0.821 | -1.321 | -1.996 | 0.720 | 0.000 | — |
 | ESOL | GINE | GNNExplainer | scaffold | 20 | — | -0.770 | 0.968 | 0.828 | -0.798 | -1.288 | 0.772 | 0.000 | — |
+| ESOL | GINE | GuidedBackprop | scaffold | 20 | — | -0.741 | 0.882 | 0.659 | -0.582 | -1.326 | 0.789 | 0.001 | — |
+| ESOL | GINE | InputXGradient | scaffold | 20 | — | -0.793 | 0.801 | 0.881 | -1.016 | -1.219 | 0.722 | 0.000 | — |
 | ESOL | GINE | IntegratedGradients | scaffold | 20 | — | -0.798 | 0.804 | 0.834 | -1.044 | -1.235 | 0.731 | 0.000 | — |
+| ESOL | GINE | Saliency | scaffold | 20 | — | -0.798 | 0.829 | 0.878 | -0.996 | -1.234 | 0.727 | 0.000 | — |
+| FreeSolv | GCN | IntegratedGradients | scaffold | 20 | — | -0.434 | 0.857 | 0.782 | -0.046 | -0.935 | 0.745 | 0.077 | — |
+| FreeSolv | GINE | GNNExplainer | scaffold | 20 | — | -0.600 | 1.000 | 0.766 | -0.424 | -0.985 | 0.755 | 0.006 | — |
+| FreeSolv | GINE | InputXGradient | scaffold | 20 | — | -0.370 | 0.754 | 0.805 | -0.364 | -0.943 | 0.714 | 0.000 | — |
 | FreeSolv | GINE | IntegratedGradients | scaffold | 20 | — | -0.582 | 0.943 | 0.782 | -0.543 | -0.922 | 0.738 | 0.004 | — |
+| FreeSolv | GINE | Saliency | scaffold | 20 | — | -0.425 | 0.843 | 0.789 | -0.371 | -0.939 | 0.736 | 0.004 | — |
+| Lipophilicity | GAT | IntegratedGradients | scaffold | 20 | — | 0.458 | 0.812 | 0.762 | -0.144 | 0.482 | 0.785 | 0.092 | — |
+| Lipophilicity | GINE | GNNExplainer | scaffold | 20 | — | -0.499 | 0.867 | 0.845 | -0.251 | -0.500 | 0.788 | 0.003 | — |
+| Lipophilicity | GINE | InputXGradient | scaffold | 20 | — | -0.439 | 0.465 | 0.699 | -0.281 | -0.510 | 0.787 | 0.006 | — |
 | Lipophilicity | GINE | IntegratedGradients | scaffold | 20 | — | -0.149 | 0.889 | 0.758 | -0.203 | -0.524 | 0.785 | 0.017 | — |
+| Lipophilicity | GINE | Saliency | scaffold | 20 | — | -0.469 | 0.536 | 0.705 | -0.299 | -0.468 | 0.788 | 0.002 | — |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 20 | 0.132 | -0.880 | 0.716 | 0.993 | 0.002 | 0.012 | 0.771 | 0.005 | 0.003 |
 | MUTAG | GAT | IntegratedGradients | scaffold | 20 | 0.130 | 0.268 | 0.929 | 0.992 | 0.189 | 0.247 | 0.771 | 0.250 | 0.097 |
 | MUTAG | GCN | IntegratedGradients | scaffold | 20 | 0.203 | 0.175 | 0.745 | 0.989 | 0.123 | 0.228 | 0.767 | 0.214 | 0.110 |
@@ -76,6 +87,10 @@
 | SynthMotifs | GINE | PGExplainer | scaffold | 20 | 0.360 | 0.106 | 0.701 | 0.393 | 0.064 | 0.126 | 0.787 | 0.106 | — |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 0.983 | 0.022 | 0.509 | 0.199 | 0.123 | 0.074 | 0.778 | 0.197 | 0.042 |
 | SynthMotifs | MPNN | IntegratedGradients | scaffold | 20 | 0.807 | -0.104 | 0.894 | 0.224 | 0.041 | 0.030 | 0.798 | 0.262 | 0.132 |
+| Tox21 | GINE | GNNExplainer | scaffold | 30 | — | 0.010 | 1.000 | 0.719 | -0.066 | -0.061 | 0.786 | 0.002 | 0.171 |
+| Tox21 | GINE | InputXGradient | scaffold | 30 | — | -0.409 | 0.809 | 0.704 | -0.075 | -0.060 | 0.780 | 0.001 | 0.211 |
+| Tox21 | GINE | IntegratedGradients | scaffold | 30 | — | -0.339 | 0.664 | 0.713 | -0.080 | -0.062 | 0.779 | 0.001 | 0.211 |
+| Tox21 | GINE | Saliency | scaffold | 30 | — | -0.391 | 0.760 | 0.697 | -0.073 | -0.063 | 0.780 | 0.002 | 0.208 |
 | hERG | GCN | IntegratedGradients | scaffold | 30 | — | 0.711 | 0.910 | 0.665 | 0.589 | 0.590 | 0.776 | 0.368 | 0.641 |
 | hERG | GINE | GNNExplainer | scaffold | 30 | — | 0.066 | 0.950 | 0.725 | 0.094 | 0.408 | 0.786 | 0.149 | 0.575 |
 | hERG | GINE | InputXGradient | scaffold | 30 | — | 0.342 | 0.671 | 0.633 | 0.410 | 0.408 | 0.779 | 0.310 | 0.582 |
@@ -141,7 +156,38 @@
 
 | method A | method B | n | median Δ(A−B) | p-value |
 | --- | --- | --- | --- | --- |
+| GNNExplainer | GuidedBackprop | 15 | 0.000 | 0.600 |
+| GNNExplainer | InputXGradient | 19 | 0.000 | 0.214 |
 | GNNExplainer | IntegratedGradients | 19 | 0.000 | 0.139 |
+| GNNExplainer | Saliency | 19 | 0.000 | 0.139 |
+| GuidedBackprop | InputXGradient | 15 | 0.000 | 0.465 |
+| GuidedBackprop | IntegratedGradients | 15 | 0.000 | 0.223 |
+| GuidedBackprop | Saliency | 15 | 0.000 | 0.223 |
+| InputXGradient | IntegratedGradients | 19 | 0.000 | 0.317 |
+| InputXGradient | Saliency | 19 | 0.000 | 0.317 |
+| IntegratedGradients | Saliency | 19 | 0.000 | — |
+
+**FreeSolv · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | InputXGradient | 14 | 0.000 | 0.109 |
+| GNNExplainer | IntegratedGradients | 14 | 0.000 | 0.465 |
+| GNNExplainer | Saliency | 14 | 0.000 | 0.109 |
+| InputXGradient | IntegratedGradients | 14 | 0.000 | 0.109 |
+| InputXGradient | Saliency | 14 | 0.000 | 0.317 |
+| IntegratedGradients | Saliency | 14 | 0.000 | 0.180 |
+
+**Lipophilicity · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | InputXGradient | 20 | -0.108 | 0.573 |
+| GNNExplainer | IntegratedGradients | 20 | -0.444 | 0.003 |
+| GNNExplainer | Saliency | 20 | -0.112 | 0.717 |
+| InputXGradient | IntegratedGradients | 20 | -0.058 | 0.028 |
+| InputXGradient | Saliency | 20 | 0.000 | 0.382 |
+| IntegratedGradients | Saliency | 20 | 0.100 | 0.031 |
 
 **MUTAG · GINE · random split** (metric: occ_spearman)
 
@@ -199,6 +245,17 @@
 | IntegratedGradients | PGExplainer | 20 | -0.102 | 0.784 |
 | IntegratedGradients | Saliency | 20 | 0.094 | 0.123 |
 | PGExplainer | Saliency | 20 | -0.026 | 0.546 |
+
+**Tox21 · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | InputXGradient | 28 | 0.062 | 0.006 |
+| GNNExplainer | IntegratedGradients | 28 | 0.029 | 0.016 |
+| GNNExplainer | Saliency | 28 | 0.129 | 0.006 |
+| InputXGradient | IntegratedGradients | 28 | 0.000 | 0.575 |
+| InputXGradient | Saliency | 28 | 0.000 | 0.600 |
+| IntegratedGradients | Saliency | 28 | 0.000 | 0.445 |
 
 **hERG · GINE · scaffold split** (metric: occ_spearman)
 

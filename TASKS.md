@@ -83,17 +83,23 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] Random-split (in-distribution) references alongside scaffold shift
 - [x] `configs/full.yaml` = complete overnight sweep (44 cells × 2 splits)
 - [x] DILI/hERG (Therapeutics Data Commons) wired via PyTDC — see Milestone 4.
-- [x] **Scaled-out matrix (CPU): 60 audit rows.** Full gradient battery
+- [x] **Scaled-out matrix (CPU): 75 audit rows.** Full gradient battery
       (Saliency/InputXGradient/GuidedBackprop) + GNNExplainer/PGExplainer on the
-      real molecular Tier-2/3 sets (BBBP/BACE/SIDER/ClinTox/DILI/hERG), and
-      SynthMotifs exact-GT across GCN/GAT/MPNN/AttentiveFP. Attributor-adds reuse
-      the committed backbone checkpoints (no retraining).
+      real molecular Tier-2/3 sets (BBBP/BACE/SIDER/ClinTox/DILI/hERG), the
+      **regression** sets (ESOL/FreeSolv/Lipophilicity — where occlusion
+      faithfulness is consistently *negative* across attributors, ≈ −0.15 to
+      −0.80), and SynthMotifs exact-GT across GCN/GAT/MPNN/AttentiveFP. Attributor-
+      adds reuse the committed backbone checkpoints (no retraining).
+- [x] **Tox21 (single-task NR-AR): audited on CPU** — 7.3k molecules, ~4%
+      positive; class-weighted GINE reaches test AUC 0.83. Gradient attributors
+      are anti-faithful here too (occ ≈ −0.34 to −0.41), GNNExplainer ≈ chance.
 - [x] **Fix:** gradient attributors on integer-featured data (MoleculeNet/TDC)
       failed ("differentiated Tensor does not require grad") — the model casts
       x→float *inside* forward, so Captum's leaf tensor was int. Now the explainer
       is fed float inputs (identity for already-float MUTAG/SynthMotifs, so those
       results are unchanged). Unblocks the battery on all molecular datasets.
-- [ ] Overnight `full.yaml` run on GPU (incl. Tox21 5.8k) for publication scale
+- [ ] Overnight `full.yaml` run on GPU for publication scale (higher epochs /
+      IG steps / eval-molecule caps; Tox21 already audited on CPU above)
 - [!] ShapeGGen (GraphXAI) synthetic exact-GT — GraphXAI's PyPI/GitHub install is
       broken here (wheel omits subpackages) and depends on the same pre-2.5 PyG
       stack as DIG. Its exact-GT role is already filled by SynthMotifs, so this is

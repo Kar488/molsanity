@@ -58,6 +58,10 @@
 | SynthMotifs | GINE | PGExplainer | scaffold | 20 | 1.000 | 1.000 | 0.360 | 0.220 | 0.393 | 0.106 | 0.000 | 0.064 | 0.126 | 0.787 | 0.000 |
 | SynthMotifs | GINE | Saliency | scaffold | 20 | 1.000 | 1.000 | 0.983 | 0.935 | 0.199 | 0.022 | 0.050 | 0.123 | 0.074 | 0.778 | 0.000 |
 | SynthMotifs | MPNN | IntegratedGradients | scaffold | 20 | 0.850 | 0.910 | 0.807 | 0.400 | 0.224 | -0.104 | 0.300 | 0.041 | 0.030 | 0.798 | 0.267 |
+| Tox21 | GINE | GNNExplainer | scaffold | 30 | 1.000 | 0.827 | — | — | 0.719 | 0.010 | 0.367 | -0.066 | -0.061 | 0.786 | 0.054 |
+| Tox21 | GINE | InputXGradient | scaffold | 30 | 1.000 | 0.827 | — | — | 0.704 | -0.409 | 0.167 | -0.075 | -0.060 | 0.780 | 0.054 |
+| Tox21 | GINE | IntegratedGradients | scaffold | 30 | 1.000 | 0.827 | — | — | 0.713 | -0.339 | 0.200 | -0.080 | -0.062 | 0.779 | 0.054 |
+| Tox21 | GINE | Saliency | scaffold | 30 | 1.000 | 0.827 | — | — | 0.697 | -0.391 | 0.167 | -0.073 | -0.063 | 0.780 | 0.054 |
 | hERG | GCN | IntegratedGradients | scaffold | 30 | 0.900 | 0.802 | — | — | 0.665 | 0.711 | 0.867 | 0.589 | 0.590 | 0.776 | 0.098 |
 | hERG | GINE | GNNExplainer | scaffold | 30 | 0.733 | 0.784 | — | — | 0.725 | 0.066 | 0.633 | 0.094 | 0.408 | 0.786 | 0.070 |
 | hERG | GINE | InputXGradient | scaffold | 30 | 0.733 | 0.784 | — | — | 0.633 | 0.342 | 0.600 | 0.410 | 0.408 | 0.779 | 0.070 |
@@ -71,9 +75,20 @@
 | ESOL | GAT | IntegratedGradients | scaffold | 20 | 1.092 | 0.880 | 0.694 | 0.799 | -0.481 | 0.150 | -0.115 | -0.995 | 0.730 |
 | ESOL | GCN | IntegratedGradients | scaffold | 20 | 1.142 | 0.868 | 0.665 | 0.821 | -0.820 | 0.100 | -1.321 | -1.996 | 0.720 |
 | ESOL | GINE | GNNExplainer | scaffold | 20 | 1.132 | 0.918 | 0.671 | 0.828 | -0.770 | 0.100 | -0.798 | -1.288 | 0.772 |
+| ESOL | GINE | GuidedBackprop | scaffold | 20 | 1.132 | 0.918 | 0.671 | 0.659 | -0.741 | 0.150 | -0.582 | -1.326 | 0.789 |
+| ESOL | GINE | InputXGradient | scaffold | 20 | 1.132 | 0.918 | 0.671 | 0.881 | -0.793 | 0.100 | -1.016 | -1.219 | 0.722 |
 | ESOL | GINE | IntegratedGradients | scaffold | 20 | 1.132 | 0.918 | 0.671 | 0.834 | -0.798 | 0.100 | -1.044 | -1.235 | 0.731 |
+| ESOL | GINE | Saliency | scaffold | 20 | 1.132 | 0.918 | 0.671 | 0.878 | -0.798 | 0.100 | -0.996 | -1.234 | 0.727 |
+| FreeSolv | GCN | IntegratedGradients | scaffold | 20 | 2.567 | 2.048 | 0.538 | 0.782 | -0.434 | 0.400 | -0.046 | -0.935 | 0.745 |
+| FreeSolv | GINE | GNNExplainer | scaffold | 20 | 2.347 | 1.733 | 0.614 | 0.766 | -0.600 | 0.350 | -0.424 | -0.985 | 0.755 |
+| FreeSolv | GINE | InputXGradient | scaffold | 20 | 2.347 | 1.733 | 0.614 | 0.805 | -0.370 | 0.450 | -0.364 | -0.943 | 0.714 |
 | FreeSolv | GINE | IntegratedGradients | scaffold | 20 | 2.347 | 1.733 | 0.614 | 0.782 | -0.582 | 0.400 | -0.543 | -0.922 | 0.738 |
+| FreeSolv | GINE | Saliency | scaffold | 20 | 2.347 | 1.733 | 0.614 | 0.789 | -0.425 | 0.450 | -0.371 | -0.939 | 0.736 |
+| Lipophilicity | GAT | IntegratedGradients | scaffold | 20 | 0.940 | 0.746 | 0.391 | 0.762 | 0.458 | 0.900 | -0.144 | 0.482 | 0.785 |
+| Lipophilicity | GINE | GNNExplainer | scaffold | 20 | 0.932 | 0.740 | 0.402 | 0.845 | -0.499 | 0.000 | -0.251 | -0.500 | 0.788 |
+| Lipophilicity | GINE | InputXGradient | scaffold | 20 | 0.932 | 0.740 | 0.402 | 0.699 | -0.439 | 0.000 | -0.281 | -0.510 | 0.787 |
 | Lipophilicity | GINE | IntegratedGradients | scaffold | 20 | 0.932 | 0.740 | 0.402 | 0.758 | -0.149 | 0.000 | -0.203 | -0.524 | 0.785 |
+| Lipophilicity | GINE | Saliency | scaffold | 20 | 0.932 | 0.740 | 0.402 | 0.705 | -0.469 | 0.000 | -0.299 | -0.468 | 0.788 |
 
 ### Metric legend
 - **acc/auc**: classification test accuracy / ROC-AUC (AUC is the honest signal on imbalanced sets, where accuracy tracks the majority class). **gt_auroc/gt_auprc**: attribution vs ground-truth motif mask (Tier-1 only; chance AUROC = 0.5; below 0.5 = *anti-aligned* with the motif).

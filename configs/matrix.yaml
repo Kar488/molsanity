@@ -55,13 +55,28 @@ cells:
   # scaffold folds on imbalanced BBBP collapse to a majority-class predictor;
   # meaningful Tier-2 classification needs the full budget + a balanced split.
   # See LIMITATIONS.md. The regression breadth below is the model-agnostic story.)
-  # Tier-2 regression × backbones (RMSE/MAE/R2; audit in output space)
+  # Tier-2 regression × backbones (RMSE/MAE/R2; audit in output space).
+  # Gradient battery + GNNExplainer/PGExplainer on the trained GINE reuse the
+  # committed checkpoint — extends faithfulness-vs-correctness to REGRESSION.
   - {dataset: ESOL,     backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: ESOL,     backbone: GINE,     attributor: Saliency}
+  - {dataset: ESOL,     backbone: GINE,     attributor: InputXGradient}
+  - {dataset: ESOL,     backbone: GINE,     attributor: GuidedBackprop}
   - {dataset: ESOL,     backbone: GINE,     attributor: GNNExplainer}
+  # (PGExplainer is classification-only in its current wrapper — omitted for
+  #  regression; see LIMITATIONS.md. GNNExplainer covers the perturbation family.)
   - {dataset: ESOL,     backbone: GCN,      attributor: IntegratedGradients}
   - {dataset: ESOL,     backbone: GAT,      attributor: IntegratedGradients}
   - {dataset: FreeSolv, backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: Saliency}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: InputXGradient}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: GNNExplainer}
+  - {dataset: FreeSolv, backbone: GCN,      attributor: IntegratedGradients}
   - {dataset: Lipophilicity, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: Saliency}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: InputXGradient}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: Lipophilicity, backbone: GAT,  attributor: IntegratedGradients}
   # Random-split (in-distribution) reference vs the scaffold-shift regime
   - {dataset: MUTAG, backbone: GINE, attributor: IntegratedGradients, split: random}
   - {dataset: MUTAG, backbone: GINE, attributor: Saliency,            split: random}

@@ -6,7 +6,7 @@
 > `config_hash`; a re-run of `run_all` with the matching config recomputes
 > the same hash, hits this file as a cache, and resumes without retraining.
 
-**31 checkpoints** (21 classification · 5 regression) · 29 with an `_early` intermediate (for cross-checkpoint stability).
+**34 checkpoints** (22 classification · 7 regression) · 32 with an `_early` intermediate (for cross-checkpoint stability).
 
 | dataset | backbone | task | config_hash | epochs | test_acc | test_auc | test_rmse | test_r2 | test_ece | temp | early |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -21,7 +21,9 @@
 | ESOL | GAT | reg | `cdb06eb6b69eb9ab` | 30 | — | — | 1.0918 | 0.6938 | — | 1.0000 | ✓ |
 | ESOL | GCN | reg | `302aa04adf197a30` | 30 | — | — | 1.1417 | 0.6651 | — | 1.0000 | ✓ |
 | ESOL | GINE | reg | `6c6fd91aefed2f88` | 30 | — | — | 1.1319 | 0.6709 | — | 1.0000 | ✓ |
+| FreeSolv | GCN | reg | `302aa04adf197a30` | 30 | — | — | 2.5673 | 0.5382 | — | 1.0000 | ✓ |
 | FreeSolv | GINE | reg | `6c6fd91aefed2f88` | 30 | — | — | 2.3472 | 0.6140 | — | 1.0000 | ✓ |
+| Lipophilicity | GAT | reg | `cdb06eb6b69eb9ab` | 30 | — | — | 0.9398 | 0.3913 | — | 1.0000 | ✓ |
 | Lipophilicity | GINE | reg | `6c6fd91aefed2f88` | 30 | — | — | 0.9316 | 0.4019 | — | 1.0000 | ✓ |
 | MUTAG | AttentiveFP | — | `73c5205ecad00af7` | 30 | 0.6500 | 0.9670 | — | — | 0.2350 | 0.8581 | ✓ |
 | MUTAG | GAT | — | `c4cc6bdaa0dbd4df` | 30 | 0.7500 | 0.8901 | — | — | 0.1550 | 0.8015 | ✓ |
@@ -39,5 +41,6 @@
 | SynthMotifs | GINE | cls | `c98efc007771f38d` | 30 | 1.0000 | 1.0000 | — | — | 0.0000 | — | — |
 | SynthMotifs | GINE | cls | `fa8282f200d66ed5` | 30 | 1.0000 | 1.0000 | — | — | 0.0012 | 0.1000 | ✓ |
 | SynthMotifs | MPNN | cls | `b081bf00c1007482` | 30 | 0.8500 | 0.9100 | — | — | 0.2667 | 0.6386 | ✓ |
+| Tox21 | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.9422 | 0.8272 | — | — | 0.0537 | 0.1000 | ✓ |
 | hERG | GCN | cls | `f402512b13fb46af` | 60 | 0.6667 | 0.8024 | — | — | 0.0980 | 2.4816 | ✓ |
 | hERG | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.7121 | 0.7838 | — | — | 0.0702 | 0.6842 | ✓ |

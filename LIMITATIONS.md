@@ -33,6 +33,10 @@ current alongside RESULTS.md.
   hang). DIG installs but fails to import; GraphXAI's wheel omits its subpackages.
   Both are kept blocked-tolerant and logged, never faked — and ShapeGGen's
   exact-GT role is already met by the offline SynthMotifs generator.
+- **PGExplainer is classification-only.** Its parametric mask-MLP is trained
+  against class logits, so the current wrapper does not support graph-regression;
+  regression cells use the gradient family + GNNExplainer (the perturbation-based
+  attributor that does support regression). Regression PGExplainer is future work.
 
 ## Tier-2 classification under reduced-budget scaffold split
 

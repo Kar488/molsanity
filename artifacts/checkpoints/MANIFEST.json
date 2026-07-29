@@ -166,6 +166,21 @@
   },
   {
     "dataset": "FreeSolv",
+    "backbone": "GCN",
+    "task": "graph-regression",
+    "config_hash": "302aa04adf197a30",
+    "path": "artifacts/checkpoints/FreeSolv/gcn_302aa04adf197a30.pt",
+    "has_early": true,
+    "epochs_run": 30,
+    "test_acc": NaN,
+    "test_auc": NaN,
+    "test_rmse": 2.567304585264058,
+    "test_r2": 0.5382392834263346,
+    "test_ece": NaN,
+    "temperature": 1.0
+  },
+  {
+    "dataset": "FreeSolv",
     "backbone": "GINE",
     "task": "graph-regression",
     "config_hash": "6c6fd91aefed2f88",
@@ -176,6 +191,21 @@
     "test_auc": NaN,
     "test_rmse": 2.347194065938083,
     "test_r2": 0.6140241009255161,
+    "test_ece": NaN,
+    "temperature": 1.0
+  },
+  {
+    "dataset": "Lipophilicity",
+    "backbone": "GAT",
+    "task": "graph-regression",
+    "config_hash": "cdb06eb6b69eb9ab",
+    "path": "artifacts/checkpoints/Lipophilicity/gat_cdb06eb6b69eb9ab.pt",
+    "has_early": true,
+    "epochs_run": 30,
+    "test_acc": NaN,
+    "test_auc": NaN,
+    "test_rmse": 0.9397799048051827,
+    "test_r2": 0.39129601647232537,
     "test_ece": NaN,
     "temperature": 1.0
   },
@@ -433,6 +463,21 @@
     "test_r2": NaN,
     "test_ece": 0.26674908101558686,
     "temperature": 0.6385893225669861
+  },
+  {
+    "dataset": "Tox21",
+    "backbone": "GINE",
+    "task": "graph-classification",
+    "config_hash": "77a73f3e6c4ad03f",
+    "path": "artifacts/checkpoints/Tox21/gine_77a73f3e6c4ad03f.pt",
+    "has_early": true,
+    "epochs_run": 60,
+    "test_acc": 0.9422283356258597,
+    "test_auc": 0.827221228384019,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.05374596297658951,
+    "temperature": 0.09999999403953552
   },
   {
     "dataset": "hERG",

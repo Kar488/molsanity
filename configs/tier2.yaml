@@ -65,3 +65,9 @@ cells:
   - {dataset: hERG, backbone: GINE, attributor: InputXGradient}
   - {dataset: hERG, backbone: GINE, attributor: GNNExplainer}
   - {dataset: hERG, backbone: GCN,  attributor: IntegratedGradients}
+  # Tox21 (single-task NR-AR view): 7.3k molecules, ~4% positive — the largest,
+  # most imbalanced set here. Class-aware split + inverse-frequency weighting.
+  - {dataset: Tox21, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: Tox21, backbone: GINE, attributor: Saliency}
+  - {dataset: Tox21, backbone: GINE, attributor: InputXGradient}
+  - {dataset: Tox21, backbone: GINE, attributor: GNNExplainer}

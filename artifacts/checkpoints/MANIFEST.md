@@ -6,11 +6,13 @@
 > `config_hash`; a re-run of `run_all` with the matching config recomputes
 > the same hash, hits this file as a cache, and resumes without retraining.
 
-**25 checkpoints** (15 classification · 5 regression) · 23 with an `_early` intermediate (for cross-checkpoint stability).
+**31 checkpoints** (21 classification · 5 regression) · 29 with an `_early` intermediate (for cross-checkpoint stability).
 
 | dataset | backbone | task | config_hash | epochs | test_acc | test_auc | test_rmse | test_r2 | test_ece | temp | early |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BACE | GCN | cls | `f402512b13fb46af` | 60 | 0.1242 | 0.2237 | — | — | 0.3983 | 10.0000 | ✓ |
 | BACE | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.3268 | 0.4342 | — | — | 0.1891 | 10.0000 | ✓ |
+| BBBP | GAT | cls | `12519adfdfd549e0` | 60 | 0.9660 | 0.8878 | — | — | 0.0243 | 0.3619 | ✓ |
 | BBBP | GCN | cls | `f402512b13fb46af` | 60 | 0.8835 | 0.8878 | — | — | 0.0164 | 0.2920 | ✓ |
 | BBBP | GINE | cls | `05214876020f04c9` | 30 | 0.9951 | 0.0293 | — | — | 0.0049 | 0.1000 | ✓ |
 | BBBP | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.9223 | 0.8049 | — | — | 0.0595 | 0.2396 | ✓ |
@@ -30,8 +32,12 @@
 | MUTAG | MPNN | — | `b081bf00c1007482` | 30 | 0.7500 | 0.8681 | — | — | 0.1287 | 1.1475 | ✓ |
 | SIDER | GCN | cls | `f402512b13fb46af` | 60 | 0.5556 | 0.6682 | — | — | 0.0726 | 2.0769 | ✓ |
 | SIDER | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.6319 | 0.6611 | — | — | 0.1096 | 1.2056 | ✓ |
+| SynthMotifs | AttentiveFP | cls | `73c5205ecad00af7` | 30 | 0.6000 | 0.5100 | — | — | 0.0911 | 10.0000 | ✓ |
+| SynthMotifs | GAT | cls | `c4cc6bdaa0dbd4df` | 30 | 0.9000 | 0.9900 | — | — | 0.2406 | 0.4047 | ✓ |
+| SynthMotifs | GCN | cls | `424b5b43b780bace` | 30 | 0.9000 | 1.0000 | — | — | 0.2712 | 0.5449 | ✓ |
 | SynthMotifs | GINE | cls | `05214876020f04c9` | 30 | 1.0000 | 1.0000 | — | — | 0.0000 | — | ✓ |
 | SynthMotifs | GINE | cls | `c98efc007771f38d` | 30 | 1.0000 | 1.0000 | — | — | 0.0000 | — | — |
 | SynthMotifs | GINE | cls | `fa8282f200d66ed5` | 30 | 1.0000 | 1.0000 | — | — | 0.0012 | 0.1000 | ✓ |
+| SynthMotifs | MPNN | cls | `b081bf00c1007482` | 30 | 0.8500 | 0.9100 | — | — | 0.2667 | 0.6386 | ✓ |
 | hERG | GCN | cls | `f402512b13fb46af` | 60 | 0.6667 | 0.8024 | — | — | 0.0980 | 2.4816 | ✓ |
 | hERG | GINE | cls | `77a73f3e6c4ad03f` | 60 | 0.7121 | 0.7838 | — | — | 0.0702 | 0.6842 | ✓ |

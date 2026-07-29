@@ -1,6 +1,21 @@
 [
   {
     "dataset": "BACE",
+    "backbone": "GCN",
+    "task": "graph-classification",
+    "config_hash": "f402512b13fb46af",
+    "path": "artifacts/checkpoints/BACE/gcn_f402512b13fb46af.pt",
+    "has_early": true,
+    "epochs_run": 60,
+    "test_acc": 0.12418300653594772,
+    "test_auc": 0.22368421052631582,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.39832281326156815,
+    "temperature": 10.0
+  },
+  {
+    "dataset": "BACE",
     "backbone": "GINE",
     "task": "graph-classification",
     "config_hash": "77a73f3e6c4ad03f",
@@ -13,6 +28,21 @@
     "test_r2": NaN,
     "test_ece": 0.1890711589576372,
     "temperature": 10.0
+  },
+  {
+    "dataset": "BBBP",
+    "backbone": "GAT",
+    "task": "graph-classification",
+    "config_hash": "12519adfdfd549e0",
+    "path": "artifacts/checkpoints/BBBP/gat_12519adfdfd549e0.pt",
+    "has_early": true,
+    "epochs_run": 60,
+    "test_acc": 0.9660194174757282,
+    "test_auc": 0.8878048780487805,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.02427695156301106,
+    "temperature": 0.3618570864200592
   },
   {
     "dataset": "BBBP",
@@ -301,6 +331,51 @@
   },
   {
     "dataset": "SynthMotifs",
+    "backbone": "AttentiveFP",
+    "task": "graph-classification",
+    "config_hash": "73c5205ecad00af7",
+    "path": "artifacts/checkpoints/SynthMotifs/attentivefp_73c5205ecad00af7.pt",
+    "has_early": true,
+    "epochs_run": 30,
+    "test_acc": 0.6,
+    "test_auc": 0.51,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.09112796783447263,
+    "temperature": 10.0
+  },
+  {
+    "dataset": "SynthMotifs",
+    "backbone": "GAT",
+    "task": "graph-classification",
+    "config_hash": "c4cc6bdaa0dbd4df",
+    "path": "artifacts/checkpoints/SynthMotifs/gat_c4cc6bdaa0dbd4df.pt",
+    "has_early": true,
+    "epochs_run": 30,
+    "test_acc": 0.9,
+    "test_auc": 0.99,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.24061554074287417,
+    "temperature": 0.4046899676322937
+  },
+  {
+    "dataset": "SynthMotifs",
+    "backbone": "GCN",
+    "task": "graph-classification",
+    "config_hash": "424b5b43b780bace",
+    "path": "artifacts/checkpoints/SynthMotifs/gcn_424b5b43b780bace.pt",
+    "has_early": true,
+    "epochs_run": 30,
+    "test_acc": 0.9,
+    "test_auc": 1.0,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.2712386041879654,
+    "temperature": 0.5448716282844543
+  },
+  {
+    "dataset": "SynthMotifs",
     "backbone": "GINE",
     "task": "graph-classification",
     "config_hash": "05214876020f04c9",
@@ -343,6 +418,21 @@
     "test_r2": NaN,
     "test_ece": 0.0012229084968566895,
     "temperature": 0.09999999403953552
+  },
+  {
+    "dataset": "SynthMotifs",
+    "backbone": "MPNN",
+    "task": "graph-classification",
+    "config_hash": "b081bf00c1007482",
+    "path": "artifacts/checkpoints/SynthMotifs/mpnn_b081bf00c1007482.pt",
+    "has_early": true,
+    "epochs_run": 30,
+    "test_acc": 0.85,
+    "test_auc": 0.91,
+    "test_rmse": NaN,
+    "test_r2": NaN,
+    "test_ece": 0.26674908101558686,
+    "temperature": 0.6385893225669861
   },
   {
     "dataset": "hERG",

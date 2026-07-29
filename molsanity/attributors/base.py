@@ -108,12 +108,21 @@ class BaseExplainerAttributor:
         pred = int(out.argmax(dim=1)) if self.task == "graph-classification" else 0
         tgt = target if target is not None else pred
 
+        # Gradient-family explainers (Saliency/InputXGradient/GuidedBackprop, and
+        # IG's interpolation) differentiate w.r.t. the input, so the leaf tensor
+        # must be float — integer-encoded node/edge features (MoleculeNet, TDC)
+        # cannot carry a gradient. The model already casts to float internally
+        # (cast_inputs), so feeding float here is identity for the forward pass
+        # and a no-op for already-float features (MUTAG/SynthMotifs unchanged).
+        x_in = data.x.float()
+        edge_attr_in = data.edge_attr.float() if data.edge_attr is not None else None
+
         gid = int(getattr(data, "graph_id", 0))
         torch.manual_seed(self.attribution_seed + (gid if gid >= 0 else 0))
         explanation = self._explainer(
-            x=data.x, edge_index=data.edge_index,
+            x=x_in, edge_index=data.edge_index,
             target=torch.tensor([tgt], device=device),
-            edge_attr=data.edge_attr, batch=batch,
+            edge_attr=edge_attr_in, batch=batch,
         )
         node_attr, edge_attr = _unpack_masks(explanation, data.num_nodes)
         meta = {"pred": pred, **self._extra_meta()}

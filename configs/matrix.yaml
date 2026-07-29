@@ -29,7 +29,13 @@ cells:
   - {dataset: SynthMotifs, backbone: GINE,  attributor: IntegratedGradients}
   - {dataset: SynthMotifs, backbone: GINE,  attributor: Saliency}
   - {dataset: SynthMotifs, backbone: GINE,  attributor: InputXGradient}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: GuidedBackprop}
   - {dataset: SynthMotifs, backbone: GINE,  attributor: GNNExplainer}
+  # SynthMotifs × backbones (IG) — how EXACT-GT localisation varies by backbone
+  - {dataset: SynthMotifs, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: AttentiveFP, attributor: IntegratedGradients}
   # MUTAG (quasi-GT) × backbones (IG)
   - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
@@ -39,6 +45,7 @@ cells:
   # MUTAG × GINE × attributors (head-to-head, paired on shared molecules)
   - {dataset: MUTAG, backbone: GINE,        attributor: Saliency}
   - {dataset: MUTAG, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: MUTAG, backbone: GINE,        attributor: GuidedBackprop}
   - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
   - {dataset: MUTAG, backbone: GINE,        attributor: PGExplainer}
   - {dataset: SynthMotifs, backbone: GINE,  attributor: PGExplainer}

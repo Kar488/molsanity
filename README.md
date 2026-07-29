@@ -70,6 +70,10 @@ model yet fail to recover the true motif. On MUTAG under a **scaffold split**
 - **Backbone matters too.** With IG, ground-truth localisation ranges from GINE
   0.54 → MPNN 0.36 → GCN 0.20 → GAT/AttentiveFP ≈ 0.13 (anti-aligned); AttentiveFP
   is even *anti-faithful* (occlusion ≈ −0.88). Reliability is model-dependent.
+  On **SynthMotifs** (with *exact* node ground truth) the same backbone spread is
+  confirmed at IG: GCN **0.92** > AttentiveFP 0.82 ≈ MPNN 0.81 > GAT 0.72 > GINE —
+  i.e. the "best" backbone for attribution reliability is itself dataset-dependent,
+  now shown against exact truth, not a proxy.
 - **The attributor ranking flips with the regime.** On **SynthMotifs** (a
   synthetic Tier-1 task with *exact* node ground truth, where GINE hits 100 %
   test accuracy and provably uses the motif), Saliency localises the motif almost

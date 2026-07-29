@@ -83,6 +83,16 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] Random-split (in-distribution) references alongside scaffold shift
 - [x] `configs/full.yaml` = complete overnight sweep (44 cells × 2 splits)
 - [x] DILI/hERG (Therapeutics Data Commons) wired via PyTDC — see Milestone 4.
+- [x] **Scaled-out matrix (CPU): 60 audit rows.** Full gradient battery
+      (Saliency/InputXGradient/GuidedBackprop) + GNNExplainer/PGExplainer on the
+      real molecular Tier-2/3 sets (BBBP/BACE/SIDER/ClinTox/DILI/hERG), and
+      SynthMotifs exact-GT across GCN/GAT/MPNN/AttentiveFP. Attributor-adds reuse
+      the committed backbone checkpoints (no retraining).
+- [x] **Fix:** gradient attributors on integer-featured data (MoleculeNet/TDC)
+      failed ("differentiated Tensor does not require grad") — the model casts
+      x→float *inside* forward, so Captum's leaf tensor was int. Now the explainer
+      is fed float inputs (identity for already-float MUTAG/SynthMotifs, so those
+      results are unchanged). Unblocks the battery on all molecular datasets.
 - [ ] Overnight `full.yaml` run on GPU (incl. Tox21 5.8k) for publication scale
 - [!] ShapeGGen (GraphXAI) synthetic exact-GT — GraphXAI's PyPI/GitHub install is
       broken here (wheel omits subpackages) and depends on the same pre-2.5 PyG

@@ -81,6 +81,17 @@ def test_blocked_dataset_raises(mutag):
         data.load_dataset("MIMIC")
 
 
+def test_single_task_view_multitask():
+    """SIDER is a 27-task set; loading it reduces to one balanced binary task
+    with single-column labels, NaN-free, and SMILES retained."""
+    ld = data.load_dataset("SIDER")
+    g = ld.dataset[0]
+    assert tuple(g.y.shape) == (1, 1)
+    labels = {int(ld.dataset[i].y.view(-1)[0]) for i in range(len(ld))}
+    assert labels == {0, 1}
+    assert isinstance(getattr(g, "smiles", None), str) and g.smiles
+
+
 def test_synth_motifs_exact_ground_truth():
     ld = data.load_dataset("SynthMotifs")
     assert len(ld) == 200

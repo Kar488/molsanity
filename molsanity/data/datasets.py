@@ -115,12 +115,39 @@ def _load_ba2motifs(spec: DatasetSpec) -> LoadedDataset:
     return LoadedDataset(spec, ds, prov)
 
 
+def _single_task_view(ds, task_index: int):
+    """Reduce a multi-task MoleculeNet dataset to one binary task: select the
+    task column, drop molecules with a missing (NaN) label for it, and relabel
+    each graph's y to that single task. Keeps x/edge/smiles intact."""
+    import math
+
+    import torch
+
+    out = []
+    for i in range(len(ds)):
+        g = ds[i]
+        val = float(g.y.view(-1)[task_index])
+        if math.isnan(val):
+            continue
+        g = g.clone()
+        g.y = torch.tensor([[int(val)]], dtype=torch.long)
+        out.append(g)
+    return out
+
+
 def _load_moleculenet(spec: DatasetSpec) -> LoadedDataset:
     from torch_geometric.datasets import MoleculeNet
 
     molnet_name = spec.extras["molnet_name"]
     cache_dir = DATA_ROOT / spec.name
     ds = MoleculeNet(root=str(cache_dir / "MoleculeNet"), name=molnet_name)
+
+    task_index = spec.extras.get("task_index")
+    if task_index is not None:
+        ds = _single_task_view(ds, task_index)
+        log.info("%s: reduced to single task #%d (%s), %d labelled molecules",
+                 spec.name, task_index, spec.extras.get("task_name", ""), len(ds))
+
     checksum = _verify_or_record_checksum(spec, ds, cache_dir)
     prov = _write_provenance(spec, ds, cache_dir, checksum)
     log.info("Loaded %s: %d graphs, checksum %s", spec.name, len(ds), checksum[:12])

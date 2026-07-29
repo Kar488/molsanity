@@ -106,9 +106,12 @@ MANIFEST: dict[str, DatasetSpec] = {
     ),
     "Tox21": DatasetSpec(
         name="Tox21", tier=2, task="graph-classification",
-        source="MoleculeNet via PyG", licence="MoleculeNet (open)",
+        source="MoleculeNet via PyG (multi-task; single task audited)",
+        licence="MoleculeNet (open)",
         loader="moleculenet", has_ground_truth=False,
-        extras={"molnet_name": "Tox21"},
+        notes="12-task nuclear-receptor/stress panel; we audit task 0 (NR-AR).",
+        extras={"molnet_name": "Tox21", "task_index": 0, "task_name": "NR-AR",
+                "num_classes": 2},
     ),
     # ---- Tier 3: chemistry-meets-medicine (TDC) -----------------------------
     "ClinTox": DatasetSpec(
@@ -118,8 +121,12 @@ MANIFEST: dict[str, DatasetSpec] = {
     ),
     "SIDER": DatasetSpec(
         name="SIDER", tier=3, task="graph-classification",
-        source="Therapeutics Data Commons", licence="TDC",
-        loader="tdc", has_ground_truth=False, extras={"tdc_group": "Tox", "tdc_name": "SIDER"},
+        source="MoleculeNet via PyG (side-effect panel; single task audited)",
+        licence="MoleculeNet (open)",
+        loader="moleculenet", has_ground_truth=False,
+        notes="27 organ-system side-effect tasks; we audit task 0 (balanced).",
+        extras={"molnet_name": "SIDER", "task_index": 0,
+                "task_name": "Hepatobiliary disorders", "num_classes": 2},
     ),
     "DILI": DatasetSpec(
         name="DILI", tier=3, task="graph-classification",

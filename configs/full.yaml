@@ -1,11 +1,15 @@
-# Full config — overnight matrix. Cells for unreachable data (e.g. BA-2Motifs
-# HTTP 403 here, or TDC before it is installed) are attempted and gracefully
-# skipped+logged, never aborting the run.
+# Full config — overnight matrix (definition of done). Broadest reproducible
+# sweep: exact + quasi ground truth, real classification & regression, and the
+# chemistry-meets-medicine tier, across backbones and attributors, on scaffold
+# (shift) + random (in-distribution) splits. Cells whose data is unreachable in
+# this environment (ShapeGGen/GraphXAI, TDC-native, BA-2Motifs download) are
+# attempted and gracefully skipped+logged. Assumes a GPU or a long CPU budget.
 seed: 0
 budget:
-  epochs: 100
+  epochs: 150
   ig_steps: 50
-  max_eval_molecules: 100    # cap audited molecules per cell (labelled in reports)
+  pg_epochs: 30
+  max_eval_molecules: 100
 
 split:
   kind: scaffold
@@ -21,29 +25,62 @@ model:
 train:
   lr: 0.001
   weight_decay: 0.0005
-  batch_size: 32
+  batch_size: 64
+  class_weight: true
 
-# Also run a random-split reference for in-distribution comparison.
-extra_splits: [random]
+extra_splits: [random]   # in-distribution reference alongside scaffold shift
 
-# Matrix: datasets × backbones × attributors.
-# Tier-1 MUTAG (quasi-GT) carries the ground-truth accuracy metric; Tier-2
-# (BBBP, BACE) exercise coherence / faithfulness / stability / calibration on
-# real molecular property tasks. Broaden further by adding rows.
+# The cell list is written explicitly (YAML has no product operator); this is the
+# intended full sweep. Tier-1 GT datasets get every attributor × every backbone;
+# Tier-2/3 get the backbone sweep under IG plus an attributor sweep on GINE.
 cells:
-  # MUTAG (ground-truth localisation) × all backbones × all attributors
+  # --- Tier-1 exact GT (SynthMotifs) — full attributor × backbone sweep ---
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: Saliency}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: GuidedBackprop}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: SynthMotifs, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # --- Tier-1 quasi-GT (MUTAG) — full attributor × backbone sweep ---
   - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GINE,        attributor: Saliency}
   - {dataset: MUTAG, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: MUTAG, backbone: GINE,        attributor: GuidedBackprop}
   - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: MUTAG, backbone: GINE,        attributor: PGExplainer}
   - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
-  # Tier-2 real molecular tasks (no GT; coherence/faithfulness/stability/calib)
-  - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}
-  - {dataset: BBBP,  backbone: GINE,        attributor: GNNExplainer}
-  - {dataset: BACE,  backbone: GINE,        attributor: IntegratedGradients}
-  # Attempted; skipped+logged where the data source is unreachable in this env.
-  - {dataset: BA-2Motifs, backbone: GINE,   attributor: IntegratedGradients}
-  - {dataset: ClinTox,    backbone: GINE,   attributor: IntegratedGradients}
+  # --- Tier-2 classification (BBBP, BACE) ---
+  - {dataset: BBBP, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: AttentiveFP, attributor: IntegratedGradients}
+  - {dataset: BBBP, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: BBBP, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: BACE, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: BACE, backbone: GCN,         attributor: IntegratedGradients}
+  # --- Tier-2 regression ---
+  - {dataset: ESOL,          backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: ESOL,          backbone: GCN,  attributor: IntegratedGradients}
+  - {dataset: ESOL,          backbone: GAT,  attributor: IntegratedGradients}
+  - {dataset: ESOL,          backbone: GINE, attributor: GNNExplainer}
+  - {dataset: FreeSolv,      backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: IntegratedGradients}
+  # --- Tier-3 chemistry-meets-medicine (single-task views) ---
+  - {dataset: ClinTox, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: ClinTox, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: SIDER,   backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: SIDER,   backbone: GCN,  attributor: IntegratedGradients}
+  - {dataset: Tox21,   backbone: GINE, attributor: IntegratedGradients}
+  # --- Attempted; skipped+logged where unreachable in this environment ---
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: ShapeGGen,  backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: DILI,       backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: hERG,       backbone: GINE, attributor: IntegratedGradients}

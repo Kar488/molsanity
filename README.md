@@ -89,15 +89,20 @@ Tier-1 sets.)
 `molsanity.data` holds the manifest (loader, source, licence, cache path,
 checksum). Provenance is logged per dataset to `data/<name>/provenance.json`.
 
-| Tier | Datasets | Source | Ground truth |
-|------|----------|--------|--------------|
-| 1 | MUTAG, SynthMotifs, BA-2Motifs, ShapeGGen | PyG / generated / GraphXAI | yes (SynthMotifs exact, MUTAG proxy) |
-| 2 | ESOL, FreeSolv, Lipophilicity, BBBP, BACE, Tox21 | MoleculeNet (PyG) | no |
-| 3 | ClinTox, SIDER, DILI, hERG | Therapeutics Data Commons | no |
+| Tier | Datasets | Source | Status |
+|------|----------|--------|--------|
+| 1 | **SynthMotifs** (exact GT), **MUTAG** (proxy GT) | generated offline / PyG | ✅ audited |
+| 1 | BA-2Motifs, ShapeGGen | PyG download / GraphXAI | ⚠ skip+log (unreachable here) |
+| 2 | **BBBP, BACE** (classification); **ESOL, FreeSolv, Lipophilicity** (regression) | MoleculeNet (PyG) | ✅ audited |
+| 2 | Tox21 | MoleculeNet (PyG) | ✅ loadable (single-task); deferred to overnight (5.8k) |
+| 3 | **ClinTox** (clinical-trial toxicity), **SIDER** (side effects) | MoleculeNet single-task views | ✅ audited |
+| 3 | DILI, hERG | Therapeutics Data Commons | ⚠ skip+log (PyTDC not installed) |
 
-Credential-gated ICU/EHR modalities (MIMIC, eICU, HiRID, AmsterdamUMCdb) are
-**out of scope**: referencing them is a no-op (skipped + logged), never a
-bypass attempt (Hard Rule 4).
+Multi-task panels (Tox21 12-task, SIDER 27-task, ClinTox 2-task) are audited as
+single-task binary views. Imbalanced classification uses a **class-aware scaffold
+split** + inverse-frequency weighting so folds aren't single-class. Credential-gated
+ICU/EHR modalities (MIMIC, eICU, HiRID, AmsterdamUMCdb) are **out of scope**:
+referencing them is a no-op (skipped + logged), never a bypass attempt (Hard Rule 4).
 
 ## Layout
 

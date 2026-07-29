@@ -38,3 +38,5 @@ cells:
   - {dataset: SIDER, backbone: GINE,       attributor: GNNExplainer}
   - {dataset: SIDER, backbone: GCN,        attributor: IntegratedGradients}
   - {dataset: Tox21, backbone: GINE,       attributor: IntegratedGradients}
+  - {dataset: ClinTox, backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: ClinTox, backbone: GINE,     attributor: GNNExplainer}

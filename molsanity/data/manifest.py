@@ -116,8 +116,13 @@ MANIFEST: dict[str, DatasetSpec] = {
     # ---- Tier 3: chemistry-meets-medicine (TDC) -----------------------------
     "ClinTox": DatasetSpec(
         name="ClinTox", tier=3, task="graph-classification",
-        source="Therapeutics Data Commons", licence="TDC (CC-BY 4.0 typical)",
-        loader="tdc", has_ground_truth=False, extras={"tdc_group": "Tox", "tdc_name": "ClinTox"},
+        source="MoleculeNet via PyG (clinical-trial toxicity; single task)",
+        licence="MoleculeNet (open)",
+        loader="moleculenet", has_ground_truth=False,
+        notes="Clinical-trial toxicity (CT_TOX, task 1) — the chemistry-meets-"
+              "medicine angle; imbalanced (112 toxic / 1368), class-weighted.",
+        extras={"molnet_name": "ClinTox", "task_index": 1, "task_name": "CT_TOX",
+                "num_classes": 2},
     ),
     "SIDER": DatasetSpec(
         name="SIDER", tier=3, task="graph-classification",

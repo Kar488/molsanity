@@ -484,7 +484,7 @@ def tab_ledger():
          "\\texttt{" + tex(MAN["config_name"]) + "} sweep attempted, as recorded "
          "in \\texttt{results/PROGRESS.md}. \\emph{carried} counts cells whose "
          "row still appears in the results matrix from an earlier "
-         "reduced-budget CPU run because this run's attempt failed --- those "
+         "reduced-budget CPU run because this run's attempt failed. Those "
          "rows are marked \\textsuperscript{c} throughout this paper and are "
          "never mixed into a this-run aggregate.}",
          "\\label{tab:ledger}",
@@ -624,7 +624,7 @@ def tab_regime():
          "\\emph{confident-correct} or \\emph{confident-error} when its "
          "temperature-scaled confidence is at least $0.8$, \\emph{borderline} "
          "otherwise. $n$ is given per metric because ground truth exists for "
-         "only a minority of molecules --- in particular the confident-error "
+         "only a minority of molecules. In particular the confident-error "
          "GT mean rests on too few molecules to interpret, and is printed "
          "rather than hidden.}",
          "\\label{tab:regime}",
@@ -676,9 +676,9 @@ def tab_molecular():
             "truth available)")
     tail = (".} Every committed classification cell on a real molecular "
             "dataset. The ground-truth localisation column does not exist for "
-            "these datasets --- no per-atom labels are published --- so only "
-            "model-side reliability can be measured, which is precisely the "
-            "gap the Tier-1 cells are needed to close. \\emph{charact.} is the "
+            "these datasets, since no per-atom labels are published, so only "
+            "model-side reliability can be measured, which is the gap the "
+            "Tier-1 cells are needed to close. \\emph{charact.} is the "
             "GraphFramEx characterisation score and \\emph{unfaith.} the "
             "PyG/DIG unfaithfulness metric, computed on the same molecules; "
             "both are blank for carried rows (\\textsuperscript{c}), whose "
@@ -737,9 +737,9 @@ def tab_regression():
          "faithfulness is computed in output space (predicted-value shift) "
          "rather than probability space. In " + str(len(neg)) + " of the "
          + str(len(vals)) + " committed regression cells the "
-         "attribution--occlusion agreement is \\emph{negative} --- the atoms an "
+         "attribution--occlusion agreement is \\emph{negative}: the atoms an "
          "attributor ranks highest are not the atoms whose removal moves the "
-         "prediction most --- while " + ", ".join(pos) + " run positive. Note "
+         "prediction most. " + ", ".join(pos) + " run positive. Note "
          "the Fidelity$\\pm$ columns leave the $[-1,1]$ range a probability-space "
          "fidelity would occupy (up to " + n(max(r["fid+"] for r in REG
                                                  if r["fid+"] is not None), 2)

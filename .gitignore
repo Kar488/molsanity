@@ -42,5 +42,8 @@ venv/
 !/figures/**
 
 # Committed pretrained checkpoints (must be the LAST word so the *.pt/*.pth and
-# /artifacts/* rules above do not re-exclude them).
+# /artifacts/* rules above do not re-exclude them). Both the working copy and
+# the archived copy under results/ are tracked, so "can you share your
+# checkpoints?" is answered by the clone itself — see paper/README.md.
 !/artifacts/checkpoints/**
+!/results/artifacts/checkpoints/**

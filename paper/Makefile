@@ -10,7 +10,7 @@
 # this after more grid cells land refreshes the whole manuscript.
 
 PY ?= python3
-TEX ?= xelatex
+XELATEX ?= xelatex
 
 .PHONY: all figures tables pdf clean
 
@@ -23,8 +23,8 @@ tables:
 	$(PY) figs/make_tables.py
 
 pdf: figures tables
-	$(TEX) -interaction=nonstopmode main.tex
-	$(TEX) -interaction=nonstopmode main.tex
+	$(XELATEX) -interaction=nonstopmode main.tex
+	$(XELATEX) -interaction=nonstopmode main.tex
 
 clean:
 	rm -f main.aux main.log main.out main.toc main.pdf

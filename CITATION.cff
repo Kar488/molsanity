@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+title: "MolSanity: a reliability audit for feature attributions on molecular graph neural networks"
+message: "If you use this software or its released artifacts, please cite it."
+type: software
+authors:
+  - given-names: Karthik
+    family-names: Iyer
+    email: karthik.iyer@hotmail.com
+    orcid: "https://orcid.org/0009-0004-0593-1602"
+    affiliation: "Department of Computer Science and Information Technology, La Trobe University, Melbourne, Victoria 3086, Australia"
+  - given-names: Nasser
+    family-names: Sabar
+    affiliation: "Department of Computer Science and Information Technology, La Trobe University, Melbourne, Victoria 3086, Australia"
+repository-code: "https://github.com/Kar488/molsanity"
+license: MIT
+keywords:
+  - graph neural networks
+  - explainability
+  - feature attribution
+  - molecular property prediction
+  - scaffold shift
+  - reliability
+abstract: >-
+  MolSanity audits existing feature-attribution methods for molecular graph
+  neural networks rather than proposing a new one. It scores every
+  (dataset, backbone, attributor, split) combination on six axes: motif-native
+  coherence, occlusion-attribution faithfulness, ground-truth localisation
+  where node labels exist, cross-checkpoint stability, calibration linkage, and
+  confidence/correctness regime stratification. The released artifacts include
+  trained checkpoints, per-molecule audit records, and the scripts that
+  regenerate every figure and table of the accompanying manuscript.
+references:
+  - type: article
+    title: "M-JEPA: predictive self-supervised learning for molecular graphs with scaffold-shift evaluation on Tox21"
+    authors:
+      - given-names: Karthik
+        family-names: Iyer
+      - given-names: Nasser
+        family-names: Sabar
+    journal: "Journal of Chemical Information and Modeling"
+    volume: 66
+    issue: 14
+    start: 8008
+    end: 8021
+    year: 2026
+    doi: "10.1021/acs.jcim.6c00828"

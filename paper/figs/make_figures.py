@@ -35,7 +35,11 @@ DATASET_ORDER = ["SynthMotifs", "SynthMotifsXL", "MUTAG", "BBBP", "BACE",
                  "ESOL", "FreeSolv", "Lipophilicity"]
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
               "GuidedBackprop", "GNNExplainer", "PGExplainer"]
-ARM = ("SynthMotifs", "GINE")
+ARMS = [("MUTAG", "GINE"), ("SynthMotifs", "GINE")]
+# The backbone sweep is read off the exact-ground-truth arm; must stay in step
+# with ``bb_ds`` in make_tables.py, which defines the \bb* macros quoted in the
+# caption and in the prose.
+BB_DATASET = "SynthMotifs"
 CARRIED_EDGE = "#4b5563"
 
 
@@ -145,133 +149,167 @@ def fig_faithfulness_correctness(out: Path):
 
 # ---------------------------------------------------------------- figure 2
 def fig_dissociation(out: Path):
-    ds, bb = ARM
-    arms = [("random", "in-distribution (random split)"),
-            ("scaffold", "scaffold shift")]
     marks = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
              "characterization": "charact."}
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.8))
-    for ax, (sp, title) in zip(axes, arms):
-        sel = D.selection_test(ds, bb, sp)
-        pa = sel["per_attributor"]
-        attrs = sorted(pa, key=lambda a: pa[a]["gt_auroc_mean"], reverse=True)
-        y = np.arange(len(attrs))
-        vals = [pa[a]["gt_auroc_mean"] for a in attrs]
-        lo = [v - pa[a]["gt_auroc_ci"][0] for v, a in zip(vals, attrs)]
-        hi = [pa[a]["gt_auroc_ci"][1] - v for v, a in zip(vals, attrs)]
-        ax.barh(y, vals, height=0.6, xerr=[lo, hi], zorder=3,
-                color=[ATTRIBUTOR_COLOR[a] for a in attrs], alpha=0.9,
-                error_kw=dict(lw=0.8, ecolor="#3f4653", capsize=1.8))
-        ax.axvline(0.5, color=MUTED, lw=0.8, ls="--", zorder=4)
-        for i, a in enumerate(attrs):
-            v = pa[a]["gt_auroc_mean"]
-            if v > 0.22:
-                ax.text(v - 0.02, i, f"{v:.3f}", va="center", ha="right",
-                        fontsize=6.2, color="white", zorder=5)
-            else:
-                ax.text(v + 0.06, i, f"{v:.3f}", va="center", ha="left",
-                        fontsize=6.2, color=INK, zorder=5)
-        ax.set_yticks(y)
-        ax.set_yticklabels([SHORT[a] for a in attrs], fontsize=6.8)
-        ax.invert_yaxis()
-        ax.set_xlim(0, 1.95)
-        ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
-        ax.set_xlabel("ground-truth localisation (AUROC)")
-        ax.set_title(f"{ds}·{bb} — {title}, $n$={max(v['n_mol'] for v in pa.values())}",
-                     fontsize=7.2, pad=9)
-        ax.grid(axis="x", lw=0.4, alpha=0.6)
-        ax.set_axisbelow(True)
-        despine(ax)
-        ax.tick_params(axis="y", length=0)
+    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, 2.5 * len(ARMS)))
+    for row, (ds, bb) in enumerate(ARMS):
+        for col, (sp, title) in enumerate([("random", "in-distribution"),
+                                           ("scaffold", "scaffold shift")]):
+            ax = axes[row][col]
+            sel = D.selection_test(ds, bb, sp)
+            if sel is None:
+                ax.axis("off")
+                continue
+            pa = sel["per_attributor"]
+            attrs = sorted(pa, key=lambda a: pa[a]["gt_auroc_mean"], reverse=True)
+            y = np.arange(len(attrs))
+            vals = [pa[a]["gt_auroc_mean"] for a in attrs]
+            lo = [v - pa[a]["gt_auroc_ci"][0] for v, a in zip(vals, attrs)]
+            hi = [pa[a]["gt_auroc_ci"][1] - v for v, a in zip(vals, attrs)]
+            ax.barh(y, vals, height=0.62, xerr=[lo, hi], zorder=3,
+                    color=[ATTRIBUTOR_COLOR[a] for a in attrs], alpha=0.9,
+                    error_kw=dict(lw=0.7, ecolor="#3f4653", capsize=1.6))
+            ax.axvline(0.5, color=MUTED, lw=0.8, ls="--", zorder=4)
+            for i, a in enumerate(attrs):
+                v = pa[a]["gt_auroc_mean"]
+                inside = v > 0.24
+                ax.text(v - 0.02 if inside else v + 0.03, i, f"{v:.3f}",
+                        va="center", ha="right" if inside else "left",
+                        fontsize=5.9, color="white" if inside else INK, zorder=5)
+            ax.set_yticks(y)
+            ax.set_yticklabels([SHORT[a] for a in attrs], fontsize=6.2)
+            ax.invert_yaxis()
+            ax.set_xlim(0, 1.85)
+            ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
+            nmol = max(v["n_mol"] for v in pa.values())
+            ax.set_title(f"{ds}·{bb} — {title}, $n$={nmol}", fontsize=7.0, pad=6)
+            if row == len(ARMS) - 1:
+                ax.set_xlabel("ground-truth localisation (AUROC)")
+            ax.grid(axis="x", lw=0.4, alpha=0.6)
+            ax.set_axisbelow(True)
+            despine(ax)
+            ax.tick_params(axis="y", length=0)
 
-        picks: dict[str, list] = {}
-        for s in sel["selections"]:
-            tag = marks[s["faithfulness_metric"]]
-            if s["mismatch"]:
-                p = s["paired_gt_pvalue"]
-                tag += "*" if (p is not None and p < 0.05) else "†"
-            picks.setdefault(s["faithfulness_pick"], []).append(tag)
-        for a, labels in picks.items():
-            i = attrs.index(a)
-            sig = any(t.endswith("*") for t in labels)
-            body = (", ".join(labels[:2]) + ",\n" + ", ".join(labels[2:])
-                    if len(labels) > 2 else ", ".join(labels))
-            ax.annotate("← ranked 1st by\n" + body, (1.10, i), fontsize=5.8,
-                        color="#8B1A1A" if sig else MUTED, va="center",
-                        linespacing=1.3)
-        rc = sel["rank_correlation"]
-        txt = " · ".join(f"{marks[k]} {v['rho']:+.2f}" for k, v in rc.items())
-        ax.text(0.0, -0.32, "faithfulness↔truth rank correlation\n" + txt,
-                transform=ax.transAxes, fontsize=6.0, color=INK, va="top",
-                linespacing=1.4)
-    axes[1].text(0.0, -0.56,
-                 "*  selected attributor is significantly worse than the "
-                 "ground-truth-best  ·  † mismatch, not significant",
-                 transform=axes[1].transAxes, ha="left", fontsize=5.8,
-                 color="#8B1A1A")
-    panel_label(axes[0], "a", dx=-0.26, dy=1.19)
-    panel_label(axes[1], "b", dx=-0.26, dy=1.19)
-    fig.subplots_adjust(wspace=0.60, bottom=0.30, top=0.88)
+            picks: dict[str, list] = {}
+            for x in sel["selections"]:
+                tag = marks[x["faithfulness_metric"]]
+                if x["mismatch"]:
+                    pv = x["paired_gt_pvalue"]
+                    tag += "*" if (pv is not None and pv < 0.05) else "†"
+                picks.setdefault(x["faithfulness_pick"], []).append(tag)
+            for a, labels in picks.items():
+                i = attrs.index(a)
+                sig = any(t.endswith("*") for t in labels)
+                body = (", ".join(labels[:2]) + ",\n" + ", ".join(labels[2:])
+                        if len(labels) > 2 else ", ".join(labels))
+                ax.annotate("← ranked 1st by\n" + body, (1.08, i), fontsize=5.5,
+                            color="#8B1A1A" if sig else MUTED, va="center",
+                            linespacing=1.25)
+            rc = sel["rank_correlation"]
+            txt = " · ".join(f"{marks[k]} {v['rho']:+.2f}" for k, v in rc.items())
+            ax.text(0.0, -0.22 if row < len(ARMS) - 1 else -0.42,
+                    "faithfulness↔truth rank corr.:  " + txt,
+                    transform=ax.transAxes, fontsize=5.7, color=INK, va="top")
+    for row in range(len(ARMS)):
+        panel_label(axes[row][0], "ab"[row] if len(ARMS) == 2 else str(row),
+                    dx=-0.26, dy=1.20)
+    axes[-1][1].text(0.0, -0.60,
+                     "*  selected attributor is significantly worse than the "
+                     "ground-truth-best  ·  † mismatch, not significant",
+                     transform=axes[-1][1].transAxes, ha="left", fontsize=5.7,
+                     color="#8B1A1A")
+    fig.subplots_adjust(wspace=0.62, hspace=0.78, bottom=0.19, top=0.92)
     save(fig, out)
 
 
 # ---------------------------------------------------------------- figure 3
 def fig_heatmaps(out: Path):
+    """Faithfulness over the whole grid; correctness only where it exists.
+
+    Rendering the correctness panel at full height would be ten rows of dashes.
+    The asymmetry between the two panels *is* the finding, so it is drawn once
+    and stated, rather than repeated as absent cells.
+    """
     rows = [r for r in ROWS if r["backbone"] == "GINE" and r["split"] == "scaffold"]
     datasets = [d for d in DATASET_ORDER if any(r["dataset"] == d for r in rows)]
     attrs = [a for a in ATTR_ORDER if any(r["attributor"] == a for r in rows)]
-    idx = {(r["attributor"], r["dataset"]): r for r in rows}
+    idx = {(r["dataset"], r["attributor"]): r for r in rows}
+    gt_sets = [d for d in datasets
+               if any(idx.get((d, a), {}).get("gt_auroc") is not None for a in attrs)]
 
-    def grid(metric):
-        M = np.full((len(attrs), len(datasets)), np.nan)
-        for (a, d), r in idx.items():
-            if a in attrs and d in datasets and r.get(metric) is not None:
-                M[attrs.index(a), datasets.index(d)] = r[metric]
-        return M
-
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.6))
-    specs = [("occ_spearman", "occlusion faithfulness (Spearman $\\rho$)", -1.0, 1.0, 0.0),
-             ("gt_auroc", "ground-truth localisation (AUROC)", 0.0, 1.0, 0.5)]
-    for ax, (metric, title, lo, hi, mid) in zip(axes, specs):
-        M = grid(metric)
+    def draw(ax, dsets, metric, lo, hi, mid, title, value_fs):
+        M = np.full((len(dsets), len(attrs)), np.nan)
+        for i, d in enumerate(dsets):
+            for j, a in enumerate(attrs):
+                r = idx.get((d, a))
+                if r is not None and r.get(metric) is not None:
+                    M[i, j] = r[metric]
         norm = plt.matplotlib.colors.TwoSlopeNorm(vmin=lo, vcenter=mid, vmax=hi)
-        ax.set_facecolor("#eceef1")
+        ax.set_facecolor("#eef0f3")
         im = ax.imshow(M, cmap="RdBu_r", norm=norm, aspect="auto")
-        for i, a in enumerate(attrs):
-            for j, d in enumerate(datasets):
-                v = M[i, j]
-                r = idx.get((a, d))
+        for i, d in enumerate(dsets):
+            for j, a in enumerate(attrs):
+                v, r = M[i, j], idx.get((d, a))
                 if np.isnan(v):
-                    ax.text(j, i, "—" if r is not None else "·", ha="center",
-                            va="center", fontsize=6.5 if r is not None else 7.5,
-                            color="#8b93a0")
-                else:
-                    shade = abs(norm(v) - 0.5) * 2
-                    carried = r["provenance"] == "carried"
-                    ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                            fontsize=5.9,
-                            style="italic" if carried else "normal",
-                            color="white" if shade > 0.62 else INK)
-        ax.set_xticks(range(len(datasets)))
-        ax.set_xticklabels(datasets, rotation=42, ha="right", fontsize=6.4)
-        ax.set_yticks(range(len(attrs)))
-        ax.set_yticklabels([SHORT[a] for a in attrs], fontsize=6.6)
-        ax.set_title(title, fontsize=7.4, pad=5)
+                    ax.text(j, i, "–" if r is not None else "", ha="center",
+                            va="center", fontsize=7, color="#a7aeb8")
+                    continue
+                shade = abs(norm(v) - 0.5) * 2
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center",
+                        fontsize=value_fs, color="white" if shade > 0.62 else INK)
+                if r["provenance"] == "carried":
+                    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False,
+                                               lw=0.6, edgecolor="#aeb5bf", zorder=4))
+        ax.set_xticks(range(len(attrs)))
+        ax.set_xticklabels([SHORT[a] for a in attrs], rotation=38, ha="right",
+                           fontsize=7.0)
+        ax.set_yticks(range(len(dsets)))
+        ax.set_yticklabels(dsets, fontsize=7.0)
+        ax.set_title(title, fontsize=8.0, pad=6)
         ax.tick_params(length=0)
-        for s in ax.spines.values():
-            s.set_visible(False)
-        cb = fig.colorbar(im, ax=ax, fraction=0.033, pad=0.02)
-        cb.ax.tick_params(labelsize=6, length=2)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        return im
+
+    fig = plt.figure(figsize=(7.1, 3.3))
+    gs = fig.add_gridspec(2, 2, width_ratios=[1, 1],
+                          height_ratios=[len(gt_sets), len(datasets) - len(gt_sets)],
+                          wspace=0.42, hspace=0.0)
+    axA = fig.add_subplot(gs[:, 0])
+    axB = fig.add_subplot(gs[0, 1])
+
+    imA = draw(axA, datasets, "occ_spearman", -1.0, 1.0, 0.0,
+               "occlusion faithfulness (Spearman $\\rho$)", 6.6)
+    imB = draw(axB, gt_sets, "gt_auroc", 0.0, 1.0, 0.5,
+               "ground-truth localisation (AUROC)", 7.2)
+
+    for ax, im, asp in ((axA, imA, 44), (axB, imB, 8)):
+        cb = fig.colorbar(im, ax=ax, fraction=0.040, pad=0.02, aspect=asp)
+        cb.ax.tick_params(labelsize=6.6, length=2)
         cb.outline.set_visible(False)
-    panel_label(axes[0], "a", dx=-0.13, dy=1.16)
-    panel_label(axes[1], "b", dx=-0.13, dy=1.16)
-    fig.subplots_adjust(wspace=0.42)
+
+    note = fig.add_subplot(gs[1, 1]); note.axis("off")
+    note.text(0.0, 0.70, "Panel b stops after two rows.",
+              transform=note.transAxes, ha="left", va="top", fontsize=7.0,
+              color=INK, weight="bold")
+    note.text(0.0, 0.58,
+              f"Of the {len(datasets)} datasets audited, {len(gt_sets)} carry "
+              "node-level labels\nagainst which an attribution can be scored. "
+              f"For the other\n{len(datasets) - len(gt_sets)} — every real "
+              "molecular property dataset in the\nsweep — no such labels are "
+              "published, so only panel a\ncan be computed at all. "
+              "Faithfulness is auditable\neverywhere; correctness almost "
+              "nowhere.",
+              transform=note.transAxes, ha="left", va="top", fontsize=6.6,
+              color=INK, linespacing=1.5)
+    panel_label(axA, "a", dx=-0.22, dy=1.06)
+    panel_label(axB, "b", dx=-0.22, dy=1.30)
     save(fig, out)
 
 
 # ---------------------------------------------------------------- figure 4
 def fig_backbone(out: Path):
-    ds, _ = ARM
+    ds = BB_DATASET
     panels = [(ds, "random", "in-distribution (random split)"),
               (ds, "scaffold", "scaffold shift")]
     fig, axes = plt.subplots(2, 1, figsize=(3.3, 3.5))
@@ -521,6 +559,25 @@ def fig_coverage(out: Path):
     save(fig, out)
 
 
+def copy_pipeline_figures():
+    """Carry the pipeline's own qualitative figures into the manuscript.
+
+    The attribution-overlay grids are rendered by the audit run itself (RDKit
+    skeletal structures for molecules, node-link diagrams for the synthetic
+    graphs, ground-truth motif outlined). They are copied rather than
+    regenerated so the paper shows exactly what the pipeline produced.
+    """
+    import shutil
+    src = D.RES / "figures" / "summary"
+    for name in ("molgrid_MUTAG", "molgrid_SynthMotifs"):
+        p = src / f"{name}.pdf"
+        if p.exists():
+            shutil.copy2(p, HERE / f"fig_{name}.pdf")
+            print(f"  copied {p.name}")
+        else:
+            print(f"  MISSING {p} — the qualitative figure will not build")
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
@@ -530,4 +587,5 @@ if __name__ == "__main__":
     fig_distributions(HERE / "fig_distributions.pdf")
     fig_regime(HERE / "fig_regime.pdf")
     fig_coverage(HERE / "fig_coverage.pdf")
+    copy_pipeline_figures()
     print("done.")

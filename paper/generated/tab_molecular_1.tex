@@ -1,14 +1,17 @@
 \begin{sidewaystable*}[p]
 \centering
-\captionsetup{width=0.95\textheight}
+\captionsetup{width=\rotmaxw}
 \caption{\textbf{Molecular classification cells (no node-level ground truth available), 1 of 2.} Every committed classification cell on a real molecular dataset. The ground-truth localisation column does not exist for these datasets --- no per-atom labels are published --- so only model-side reliability can be measured, which is precisely the gap the Tier-1 cells are needed to close. \emph{charact.} is the GraphFramEx characterisation score and \emph{unfaith.} the PyG/DIG unfaithfulness metric, computed on the same molecules; both are blank for carried rows (\textsuperscript{c}), whose per-molecule records this run did not regenerate. Bold marks the highest occlusion $\rho$ per dataset (emphasis only).}
 \label{tab:molecular}
-\renewcommand{\arraystretch}{1.3}
-\resizebox{0.95\textheight}{!}{%
+\renewcommand{\arraystretch}{1.15}
+\adjustbox{max width=\rotmaxw,max totalheight=\rotmaxh}{%
 \begin{tabular}{lllcrrrrrrrrrrrr}
 \toprule
 \textbf{dataset} & \textbf{backbone} & \textbf{attributor} & \textbf{split} & \textbf{$n$} & \textbf{acc} & \textbf{AUC} & \textbf{ECE} & \textbf{motif top-1} & \textbf{occ.\ $\rho$} & \textbf{occ.\ top-1} & \textbf{Fid+} & \textbf{Fid--} & \textbf{stab.} & \textbf{charact.} & \textbf{unfaith.} \\
 \midrule
+BA-2Motifs & GINE & IG & random & 100 & 0.820 & 1.000 & 0.076 & 0.209 & $-$0.393 & 0.090 & 0.037 & 0.001 & 0.745 & 0.132 & --- \\
+BA-2Motifs & GINE & IG & scaffold & 100 & 0.990 & 0.990 & 0.253 & 0.119 & \textbf{0.636} & 0.360 & 0.022 & 0.029 & 0.740 & 0.044 & --- \\
+\addlinespace[2pt]
 BACE & GCN & IG & random & 100 & 0.640 & 0.839 & 0.082 & 0.792 & 0.034 & 0.530 & 0.181 & 0.218 & 0.738 & 0.209 & 0.268 \\
 BACE & GCN & IG & scaffold & 100 & 0.850 & 0.507 & 0.069 & 0.800 & $-$0.668 & 0.140 & $-$0.125 & $-$0.125 & 0.898 & 0.067 & 0.276 \\
 BACE\,\textsuperscript{c} & GINE & GNNExpl. & scaffold & 30 & 0.433 & 0.434 & 0.189 & 0.835 & $-$0.128 & 0.167 & 0.064 & 0.214 & --- & --- & --- \\
@@ -29,7 +32,8 @@ BBBP\,\textsuperscript{c} & GINE & GuidedBP & scaffold & 30 & 0.967 & 0.805 & 0.
 BBBP\,\textsuperscript{c} & GINE & Input$\times$Grad & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.839 & $-$0.620 & 0.000 & $-$0.016 & $-$0.047 & --- & --- & --- \\
 BBBP & GINE & IG & random & 100 & 0.820 & 0.886 & 0.053 & 0.724 & 0.016 & 0.470 & 0.332 & 0.334 & 0.827 & 0.098 & 0.394 \\
 BBBP & GINE & IG & scaffold & 100 & 0.950 & 0.932 & 0.029 & 0.841 & $-$0.741 & 0.040 & $-$0.031 & $-$0.057 & 0.857 & 0.028 & 0.090 \\
-BBBP\,\textsuperscript{c} & GINE & PGExpl. & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.422 & $-$0.185 & 0.367 & $-$0.055 & $-$0.059 & --- & --- & --- \\
+BBBP & GINE & PGExpl. & random & 100 & 0.820 & 0.886 & 0.053 & 0.927 & $-$0.050 & 0.310 & 0.086 & 0.332 & 0.562 & 0.075 & --- \\
+BBBP & GINE & PGExpl. & scaffold & 100 & 0.950 & 0.932 & 0.029 & 0.954 & $-$0.538 & 0.060 & $-$0.016 & $-$0.060 & 0.488 & 0.031 & --- \\
 BBBP\,\textsuperscript{c} & GINE & Saliency & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.826 & $-$0.627 & 0.000 & $-$0.029 & $-$0.033 & --- & --- & --- \\
 BBBP & MPNN & IG & random & 100 & 0.840 & 0.914 & 0.053 & 0.792 & 0.154 & 0.420 & 0.210 & 0.267 & 0.765 & 0.121 & 0.104 \\
 BBBP & MPNN & IG & scaffold & 100 & 0.950 & 0.922 & 0.033 & 0.824 & $-$0.431 & 0.040 & 0.052 & $-$0.043 & 0.832 & 0.117 & 0.096 \\

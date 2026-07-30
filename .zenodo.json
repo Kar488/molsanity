@@ -1,0 +1,34 @@
+{
+  "title": "MolSanity: a reliability audit for feature attributions on molecular graph neural networks",
+  "description": "<p>MolSanity audits existing feature-attribution methods for molecular graph neural networks rather than proposing a new one. Every (dataset, backbone, attributor, split) combination is scored on six axes: motif-native coherence, occlusion&ndash;attribution faithfulness, ground-truth localisation where node labels exist, cross-checkpoint stability, calibration linkage, and confidence/correctness regime stratification.</p><p>This archive contains the trained GNN checkpoints, the per-molecule audit records, the run manifest (seed, library versions, hardware), and the scripts that regenerate every figure and table of the accompanying manuscript from those artifacts.</p>",
+  "upload_type": "software",
+  "license": "mit",
+  "creators": [
+    {
+      "name": "Iyer, Karthik",
+      "affiliation": "Department of Computer Science and Information Technology, La Trobe University, Melbourne, Victoria, Australia",
+      "orcid": "0009-0004-0593-1602"
+    },
+    {
+      "name": "Sabar, Nasser",
+      "affiliation": "Department of Computer Science and Information Technology, La Trobe University, Melbourne, Victoria, Australia"
+    }
+  ],
+  "keywords": [
+    "graph neural networks",
+    "explainability",
+    "feature attribution",
+    "molecular property prediction",
+    "scaffold shift",
+    "model reliability",
+    "cheminformatics"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.1021/acs.jcim.6c00828",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-article",
+      "scheme": "doi"
+    }
+  ]
+}

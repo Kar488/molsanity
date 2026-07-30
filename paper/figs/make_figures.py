@@ -36,7 +36,10 @@ DATASET_ORDER = ["SynthMotifs", "SynthMotifsXL", "MUTAG", "BBBP", "BACE",
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
               "GuidedBackprop", "GNNExplainer", "PGExplainer"]
 ARMS = [("MUTAG", "GINE"), ("SynthMotifs", "GINE")]
-ARM = ARMS[0]
+# The backbone sweep is read off the exact-ground-truth arm; must stay in step
+# with ``bb_ds`` in make_tables.py, which defines the \bb* macros quoted in the
+# caption and in the prose.
+BB_DATASET = "SynthMotifs"
 CARRIED_EDGE = "#4b5563"
 
 
@@ -221,65 +224,92 @@ def fig_dissociation(out: Path):
 
 # ---------------------------------------------------------------- figure 3
 def fig_heatmaps(out: Path):
-    """Datasets as rows, attributors as columns: 11x6 reads far better than the
-    transpose at two-column width, and leaves room for legible values."""
+    """Faithfulness over the whole grid; correctness only where it exists.
+
+    Rendering the correctness panel at full height would be ten rows of dashes.
+    The asymmetry between the two panels *is* the finding, so it is drawn once
+    and stated, rather than repeated as absent cells.
+    """
     rows = [r for r in ROWS if r["backbone"] == "GINE" and r["split"] == "scaffold"]
     datasets = [d for d in DATASET_ORDER if any(r["dataset"] == d for r in rows)]
     attrs = [a for a in ATTR_ORDER if any(r["attributor"] == a for r in rows)]
     idx = {(r["dataset"], r["attributor"]): r for r in rows}
+    gt_sets = [d for d in datasets
+               if any(idx.get((d, a), {}).get("gt_auroc") is not None for a in attrs)]
 
-    def grid(metric):
-        M = np.full((len(datasets), len(attrs)), np.nan)
-        for (d, a), r in idx.items():
-            if a in attrs and d in datasets and r.get(metric) is not None:
-                M[datasets.index(d), attrs.index(a)] = r[metric]
-        return M
-
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 3.1))
-    specs = [("occ_spearman", "occlusion faithfulness (Spearman $\\rho$)", -1.0, 1.0, 0.0),
-             ("gt_auroc", "ground-truth localisation (AUROC)", 0.0, 1.0, 0.5)]
-    for ax, (metric, title, lo, hi, mid) in zip(axes, specs):
-        M = grid(metric)
-        norm = plt.matplotlib.colors.TwoSlopeNorm(vmin=lo, vcenter=mid, vmax=hi)
-        ax.set_facecolor("#eceef1")
-        im = ax.imshow(M, cmap="RdBu_r", norm=norm, aspect="auto")
-        for i, d in enumerate(datasets):
+    def draw(ax, dsets, metric, lo, hi, mid, title, value_fs):
+        M = np.full((len(dsets), len(attrs)), np.nan)
+        for i, d in enumerate(dsets):
             for j, a in enumerate(attrs):
-                v = M[i, j]
                 r = idx.get((d, a))
+                if r is not None and r.get(metric) is not None:
+                    M[i, j] = r[metric]
+        norm = plt.matplotlib.colors.TwoSlopeNorm(vmin=lo, vcenter=mid, vmax=hi)
+        ax.set_facecolor("#eef0f3")
+        im = ax.imshow(M, cmap="RdBu_r", norm=norm, aspect="auto")
+        for i, d in enumerate(dsets):
+            for j, a in enumerate(attrs):
+                v, r = M[i, j], idx.get((d, a))
                 if np.isnan(v):
-                    ax.text(j, i, "—" if r is not None else "·", ha="center",
-                            va="center", fontsize=7 if r is not None else 8,
-                            color="#8b93a0")
+                    ax.text(j, i, "–" if r is not None else "", ha="center",
+                            va="center", fontsize=7, color="#a7aeb8")
                     continue
                 shade = abs(norm(v) - 0.5) * 2
-                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=6.6,
-                        color="white" if shade > 0.62 else INK)
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center",
+                        fontsize=value_fs, color="white" if shade > 0.62 else INK)
                 if r["provenance"] == "carried":
-                    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1,
-                                               fill=False, lw=1.1,
-                                               edgecolor="#4b5563", zorder=4))
+                    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False,
+                                               lw=0.6, edgecolor="#aeb5bf", zorder=4))
         ax.set_xticks(range(len(attrs)))
         ax.set_xticklabels([SHORT[a] for a in attrs], rotation=38, ha="right",
-                           fontsize=7.2)
-        ax.set_yticks(range(len(datasets)))
-        ax.set_yticklabels(datasets, fontsize=7.2)
+                           fontsize=7.0)
+        ax.set_yticks(range(len(dsets)))
+        ax.set_yticklabels(dsets, fontsize=7.0)
         ax.set_title(title, fontsize=8.0, pad=6)
         ax.tick_params(length=0)
         for sp in ax.spines.values():
             sp.set_visible(False)
-        cb = fig.colorbar(im, ax=ax, fraction=0.042, pad=0.02)
-        cb.ax.tick_params(labelsize=6.8, length=2)
+        return im
+
+    fig = plt.figure(figsize=(7.1, 3.3))
+    gs = fig.add_gridspec(2, 2, width_ratios=[1, 1],
+                          height_ratios=[len(gt_sets), len(datasets) - len(gt_sets)],
+                          wspace=0.42, hspace=0.0)
+    axA = fig.add_subplot(gs[:, 0])
+    axB = fig.add_subplot(gs[0, 1])
+
+    imA = draw(axA, datasets, "occ_spearman", -1.0, 1.0, 0.0,
+               "occlusion faithfulness (Spearman $\\rho$)", 6.6)
+    imB = draw(axB, gt_sets, "gt_auroc", 0.0, 1.0, 0.5,
+               "ground-truth localisation (AUROC)", 7.2)
+
+    for ax, im, asp in ((axA, imA, 44), (axB, imB, 8)):
+        cb = fig.colorbar(im, ax=ax, fraction=0.040, pad=0.02, aspect=asp)
+        cb.ax.tick_params(labelsize=6.6, length=2)
         cb.outline.set_visible(False)
-    panel_label(axes[0], "a", dx=-0.22, dy=1.12)
-    panel_label(axes[1], "b", dx=-0.22, dy=1.12)
-    fig.subplots_adjust(wspace=0.45)
+
+    note = fig.add_subplot(gs[1, 1]); note.axis("off")
+    note.text(0.0, 0.70, "Panel b stops after two rows.",
+              transform=note.transAxes, ha="left", va="top", fontsize=7.0,
+              color=INK, weight="bold")
+    note.text(0.0, 0.58,
+              f"Of the {len(datasets)} datasets audited, {len(gt_sets)} carry "
+              "node-level labels\nagainst which an attribution can be scored. "
+              f"For the other\n{len(datasets) - len(gt_sets)} — every real "
+              "molecular property dataset in the\nsweep — no such labels are "
+              "published, so only panel a\ncan be computed at all. "
+              "Faithfulness is auditable\neverywhere; correctness almost "
+              "nowhere.",
+              transform=note.transAxes, ha="left", va="top", fontsize=6.6,
+              color=INK, linespacing=1.5)
+    panel_label(axA, "a", dx=-0.22, dy=1.06)
+    panel_label(axB, "b", dx=-0.22, dy=1.30)
     save(fig, out)
 
 
 # ---------------------------------------------------------------- figure 4
 def fig_backbone(out: Path):
-    ds, _ = ARM
+    ds = BB_DATASET
     panels = [(ds, "random", "in-distribution (random split)"),
               (ds, "scaffold", "scaffold shift")]
     fig, axes = plt.subplots(2, 1, figsize=(3.3, 3.5))

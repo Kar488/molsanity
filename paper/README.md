@@ -73,10 +73,17 @@ only the split changes) possible.
 
 ## Releasing the artifacts (checkpoints + DOI)
 
-The trained weights are archived under `results/artifacts/checkpoints/` by the
-notebook's publish step, so a clone already answers "can you share your
-checkpoints?". For a citable, permanent record — what a journal will ask for —
-tag a release and let Zenodo archive it:
+The trained weights are already tracked in the repository: 68 `.pt` files
+(35 final + 33 `_early` intermediates, 7.7 MB total) under
+`artifacts/checkpoints/`, indexed by
+`results/artifacts/checkpoints/MANIFEST.{json,md}`. Every path in that manifest
+resolves to a committed file, and the metrics stored inside each checkpoint
+payload match the manifest row, so a clone already answers "can you share your
+checkpoints?" without any extra step. The notebook's publish step only exists to
+pick up weights a *future* run trains that are not yet committed.
+
+For a citable, permanent record — what a journal will ask for — tag a release
+and let Zenodo archive it:
 
 1. Sign in at <https://zenodo.org> with GitHub, then flip the switch for
    `Kar488/molsanity` under *GitHub* in your Zenodo account. One-time.

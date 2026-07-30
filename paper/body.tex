@@ -404,6 +404,8 @@ of which \nGtCells{} carry a node-level ground truth.
 \input{generated/tab_regression}
 \input{generated/tab_paired}
 \input{generated/tab_molecular}
+\input{generated/tab_selection}
+\input{generated/tab_tier1}
 
 \subsection{Faithfulness is not correctness}
 
@@ -423,8 +425,6 @@ molecular datasets, have no published per-atom labels: only the horizontal axis
 is measurable for them.}
 \label{fig:faithcorrect}
 \end{figure*}
-
-\input{generated/tab_tier1}
 
 Table~\ref{tab:tier1} lists every committed cell in which attribution
 \emph{correctness} can be measured at all, and Figure~\ref{fig:faithcorrect}
@@ -465,8 +465,6 @@ pipeline's own output, reproduced unmodified.}
 
 \subsection{A fidelity-only ranking picks the wrong attributor under shift}
 \label{sec:selection}
-
-\input{generated/tab_selection}
 
 \begin{figure*}[t]
 \centering
@@ -552,11 +550,12 @@ result. The shift arm, which carries the argument, does not involve it.
 \includegraphics[width=\textwidth]{figs/fig_heatmaps.pdf}
 \caption{\textbf{Reliability is a property of the (attributor, dataset) pair,
 not of the attributor.} All committed GINE cells at the scaffold split.
-\textbf{(a)} Occlusion faithfulness; blue $=$ anti-faithful. \textbf{(b)}
-Ground-truth localisation; the grey block is not a low score but an
-\emph{unmeasurable} one --- no molecular dataset here publishes per-atom
-labels. ``---'' marks an audited cell whose metric is undefined, ``$\cdot$'' a
-cell that was not audited, and italic values are carried from an earlier run.}
+\textbf{(a)} Occlusion faithfulness over every audited dataset; blue $=$
+anti-faithful. \textbf{(b)} Ground-truth localisation, which exists for two
+datasets only. Panel~b is short because correctness is unmeasurable elsewhere,
+not because it scores badly there --- no molecular dataset in the sweep
+publishes per-atom labels. Blank cells were not audited; a thin outline marks a
+value carried from an earlier run.}
 \label{fig:heatmaps}
 \end{figure*}
 
@@ -876,6 +875,7 @@ scope and were never accessed.
 \clearpage
 \begin{thebibliography}{99}
 \footnotesize
+\setlength{\itemsep}{1.5pt}\setlength{\parskip}{0pt}
 
 \bibitem{ig} M.~Sundararajan, A.~Taly, and Q.~Yan. Axiomatic attribution for
 deep networks. \emph{Proceedings of the 34th International Conference on

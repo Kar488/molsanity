@@ -683,11 +683,11 @@ def tab_molecular():
         sub = [r for r in rows if r["dataset"] in part]
         suffix = "" if len(parts) == 1 else f", {pi + 1} of {len(parts)}"
         L = ["\\begin{sidewaystable*}[p]", "\\centering",
-             "\\captionsetup{width=0.95\\textheight}",
+             "\\captionsetup{width=0.94\\textheight}",
              "\\caption{" + head + suffix + tail,
              "\\label{tab:molecular" + ("" if pi == 0 else chr(97 + pi)) + "}",
              "\\renewcommand{\\arraystretch}{1.3}",
-             "\\resizebox{0.95\\textheight}{!}{%",
+             "\\resizebox{0.94\\textheight}{!}{%",
              "\\begin{tabular}{lllcrrrrrrrrrrrr}",
              "\\toprule",
              "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "

@@ -166,6 +166,28 @@ def macros():
             "InputXGradient": "IxG", "GuidedBackprop": "GBP",
             "GNNExplainer": "GNNE", "PGExplainer": "PGE"}
     add("nArms", len(ARMS))
+
+    # Benjamini-Hochberg over the whole family of selection tests, so the prose
+    # can quote an FDR-controlled value rather than a raw one. Built here in the
+    # same order tab_selection walks so the macro and the table agree.
+    _sel_cache, _pvals = {}, []
+    for ds, bb, arm in ARMS:
+        for sp, half in (("random", "Ind"), ("scaffold", "Shift")):
+            sel = D.selection_test(ds, bb, sp)
+            _sel_cache[(ds, bb, sp)] = sel
+            if sel is not None:
+                _pvals += [x["paired_gt_pvalue"] for x in sel["selections"]]
+    _qvals = iter(D.benjamini_hochberg(_pvals))
+    _qmap = {}
+    for ds, bb, arm in ARMS:
+        for sp, half in (("random", "Ind"), ("scaffold", "Shift")):
+            sel = _sel_cache[(ds, bb, sp)]
+            if sel is None:
+                continue
+            for x in sel["selections"]:
+                _qmap[(ds, bb, sp, x["faithfulness_metric"])] = next(_qvals)
+    add("nSelectionTests", len(_pvals))
+
     for ds, bb, arm in ARMS:
         add(f"{arm}Dataset", ds)
         add(f"{arm}Backbone", bb)
@@ -194,6 +216,10 @@ def macros():
                     pv = x["paired_gt_pvalue"]
                     add(f"{pre}P{t}",
                         "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+                    qv = _qmap.get((ds, bb, sp, x["faithfulness_metric"]))
+                    if qv is not None and qv == qv:
+                        add(f"{pre}Q{t}",
+                            "\\ensuremath{<}0.001" if qv < 0.001 else f"{qv:.3f}")
                     add(f"{pre}Gap{t}", num(x["paired_gt_gap_median"]))
                     add(f"{pre}NPaired{t}", x["n_paired"])
             for k, v in sel["rank_correlation"].items():
@@ -484,7 +510,7 @@ def tab_ledger():
          "\\texttt{" + tex(MAN["config_name"]) + "} sweep attempted, as recorded "
          "in \\texttt{results/PROGRESS.md}. \\emph{carried} counts cells whose "
          "row still appears in the results matrix from an earlier "
-         "reduced-budget CPU run because this run's attempt failed --- those "
+         "reduced-budget CPU run because this run's attempt failed. Those "
          "rows are marked \\textsuperscript{c} throughout this paper and are "
          "never mixed into a this-run aggregate.}",
          "\\label{tab:ledger}",
@@ -524,42 +550,55 @@ def tab_selection():
          "ranks the attributors by one faithfulness/fidelity metric and asks "
          "whether its top choice is the one the ground truth ranks best. $p$ is a "
          "paired Wilcoxon test on per-molecule GT AUROC between the selected and "
-         "the ground-truth-best attributor, over the molecules both audited.}",
+         "the ground-truth-best attributor, over the molecules both audited, and "
+         "$q$ its Benjamini--Hochberg adjustment over all "
+         + str(len(ARMS) * 2 * 3) + " selection tests in this table.}",
          "\\label{tab:selection}",
          "\\small",
          "\\renewcommand{\\arraystretch}{1.3}",
          "\\resizebox{\\textwidth}{!}{%",
-         "\\begin{tabular}{llllrlrcrr}",
+         "\\begin{tabular}{llllrlrcrrr}",
          "\\toprule",
          "\\textbf{cell} & \\textbf{regime} & \\textbf{ranking metric} & "
          "\\textbf{its top pick} & \\textbf{pick GT} & \\textbf{GT-best} & "
          "\\textbf{GT-best} & \\textbf{mismatch} & \\textbf{Wilcoxon $p$} & "
-         "\\textbf{$\\rho$(faith,GT)} \\\\",
+         "\\textbf{$q$} & \\textbf{$\\rho$(faith,GT)} \\\\",
          "\\midrule"]
     names = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
              "characterization": "characterisation"}
-    first = True
+
+    # Collect every selection test first so the false discovery rate is
+    # controlled over the whole family (each cell x split x ranking metric),
+    # which is the set a reader draws conclusions from.
+    blocks = []
     for ds, bb, _arm in ARMS:
         for sp, label in (("random", "in-distribution"), ("scaffold", "scaffold shift")):
             sel = D.selection_test(ds, bb, sp)
-            if sel is None:
-                continue
-            if not first:
-                L.append("\\addlinespace[2pt]")
-            first = False
-            nmol = max(v["n_mol"] for v in sel["per_attributor"].values())
-            cell = tex(ds) + "$\\cdot$" + bb + ", $n$=" + str(nmol)
-            for si, x in enumerate(sel["selections"]):
-                rho = sel["rank_correlation"][x["faithfulness_metric"]]["rho"]
-                L.append(" & ".join([
-                    cell if si == 0 else "", label if si == 0 else "",
-                    names[x["faithfulness_metric"]],
-                    SHORT.get(x["faithfulness_pick"], x["faithfulness_pick"]),
-                    n(x["faithfulness_pick_gt_auroc"]),
-                    SHORT.get(x["gt_best"], x["gt_best"]), n(x["gt_best_gt_auroc"]),
-                    "\\textbf{yes}" if x["mismatch"] else "no",
-                    pfmt(x["paired_gt_pvalue"]), n(rho),
-                ]) + " \\\\")
+            if sel is not None:
+                blocks.append((ds, bb, sp, label, sel))
+    qs = D.benjamini_hochberg([x["paired_gt_pvalue"]
+                               for _, _, _, _, sel in blocks
+                               for x in sel["selections"]])
+    qi = iter(qs)
+
+    first = True
+    for ds, bb, sp, label, sel in blocks:
+        if not first:
+            L.append("\\addlinespace[2pt]")
+        first = False
+        nmol = max(v["n_mol"] for v in sel["per_attributor"].values())
+        cell = tex(ds) + "$\\cdot$" + bb + ", $n$=" + str(nmol)
+        for si, x in enumerate(sel["selections"]):
+            rho = sel["rank_correlation"][x["faithfulness_metric"]]["rho"]
+            L.append(" & ".join([
+                cell if si == 0 else "", label if si == 0 else "",
+                names[x["faithfulness_metric"]],
+                SHORT.get(x["faithfulness_pick"], x["faithfulness_pick"]),
+                n(x["faithfulness_pick_gt_auroc"]),
+                SHORT.get(x["gt_best"], x["gt_best"]), n(x["gt_best_gt_auroc"]),
+                "\\textbf{yes}" if x["mismatch"] else "no",
+                pfmt(x["paired_gt_pvalue"]), pfmt(next(qi)), n(rho),
+            ]) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
     write("tab_selection.tex", "\n".join(L) + "\n")
 
@@ -572,16 +611,17 @@ def tab_paired():
          "molecules}, computed from the committed per-molecule records "
          "(Wilcoxon signed-rank on per-molecule occlusion faithfulness, "
          "$\\Delta = A - B$). Same cell family as "
-         "Table~\\ref{tab:selection}. $p$ values are unadjusted for "
-         "multiplicity and should be read as descriptive at these sample "
-         "sizes.}",
+         "Table~\\ref{tab:selection}. $p$ is the raw two-sided Wilcoxon value "
+         "and $q$ its Benjamini--Hochberg adjustment, controlling the false "
+         "discovery rate over the contrasts within each cell block, which is "
+         "the family a reader compares across.}",
          "\\label{tab:paired}",
          "\\footnotesize",
          "\\renewcommand{\\arraystretch}{1.2}",
-         "\\begin{tabular}{lrrr}",
+         "\\begin{tabular}{lrrrr}",
          "\\toprule",
          "\\textbf{A vs.\\ B} & \\textbf{$n$} & \\textbf{median $\\Delta$} & "
-         "\\textbf{$p$} \\\\",
+         "\\textbf{$p$} & \\textbf{$q$} \\\\",
          "\\midrule"]
     for bi, sp in enumerate(("random", "scaffold")):
         cells = D.attributor_cells(ds, bb, sp)
@@ -590,19 +630,25 @@ def tab_paired():
             continue
         if bi:
             L.append("\\addlinespace[3pt]")
-        L.append("\\multicolumn{4}{l}{\\itshape " + tex(ds) + ", " + bb + ", "
+        L.append("\\multicolumn{5}{l}{\\itshape " + tex(ds) + ", " + bb + ", "
                  + sp + " split} \\\\")
         L.append("\\addlinespace[1pt]")
+        pairs = []
         for i, a in enumerate(attrs):
             for b in attrs[i + 1:]:
                 A, B = D.by_graph(cells[a]), D.by_graph(cells[b])
                 shared = sorted(set(A) & set(B))
                 w = D.paired_wilcoxon([A[g]["occ_spearman"] for g in shared],
                                       [B[g]["occ_spearman"] for g in shared])
-                L.append(" & ".join([
-                    f"{SHORT.get(a, a)} vs.\\ {SHORT.get(b, b)}",
-                    str(w["n"]), n(w["median_delta"]), pfmt(w["p"]),
-                ]) + " \\\\")
+                pairs.append((a, b, w))
+        # Control the false discovery rate over the contrasts within this
+        # cell, which is the family a reader compares across.
+        qs = D.benjamini_hochberg([w["p"] for _, _, w in pairs])
+        for (a, b, w), q in zip(pairs, qs):
+            L.append(" & ".join([
+                f"{SHORT.get(a, a)} vs.\\ {SHORT.get(b, b)}",
+                str(w["n"]), n(w["median_delta"]), pfmt(w["p"]), pfmt(q),
+            ]) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
     write("tab_paired.tex", "\n".join(L) + "\n")
 
@@ -624,7 +670,7 @@ def tab_regime():
          "\\emph{confident-correct} or \\emph{confident-error} when its "
          "temperature-scaled confidence is at least $0.8$, \\emph{borderline} "
          "otherwise. $n$ is given per metric because ground truth exists for "
-         "only a minority of molecules --- in particular the confident-error "
+         "only a minority of molecules. In particular the confident-error "
          "GT mean rests on too few molecules to interpret, and is printed "
          "rather than hidden.}",
          "\\label{tab:regime}",
@@ -676,9 +722,9 @@ def tab_molecular():
             "truth available)")
     tail = (".} Every committed classification cell on a real molecular "
             "dataset. The ground-truth localisation column does not exist for "
-            "these datasets --- no per-atom labels are published --- so only "
-            "model-side reliability can be measured, which is precisely the "
-            "gap the Tier-1 cells are needed to close. \\emph{charact.} is the "
+            "these datasets, since no per-atom labels are published, so only "
+            "model-side reliability can be measured, which is the gap the "
+            "Tier-1 cells are needed to close. \\emph{charact.} is the "
             "GraphFramEx characterisation score and \\emph{unfaith.} the "
             "PyG/DIG unfaithfulness metric, computed on the same molecules; "
             "both are blank for carried rows (\\textsuperscript{c}), whose "
@@ -737,9 +783,9 @@ def tab_regression():
          "faithfulness is computed in output space (predicted-value shift) "
          "rather than probability space. In " + str(len(neg)) + " of the "
          + str(len(vals)) + " committed regression cells the "
-         "attribution--occlusion agreement is \\emph{negative} --- the atoms an "
+         "attribution--occlusion agreement is \\emph{negative}: the atoms an "
          "attributor ranks highest are not the atoms whose removal moves the "
-         "prediction most --- while " + ", ".join(pos) + " run positive. Note "
+         "prediction most. " + ", ".join(pos) + " run positive. Note "
          "the Fidelity$\\pm$ columns leave the $[-1,1]$ range a probability-space "
          "fidelity would occupy (up to " + n(max(r["fid+"] for r in REG
                                                  if r["fid+"] is not None), 2)

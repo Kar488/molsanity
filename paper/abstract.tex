@@ -14,14 +14,15 @@ localisation where node labels exist, cross-checkpoint stability, calibration
 linkage, and confidence/correctness regime stratification. Our central finding
 is that \emph{faithfulness is not correctness}, and that the two invert under
 shift. Holding dataset, backbone and attributor set fixed and changing only the
-split, all $\mutShiftNMetrics{}$ faithfulness metrics we test --- our occlusion
-measure, Fidelity+ and the GraphFramEx characterisation score --- select
+split, all $\mutShiftNMetrics{}$ faithfulness metrics we test (our occlusion
+measure, Fidelity+ and the GraphFramEx characterisation score) select
 \mutShiftPickOccspearman{} on MUTAG under a Bemis--Murcko scaffold split, whose
 agreement with the mutagenic nitro motif is GT AUROC
 $\mutShiftPickGtOccspearman{}$, the worst of the $\mutShiftNAttr{}$ attributors
 audited, while the ground truth ranks \mutShiftGtBest{} best at
 $\mutShiftGtBestVal{}$ (median paired gap $\mutShiftGapOccspearman{}$ AUROC,
-Wilcoxon $p\mutShiftPOccspearman{}$). The faithfulness--truth rank correlation
+Wilcoxon $p\mutShiftPOccspearman{}$, Benjamini--Hochberg
+$q\mutShiftQOccspearman{}$ over the $\nSelectionTests{}$ selection tests). The faithfulness--truth rank correlation
 is $+\mutIndRhoOccspearman{}$ in distribution and
 $\mutShiftRhoOccspearman{}$ under shift; on a synthetic set with \emph{exact}
 node labels the same inversion appears with a smaller penalty. Faithfulness

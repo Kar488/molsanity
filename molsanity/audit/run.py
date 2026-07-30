@@ -40,6 +40,11 @@ class MoleculeAuditRecord:
     occ_top1_agreement: float = float("nan")
     fidelity_plus: float = float("nan")
     fidelity_minus: float = float("nan")
+    fidelity_ratio: float = float("nan")
+    # Same statistic under a manifold-respecting counterfactual (a removed node
+    # takes the training-set mean feature vector instead of zeros). The gap
+    # between the two bounds how much of the score is an off-manifold artefact.
+    occ_spearman_imputed: float = float("nan")
     sparsity: float = float("nan")
     characterization: float = float("nan")
     unfaithfulness: float = float("nan")
@@ -52,7 +57,8 @@ class MoleculeAuditRecord:
 
 def audit_molecule(model, data, attribution, dataset_name: str,
                    temperature: float = 1.0, tau: float = 0.8,
-                   decomp=None, task: str = "graph-classification") -> MoleculeAuditRecord:
+                   decomp=None, task: str = "graph-classification",
+                   occ_baseline=None) -> MoleculeAuditRecord:
     """Audit one molecule. ``decomp`` (an RDKit motif decomposition) may be
     passed in to avoid recomputing it — it depends only on the molecule.
 
@@ -103,11 +109,18 @@ def audit_molecule(model, data, attribution, dataset_name: str,
     rec.salient_cc_frac = coh["salient_cc_frac"]
     rec.motif_top1_share = coh["motif_top1_share"]
 
-    occ = occlusion_faithfulness(model, data, node_attr, decomp, target=int(target), task=task)
+    occ = occlusion_faithfulness(model, data, node_attr, decomp,
+                                 target=int(target), task=task)
+    if occ_baseline is not None:
+        alt = occlusion_faithfulness(model, data, node_attr, decomp,
+                                     target=int(target), task=task,
+                                     baseline=occ_baseline)
+        rec.occ_spearman_imputed = alt["spearman"]
     rec.occ_spearman = occ["spearman"]
     rec.occ_top1_agreement = occ["top1_agreement"]
     rec.fidelity_plus = occ["fidelity_plus"]
     rec.fidelity_minus = occ["fidelity_minus"]
+    rec.fidelity_ratio = occ.get("fidelity_ratio", float("nan"))
     rec.sparsity = occ["sparsity"]
     rec.characterization = occ.get("characterization", float("nan"))
     rec.unfaithfulness = float(attribution.meta.get("unfaithfulness", float("nan")))
@@ -133,7 +146,8 @@ def aggregate_records(records: list[MoleculeAuditRecord], seed: int = 0) -> dict
     metrics = [
         "gt_auroc", "gt_auprc", "atom_gini", "top20_mass", "salient_cc_frac",
         "motif_top1_share", "occ_spearman", "occ_top1_agreement",
-        "fidelity_plus", "fidelity_minus", "sparsity", "characterization",
+        "fidelity_plus", "fidelity_minus", "fidelity_ratio",
+        "occ_spearman_imputed", "sparsity", "characterization",
         "unfaithfulness", "stability", "confidence",
     ]
     agg = {m: summarise(col(m), name=m, seed=seed) for m in metrics}

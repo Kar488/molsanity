@@ -131,8 +131,14 @@ def test_tdc_loader_featurises_compatibly(monkeypatch):
 
 
 def test_synth_motifs_exact_ground_truth():
+    from molsanity.data.manifest import MANIFEST
+
     ld = data.load_dataset("SynthMotifs")
-    assert len(ld) == 200
+    # Read the size from the manifest rather than pinning a literal: the
+    # generator's size is a config choice (it was raised so the test fold is
+    # not the binding constraint on n), while what must hold is that the
+    # generated set matches the spec.
+    assert len(ld) == MANIFEST["SynthMotifs"].extras["num_graphs"]
     g = ld.dataset[0]
     gt = data.ground_truth_mask("SynthMotifs", g)
     assert gt is not None

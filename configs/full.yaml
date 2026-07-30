@@ -1,19 +1,33 @@
 # Full config — overnight matrix (definition of done). Broadest reproducible
 # sweep: exact + quasi ground truth, real classification & regression, and the
 # chemistry-meets-medicine tier, across backbones and attributors, on scaffold
-# (shift) + random (in-distribution) splits. Cells whose data is unreachable in
-# this environment (ShapeGGen/GraphXAI, TDC-native, BA-2Motifs download) are
-# attempted and gracefully skipped+logged. Assumes a GPU or a long CPU budget.
+# (shift) + random (in-distribution) splits. Cells whose dependencies are
+# unavailable (SubgraphX needs DIG, ShapeGGen needs a GraphXAI source checkout,
+# DILI/hERG need PyTDC) are attempted and gracefully skipped+logged rather than
+# aborting the run. Assumes a GPU or a long CPU budget.
 seed: 0
+# Repeat the whole matrix under several seeds so split and initialisation
+# variance is measured, not assumed away. Each seed multiplies the run time, so
+# drop to [0] for a quick pass. SEED_VARIANCE.md reports the across-seed spread
+# per cell; read it against the effect sizes in RESULTS.md.
+seeds: [0, 1, 2]
 budget:
   epochs: 150
   ig_steps: 50
   pg_epochs: 30
-  max_eval_molecules: 100
+  max_eval_molecules: 200
+  # SubgraphX runs a Monte-Carlo tree search per molecule and is the most
+  # expensive attributor here by a wide margin; these keep it tractable.
+  sgx_max_nodes: 8
+  sgx_rollouts: 20
 
 split:
   kind: scaffold
-  frac_train: 0.8
+  # 0.8/0.1/0.1 left only ~20 test molecules on MUTAG and SynthMotifs, which is
+  # what made the ground-truth arms underpowered. The audit needs a large
+  # EVALUATION set far more than it needs the last 20% of training data, so the
+  # test fold is widened. This changes the trained models, hence every number.
+  frac_train: 0.6
   frac_val: 0.1
 
 model:
@@ -41,6 +55,7 @@ cells:
   - {dataset: SynthMotifs, backbone: GINE,        attributor: GuidedBackprop}
   - {dataset: SynthMotifs, backbone: GINE,        attributor: GNNExplainer}
   - {dataset: SynthMotifs, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: SubgraphX}
   - {dataset: SynthMotifs, backbone: GCN,         attributor: IntegratedGradients}
   - {dataset: SynthMotifs, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: SynthMotifs, backbone: MPNN,        attributor: IntegratedGradients}
@@ -52,10 +67,19 @@ cells:
   - {dataset: MUTAG, backbone: GINE,        attributor: GuidedBackprop}
   - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
   - {dataset: MUTAG, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: MUTAG, backbone: GINE,        attributor: SubgraphX}
   - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # --- Tier-1 exact GT (ShapeGGen, via k-hop enclosing subgraphs) ---
+  - {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: InputXGradient}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: PGExplainer}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: SubgraphX}
   # --- Tier-2 classification (BBBP, BACE) ---
   - {dataset: BBBP, backbone: GINE,        attributor: IntegratedGradients}
   - {dataset: BBBP, backbone: GCN,         attributor: IntegratedGradients}
@@ -79,8 +103,16 @@ cells:
   - {dataset: SIDER,   backbone: GINE, attributor: IntegratedGradients}
   - {dataset: SIDER,   backbone: GCN,  attributor: IntegratedGradients}
   - {dataset: Tox21,   backbone: GINE, attributor: IntegratedGradients}
-  # --- Attempted; skipped+logged where unreachable in this environment ---
+  # --- Tier-1 exact GT (BA-2Motifs) ---
+  # Now carries exact node ground truth (recovered from its node ordering and
+  # structurally verified), so it earns the full attributor sweep the other
+  # exact-GT arms get.
   - {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
-  - {dataset: ShapeGGen,  backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: Saliency}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: InputXGradient}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: PGExplainer}
+  # --- Tier-3 ADMET via PyTDC; skipped+logged if PyTDC is unavailable ---
   - {dataset: DILI,       backbone: GINE, attributor: IntegratedGradients}
   - {dataset: hERG,       backbone: GINE, attributor: IntegratedGradients}

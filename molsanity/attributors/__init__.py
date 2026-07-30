@@ -4,6 +4,7 @@ from .captum_methods import CaptumAttributor
 from .gnn_explainer import GNNExplainerAttributor
 from .integrated_gradients import IntegratedGradientsAttributor
 from .pg_explainer import PGExplainerAttributor
+from .subgraphx import SubgraphXAttributor, SubgraphXUnavailable
 
 # Gradient-family methods share the Captum adapter (parameterised by name).
 _CAPTUM_METHODS = {"IntegratedGradients", "Saliency", "InputXGradient",
@@ -29,16 +30,26 @@ def build_attributor(name, model, **kwargs):
             epochs=kwargs.pop("pg_epochs", 30),
             seed=kwargs.pop("seed", 0),
         )
-    raise KeyError(
-        f"Unknown attributor '{name}'. Known: {ATTRIBUTORS}. "
-        "SubgraphX is blocked-tolerant (needs DIG; see TASKS.md)."
-    )
+    if name == "SubgraphX":
+        # Raises SubgraphXUnavailable at first use if DIG's compiled
+        # dependencies are missing; run_all catches it and skips the cell.
+        task = kwargs.pop("task", "graph-classification")
+        kwargs.pop("ig_steps", None)
+        return SubgraphXAttributor(
+            model, task=task,
+            max_nodes=kwargs.pop("sgx_max_nodes", 8),
+            rollouts=kwargs.pop("sgx_rollouts", 20),
+            seed=kwargs.pop("seed", 0),
+        )
+    raise KeyError(f"Unknown attributor '{name}'. Known: {ATTRIBUTORS}.")
 
 
-ATTRIBUTORS = sorted(_CAPTUM_METHODS | {"GNNExplainer", "PGExplainer"})
+ATTRIBUTORS = sorted(_CAPTUM_METHODS | {"GNNExplainer", "PGExplainer",
+                                        "SubgraphX"})
 
 __all__ = [
     "Attribution", "minmax_normalise", "CaptumAttributor",
     "IntegratedGradientsAttributor", "GNNExplainerAttributor",
-    "PGExplainerAttributor", "build_attributor", "ATTRIBUTORS",
+    "PGExplainerAttributor", "SubgraphXAttributor", "SubgraphXUnavailable",
+    "build_attributor", "ATTRIBUTORS",
 ]

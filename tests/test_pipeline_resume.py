@@ -36,8 +36,11 @@ def test_results_md_roundtrip_and_dedup(tmp_path):
     update_results_md([row], path=path)
     rows = _parse_existing_rows(path)
     assert len(rows) == 1
-    key = ("MUTAG", "GINE", "IntegratedGradients", "scaffold")
-    assert key in rows
+    # The key includes the seed, so ask the module for it rather than pinning a
+    # literal; a multi-seed run must not collapse three results into one row.
+    from molsanity.reporting import _row_key
+
+    assert _row_key(row) in rows
 
     # Writing the same key again replaces in place (no duplicate row).
     update_results_md([row], path=path)

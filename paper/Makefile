@@ -12,7 +12,7 @@
 PY ?= python3
 XELATEX ?= xelatex
 
-.PHONY: all figures tables pdf clean
+.PHONY: all figures tables pdf fontcheck clean
 
 all: pdf
 
@@ -25,6 +25,11 @@ tables:
 pdf: figures tables
 	$(XELATEX) -interaction=nonstopmode main.tex
 	$(XELATEX) -interaction=nonstopmode main.tex
+	$(PY) figs/check_fonts.py main.pdf
+
+# arXiv rejects Type 3 and non-embedded fonts; run this before uploading.
+fontcheck:
+	$(PY) figs/check_fonts.py main.pdf
 
 clean:
 	rm -f main.aux main.log main.out main.toc main.pdf

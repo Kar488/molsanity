@@ -10,19 +10,20 @@ import re
 from pathlib import Path
 
 RESULTS_HEADER = [
-    "dataset", "backbone", "attributor", "split", "n_mol", "acc", "auc",
+    "dataset", "backbone", "attributor", "split", "seed", "n_mol", "acc", "auc",
     "gt_auroc", "gt_auprc", "motif_top1", "occ_spearman", "occ_top1",
     "fid+", "fid-", "sparsity", "ece",
 ]
 
 # Regression table (no class accuracy / GT / ECE; adds RMSE/MAE/R2).
 REGRESSION_HEADER = [
-    "dataset", "backbone", "attributor", "split", "n_mol", "rmse", "mae", "r2",
+    "dataset", "backbone", "attributor", "split", "seed", "n_mol", "rmse",
+    "mae", "r2",
     "motif_top1", "occ_spearman", "occ_top1", "fid+", "fid-", "sparsity",
 ]
 
 
-_INT_COLS = {"n_mol"}
+_INT_COLS = {"n_mol", "seed"}
 
 
 def _fmt(v, col: str | None = None):
@@ -49,6 +50,7 @@ def results_row(cell: dict, agg: dict, train_res: dict, split_kind: str) -> dict
         "backbone": cell["backbone"],
         "attributor": cell["attributor"],
         "split": split_kind,
+        "seed": None,          # set by the caller, which knows the run's seed
         "n_mol": agg.get("n_molecules"),
         "acc": agg.get("accuracy"),
         "auc": train_res.get("test_auc"),
@@ -68,7 +70,18 @@ def results_row(cell: dict, agg: dict, train_res: dict, split_kind: str) -> dict
 
 
 def _row_key(row: dict) -> tuple:
-    return (row["dataset"], row["backbone"], row["attributor"], row["split"])
+    """Identity of a results row.
+
+    The seed is part of the key. Without it a multi-seed run would write three
+    rows to the same slot and keep only the last, silently discarding two
+    thirds of the matrix while looking complete.
+    """
+    seed = row.get("seed")
+    try:
+        seed = int(float(seed))
+    except (TypeError, ValueError):
+        seed = -1
+    return (row["dataset"], row["backbone"], row["attributor"], row["split"], seed)
 
 
 def _table(rows: list[dict], header: list[str]) -> list[str]:

@@ -139,6 +139,12 @@ def apply_style():
         "text.color": INK,
         "figure.facecolor": "white",
         "axes.facecolor": "white",
+        # Vector text, fully embedded. matplotlib's PDF default is Type 3,
+        # which embeds no font programme and is rejected by arXiv; 42 emits a
+        # subsetted TrueType instead. svg.fonttype "none" keeps SVG text
+        # editable, which is a separate axis from the PDF font programme.
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "svg.fonttype": "none",
     })
 

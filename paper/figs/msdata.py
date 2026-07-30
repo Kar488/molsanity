@@ -128,12 +128,60 @@ def load_results() -> tuple[tuple[dict, ...], tuple[dict, ...]]:
     cur = current_cells()
     out = []
     for pack in (cls, reg):
-        recs = _to_recs(*pack)
+        recs = _collapse_seeds(_to_recs(*pack))
         for r in recs:
             r["regime"] = regime_of(r["dataset"])
             r["provenance"] = "current" if cell_key(r) in cur else "carried"
         out.append(tuple(recs))
     return out[0], out[1]
+
+
+_NON_NUMERIC = {"dataset", "backbone", "attributor", "split", "task", "seed",
+                "regime", "provenance"}
+
+
+def _collapse_seeds(recs: list[dict]) -> list[dict]:
+    """One row per cell, averaged over seeds, with the spread kept alongside.
+
+    A multi-seed run writes one RESULTS.md row per (cell, seed). Every table and
+    figure in the manuscript is one row per cell, so without this a three-seed
+    run would silently triplicate every row. Each numeric field collapses to its
+    across-seed mean and the standard deviation is kept as ``<field>_sd``, so a
+    caption can state how much of a reported difference is seed noise.
+
+    Single-seed runs pass through unchanged apart from gaining ``n_seeds`` = 1.
+    """
+    import math
+    import statistics as st
+
+    if not recs or not any(r.get("seed") is not None for r in recs):
+        for r in recs:
+            r["n_seeds"] = 1
+        return recs
+
+    groups: dict[tuple, list[dict]] = {}
+    for r in recs:
+        groups.setdefault(cell_key(r), []).append(r)
+
+    collapsed = []
+    for _key, group in groups.items():
+        base = dict(group[0])
+        seeds = sorted({r.get("seed") for r in group if r.get("seed") is not None})
+        base["n_seeds"] = max(1, len(seeds))
+        base["seeds"] = seeds
+        base.pop("seed", None)
+        if len(group) > 1:
+            fields = set().union(*(r.keys() for r in group)) - _NON_NUMERIC
+            for field in fields:
+                vals = [r.get(field) for r in group]
+                vals = [float(v) for v in vals
+                        if isinstance(v, (int, float)) and not math.isnan(float(v))]
+                if not vals:
+                    continue
+                base[field] = st.mean(vals)
+                base[f"{field}_sd"] = st.stdev(vals) if len(vals) > 1 else 0.0
+        collapsed.append(base)
+    return collapsed
 
 
 @lru_cache(maxsize=1)
@@ -230,6 +278,39 @@ def paired_wilcoxon(a, b):
     except Exception:
         p = float("nan")
     return {"n": len(a), "median_delta": med, "p": p}
+
+
+def benjamini_hochberg(pvalues) -> list[float]:
+    """Benjamini-Hochberg adjusted p-values (q-values) for a family of tests.
+
+    Every paired test in this paper belongs to a family: the attributor-vs-
+    attributor contrasts within a cell, and the selection tests across cells.
+    Reporting raw p-values across dozens of such tests inflates the false
+    discovery rate, which is why the tables previously carried a note saying
+    they should be read as descriptive. Controlling the FDR at the family level
+    lets the surviving contrasts be read as findings instead.
+
+    Returns adjusted values in the input order. NaN inputs stay NaN and are
+    excluded from the family size, since a test that could not be computed is
+    not a test that was performed.
+    """
+    import math
+
+    idx = [i for i, p in enumerate(pvalues)
+           if p is not None and not (isinstance(p, float) and math.isnan(p))]
+    m = len(idx)
+    out = [float("nan")] * len(pvalues)
+    if m == 0:
+        return out
+    order = sorted(idx, key=lambda i: pvalues[i])
+    # Step up from the largest p, enforcing monotonicity.
+    prev = 1.0
+    for rank in range(m, 0, -1):
+        i = order[rank - 1]
+        q = min(prev, float(pvalues[i]) * m / rank)
+        out[i] = q
+        prev = q
+    return out
 
 
 def by_graph(records) -> dict:

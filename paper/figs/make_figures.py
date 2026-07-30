@@ -182,7 +182,7 @@ def fig_dissociation(out: Path):
             ax.set_xlim(0, 1.85)
             ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
             nmol = max(v["n_mol"] for v in pa.values())
-            ax.set_title(f"{ds}·{bb} — {title}, $n$={nmol}", fontsize=7.0, pad=6)
+            ax.set_title(f"{ds}·{bb}: {title}, $n$={nmol}", fontsize=7.0, pad=6)
             if row == len(ARMS) - 1:
                 ax.set_xlabel("ground-truth localisation (AUROC)")
             ax.grid(axis="x", lw=0.4, alpha=0.6)
@@ -295,9 +295,9 @@ def fig_heatmaps(out: Path):
     note.text(0.0, 0.58,
               f"Of the {len(datasets)} datasets audited, {len(gt_sets)} carry "
               "node-level labels\nagainst which an attribution can be scored. "
-              f"For the other\n{len(datasets) - len(gt_sets)} — every real "
-              "molecular property dataset in the\nsweep — no such labels are "
-              "published, so only panel a\ncan be computed at all. "
+              f"For the other\n{len(datasets) - len(gt_sets)}, every real "
+              "molecular property dataset in the sweep,\nno such labels are "
+              "published, so only panel a can\nbe computed at all. "
               "Faithfulness is auditable\neverywhere; correctness almost "
               "nowhere.",
               transform=note.transAxes, ha="left", va="top", fontsize=6.6,

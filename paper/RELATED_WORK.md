@@ -24,11 +24,20 @@ Legend: ✓ = core capability · ~ = partial / possible but not central · ✗ =
 
 ## The explicit delta
 
-- **vs MolFaith** (molecular attribution *faithfulness* benchmark): MolSanity
-  keeps faithfulness but adds *correctness under distribution shift*, *stability*,
-  and *calibration linkage* — and stratifies all of them by confidence/correctness
-  regime. Faithfulness answers "does the explanation match the model"; MolSanity
-  also asks "is the model's explanation trustworthy, and where does it fail".
+- **vs MolFaith** (Hiltscher, Bianciotto & Grisoni 2026, ChemRxiv,
+  doi:10.26434/chemrxiv.10001594/v1, platform at github.com/molML/MolFaith):
+  the closest work on the faithfulness axis, and **larger than MolSanity on that
+  axis** — 8 attribution methods x 2 molecular representations x 5 architectures
+  over ~14,000 molecules. We claim no broader faithfulness coverage. Their
+  finding that some methods are inherently more faithful largely independently of
+  architecture *converges* with ours that faithfulness does not shift
+  systematically across splits (median change -0.001 over 43 paired cells). The
+  delta is what that stability does and does not buy: the ordering that fails to
+  survive the split is the **ground-truth** one, so a stable faithfulness ranking
+  is not evidence of a stable correctness ranking. MolSanity adds correctness
+  under shift, cross-checkpoint stability, calibration linkage, and
+  confidence/correctness regime stratification (which locates part of the
+  per-molecule faithfulness variance they report).
 - **vs GraphXAI / GraphFramEx** (general GNN explanation evaluation): MolSanity is
   molecular-motif-native (RDKit) and centres the **scaffold-shift regime**, which
   general-graph frameworks do not target.
@@ -47,6 +56,8 @@ No attributor is universally reliable; a faithfulness-only benchmark would miss
 this regime dependence. MolSanity's ground-truth + shift view surfaces it. See
 `RESULTS.md` / `BENCHMARK.md` for the computed numbers.
 
-> References (to be completed with full citations in the manuscript):
-> GraphXAI (Agarwal et al., 2023); GraphFramEx (Amara et al., 2022);
-> DIG (Liu et al., 2021); MolFaith (molML). MUTAG (Debnath et al., 1991).
+> References: GraphXAI (Agarwal et al., Scientific Data 10:144, 2023);
+> GraphFramEx (Amara et al., LoG 2022); DIG (Liu et al., JMLR 22(240), 2021);
+> MolFaith (Hiltscher, Bianciotto & Grisoni, ChemRxiv 2026,
+> doi:10.26434/chemrxiv.10001594/v1); Sanchez-Lengeling et al. (NeurIPS 2020);
+> MUTAG (Debnath et al., J. Med. Chem. 34(2):786-797, 1991).

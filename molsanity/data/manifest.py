@@ -61,7 +61,7 @@ MANIFEST: dict[str, DatasetSpec] = {
             "Exact node ground truth (injected-motif nodes). Offline BA-2Motifs "
             "equivalent; validates the audit against real GT, not a proxy."
         ),
-        extras={"num_graphs": 200, "num_nodes": 25},
+        extras={"num_graphs": 1000, "num_nodes": 25},  # 1000 matches BA-2Motifs
     ),
     "SynthMotifsXL": DatasetSpec(
         name="SynthMotifsXL",
@@ -81,12 +81,23 @@ MANIFEST: dict[str, DatasetSpec] = {
     "ShapeGGen": DatasetSpec(
         name="ShapeGGen",
         tier=1,
-        task="node-classification",
+        task="graph-classification",
         source="GraphXAI (Agarwal et al. 2023)",
         licence="MIT (GraphXAI)",
         loader="shapeggen",
         has_ground_truth=True,
-        notes="Optional heavy dep; skip+log if GraphXAI unavailable.",
+        # ShapeGGen's generator verifies each candidate graph and gives up
+        # after a few tries; only the smaller settings build reliably, so these
+        # are the largest values observed to succeed rather than the largest we
+        # would like. ~164 nodes yields ~100+ scoreable k-hop subgraphs, which
+        # is already several times the n of the other exact-GT arms.
+        extras={"hops": 2, "num_subgraphs": 20, "subgraph_size": 8,
+                "prob_connection": 0.4, "max_graphs": 400, "seed": 0,
+                "max_tries_verification": 15},
+        notes=("Node classification, adapted to graph classification by taking "
+               "each labelled node's k-hop enclosing subgraph (k = message "
+               "passing depth), which is where its explanation lives. Needs "
+               "GraphXAI from a source checkout; skip+log if unavailable."),
     ),
     # ---- Tier 2: real molecular property prediction -------------------------
     "ESOL": DatasetSpec(

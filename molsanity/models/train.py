@@ -171,7 +171,14 @@ def train_model(
         res = TrainResult(**{k: payload[k] for k in TrainResult.__dataclass_fields__ if k in payload})
         return model, res
 
-    train_loader = DataLoader(_subset(dataset, split.train), batch_size=train_cfg.get("batch_size", 32), shuffle=True)
+    train_subset = _subset(dataset, split.train)
+    batch_size = train_cfg.get("batch_size", 32)
+    # A trailing batch of size 1 makes BatchNorm raise in train mode ("expected
+    # more than 1 value per channel"), which killed whole cells whenever
+    # len(train) % batch_size == 1. Drop that single graph for the epoch instead.
+    drop_last = len(train_subset) % batch_size == 1 and len(train_subset) > batch_size
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True,
+                              drop_last=drop_last)
     val_loader = DataLoader(_subset(dataset, split.val), batch_size=64)
     test_loader = DataLoader(_subset(dataset, split.test), batch_size=64)
 

@@ -23,7 +23,8 @@ from torch_geometric.nn import (
     global_mean_pool,
 )
 
-from .gine import GINE, cast_inputs  # canonical GINE + shared input cast
+from .gine import (GINE, cast_inputs,  # canonical GINE + shared input cast
+                   ensure_edge_attr)
 
 
 def _pool_fn(pool: str):
@@ -39,6 +40,7 @@ class _BaseGNN(nn.Module):
         self.task = task
         self.dropout = dropout
         self.pool = _pool_fn(pool)
+        self.edge_dim = edge_dim
         self.node_encoder = nn.Linear(in_channels, hidden_channels)
         self.edge_encoder = nn.Linear(edge_dim, hidden_channels)
         self.convs = nn.ModuleList()
@@ -60,7 +62,8 @@ class _BaseGNN(nn.Module):
         if node_mask is not None:
             x = x * node_mask
         h = self.node_encoder(x)
-        e = self.edge_encoder(edge_attr) if edge_attr is not None else None
+        e = self.edge_encoder(ensure_edge_attr(x, edge_index, edge_attr,
+                                               self.edge_dim))
         for conv, bn in zip(self.convs, self.bns):
             h = self._conv_forward(conv, h, edge_index, e)
             h = F.relu(bn(h))

@@ -24,9 +24,11 @@ def mutag_nitro_mask(data) -> np.ndarray:
     Detected structurally on the graph (an N with >= 2 O neighbours, plus those
     O atoms), which is robust to bond-order ambiguity in the reconstructed mol.
     """
-    x = data.x.argmax(dim=1).numpy()
+    # .cpu() before .numpy(): on a GPU run the graph has already been moved to
+    # the device by the attribution step, and a bare .numpy() raises.
+    x = data.x.argmax(dim=1).detach().cpu().numpy()
     n = x.shape[0]
-    ei = data.edge_index.numpy()
+    ei = data.edge_index.detach().cpu().numpy()
 
     neighbors: list[list[int]] = [[] for _ in range(n)]
     for k in range(ei.shape[1]):

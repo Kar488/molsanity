@@ -1,0 +1,144 @@
+% MolSanity — standalone two-column preprint.
+% Compile with:  xelatex main.tex  (twice, for refs/headers)
+% Figures and tables are generated from the committed results by
+%   python paper/figs/make_figures.py && python paper/figs/make_tables.py
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\usepackage[letterpaper,margin=0.72in,columnsep=0.28in]{geometry}
+
+% ---------------------------------------------------------------- fonts ---
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{TeX Gyre Pagella}
+% Pagella Math is preferred; Latin Modern Math is the documented fallback.
+\IfFontExistsTF{texgyrepagella-math.otf}
+  {\setmathfont{TeX Gyre Pagella Math}}
+  {\setmathfont{Latin Modern Math}}
+\usepackage{newunicodechar}
+
+% -------------------------------------------------------------- packages --
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{rotating}
+\usepackage[font=small,labelfont=bf,skip=6pt]{caption}
+\usepackage{xcolor}
+\usepackage[verbose=silent]{microtype}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{pifont}
+
+\definecolor{accent}{RGB}{38,78,120}
+\definecolor{linkblue}{RGB}{20,60,110}
+\definecolor{urlblue}{RGB}{0,84,166}
+\definecolor{headtint}{RGB}{24,42,64}
+
+\usepackage[colorlinks=true,
+            linkcolor=linkblue,
+            citecolor=linkblue,
+            urlcolor=urlblue,
+            filecolor=urlblue,
+            breaklinks=true]{hyperref}
+
+% ------------------------------------------------- unicode text fallbacks --
+% Glyphs the text font does not carry, mapped so nothing is silently dropped.
+\newunicodechar{∈}{\ensuremath{\in}}
+\newunicodechar{∉}{\ensuremath{\notin}}
+\newunicodechar{∖}{\ensuremath{\setminus}}
+\newunicodechar{∪}{\ensuremath{\cup}}
+\newunicodechar{∩}{\ensuremath{\cap}}
+\newunicodechar{⊆}{\ensuremath{\subseteq}}
+\newunicodechar{⊂}{\ensuremath{\subset}}
+\newunicodechar{ℝ}{\ensuremath{\mathbb{R}}}
+\newunicodechar{∅}{\ensuremath{\emptyset}}
+\newunicodechar{×}{\ensuremath{\times}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{≥}{\ensuremath{\geq}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{≠}{\ensuremath{\neq}}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{↔}{\ensuremath{\leftrightarrow}}
+\newunicodechar{−}{\ensuremath{-}}
+\newunicodechar{±}{\ensuremath{\pm}}
+\newunicodechar{ρ}{\ensuremath{\rho}}
+\newunicodechar{τ}{\ensuremath{\tau}}
+\newunicodechar{Δ}{\ensuremath{\Delta}}
+\newunicodechar{α}{\ensuremath{\alpha}}
+\newunicodechar{β}{\ensuremath{\beta}}
+\newunicodechar{²}{\ensuremath{^{2}}}
+\newunicodechar{³}{\ensuremath{^{3}}}
+\newunicodechar{₁}{\ensuremath{_{1}}}
+\newunicodechar{₂}{\ensuremath{_{2}}}
+\newunicodechar{·}{\,\textperiodcentered\,}
+\newunicodechar{✓}{\ding{51}}
+\newunicodechar{✗}{\ding{55}}
+\newunicodechar{ }{\,}   % U+2009 thin space
+\newunicodechar{ }{~}     % U+00A0 no-break space
+\newunicodechar{‑}{-}     % U+2011 non-breaking hyphen
+
+% ------------------------------------------------------------- spacing ----
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt}
+\linespread{1.06}
+\setlength{\textfloatsep}{12pt plus 3pt minus 3pt}
+\setlength{\dbltextfloatsep}{14pt plus 3pt minus 3pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+\renewcommand{\arraystretch}{1.3}
+\tolerance=1400
+\emergencystretch=1.6em
+\hbadness=3000
+
+% ------------------------------------------------------------ headings ----
+\setcounter{secnumdepth}{0}
+\newcommand{\secsquare}{%
+  \textcolor{accent}{\rule[0.14em]{0.52em}{0.52em}}\hspace{0.42em}}
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{headtint}}{}{0pt}{\secsquare}
+\titlespacing*{\section}{0pt}{16pt plus 4pt minus 2pt}{5pt plus 1pt}
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{headtint}}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{11pt plus 3pt minus 2pt}{3pt}
+\titleformat{\paragraph}[runin]
+  {\normalfont\bfseries\color{headtint}}{}{0pt}{}[.]
+\titlespacing*{\paragraph}{0pt}{6pt plus 2pt}{0.6em}
+
+% -------------------------------------------------------------- header ----
+\newcommand{\shorttitle}{MolSanity: a reliability audit for molecular GNN attributions}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\textcolor{headtint}{\shorttitle}}
+\fancyhead[R]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{accent!45}\leaders\hrule height \headrulewidth\hfill}}
+
+% ----------------------------------------------------- generated numbers --
+\input{generated/macros}
+
+\begin{document}
+
+% ------------------------------------------------------------ title block -
+\makeatletter
+\twocolumn[
+  \vspace*{6pt}
+  \begin{center}
+    {\LARGE\bfseries\color{headtint} MolSanity: A Reliability Audit for Feature\\[2pt]
+     Attributions on Molecular Graph Neural Networks\par}
+    \vspace{10pt}
+    {\large MolSanity contributors\par}
+    \vspace{4pt}
+    {\normalsize\itshape [author list and affiliations to be completed]\par}
+    \vspace{3pt}
+    {\footnotesize\texttt{https://github.com/Kar488/molsanity}\par}
+    \vspace{14pt}
+    \begin{minipage}{0.86\textwidth}
+      \input{abstract}
+    \end{minipage}
+    \vspace{16pt}
+  \end{center}
+]
+\makeatother
+\thispagestyle{plain}
+
+\input{body}
+
+\end{document}

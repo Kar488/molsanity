@@ -221,19 +221,21 @@ def fig_dissociation(out: Path):
 
 # ---------------------------------------------------------------- figure 3
 def fig_heatmaps(out: Path):
+    """Datasets as rows, attributors as columns: 11x6 reads far better than the
+    transpose at two-column width, and leaves room for legible values."""
     rows = [r for r in ROWS if r["backbone"] == "GINE" and r["split"] == "scaffold"]
     datasets = [d for d in DATASET_ORDER if any(r["dataset"] == d for r in rows)]
     attrs = [a for a in ATTR_ORDER if any(r["attributor"] == a for r in rows)]
-    idx = {(r["attributor"], r["dataset"]): r for r in rows}
+    idx = {(r["dataset"], r["attributor"]): r for r in rows}
 
     def grid(metric):
-        M = np.full((len(attrs), len(datasets)), np.nan)
-        for (a, d), r in idx.items():
+        M = np.full((len(datasets), len(attrs)), np.nan)
+        for (d, a), r in idx.items():
             if a in attrs and d in datasets and r.get(metric) is not None:
-                M[attrs.index(a), datasets.index(d)] = r[metric]
+                M[datasets.index(d), attrs.index(a)] = r[metric]
         return M
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.6))
+    fig, axes = plt.subplots(1, 2, figsize=(7.1, 3.1))
     specs = [("occ_spearman", "occlusion faithfulness (Spearman $\\rho$)", -1.0, 1.0, 0.0),
              ("gt_auroc", "ground-truth localisation (AUROC)", 0.0, 1.0, 0.5)]
     for ax, (metric, title, lo, hi, mid) in zip(axes, specs):
@@ -241,35 +243,37 @@ def fig_heatmaps(out: Path):
         norm = plt.matplotlib.colors.TwoSlopeNorm(vmin=lo, vcenter=mid, vmax=hi)
         ax.set_facecolor("#eceef1")
         im = ax.imshow(M, cmap="RdBu_r", norm=norm, aspect="auto")
-        for i, a in enumerate(attrs):
-            for j, d in enumerate(datasets):
+        for i, d in enumerate(datasets):
+            for j, a in enumerate(attrs):
                 v = M[i, j]
-                r = idx.get((a, d))
+                r = idx.get((d, a))
                 if np.isnan(v):
                     ax.text(j, i, "—" if r is not None else "·", ha="center",
-                            va="center", fontsize=6.5 if r is not None else 7.5,
+                            va="center", fontsize=7 if r is not None else 8,
                             color="#8b93a0")
-                else:
-                    shade = abs(norm(v) - 0.5) * 2
-                    carried = r["provenance"] == "carried"
-                    ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                            fontsize=5.9,
-                            style="italic" if carried else "normal",
-                            color="white" if shade > 0.62 else INK)
-        ax.set_xticks(range(len(datasets)))
-        ax.set_xticklabels(datasets, rotation=42, ha="right", fontsize=6.4)
-        ax.set_yticks(range(len(attrs)))
-        ax.set_yticklabels([SHORT[a] for a in attrs], fontsize=6.6)
-        ax.set_title(title, fontsize=7.4, pad=5)
+                    continue
+                shade = abs(norm(v) - 0.5) * 2
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=6.6,
+                        color="white" if shade > 0.62 else INK)
+                if r["provenance"] == "carried":
+                    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1,
+                                               fill=False, lw=1.1,
+                                               edgecolor="#4b5563", zorder=4))
+        ax.set_xticks(range(len(attrs)))
+        ax.set_xticklabels([SHORT[a] for a in attrs], rotation=38, ha="right",
+                           fontsize=7.2)
+        ax.set_yticks(range(len(datasets)))
+        ax.set_yticklabels(datasets, fontsize=7.2)
+        ax.set_title(title, fontsize=8.0, pad=6)
         ax.tick_params(length=0)
-        for s in ax.spines.values():
-            s.set_visible(False)
-        cb = fig.colorbar(im, ax=ax, fraction=0.033, pad=0.02)
-        cb.ax.tick_params(labelsize=6, length=2)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        cb = fig.colorbar(im, ax=ax, fraction=0.042, pad=0.02)
+        cb.ax.tick_params(labelsize=6.8, length=2)
         cb.outline.set_visible(False)
-    panel_label(axes[0], "a", dx=-0.13, dy=1.16)
-    panel_label(axes[1], "b", dx=-0.13, dy=1.16)
-    fig.subplots_adjust(wspace=0.42)
+    panel_label(axes[0], "a", dx=-0.22, dy=1.12)
+    panel_label(axes[1], "b", dx=-0.22, dy=1.12)
+    fig.subplots_adjust(wspace=0.45)
     save(fig, out)
 
 
@@ -525,6 +529,25 @@ def fig_coverage(out: Path):
     save(fig, out)
 
 
+def copy_pipeline_figures():
+    """Carry the pipeline's own qualitative figures into the manuscript.
+
+    The attribution-overlay grids are rendered by the audit run itself (RDKit
+    skeletal structures for molecules, node-link diagrams for the synthetic
+    graphs, ground-truth motif outlined). They are copied rather than
+    regenerated so the paper shows exactly what the pipeline produced.
+    """
+    import shutil
+    src = D.RES / "figures" / "summary"
+    for name in ("molgrid_MUTAG", "molgrid_SynthMotifs"):
+        p = src / f"{name}.pdf"
+        if p.exists():
+            shutil.copy2(p, HERE / f"fig_{name}.pdf")
+            print(f"  copied {p.name}")
+        else:
+            print(f"  MISSING {p} — the qualitative figure will not build")
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
@@ -534,4 +557,5 @@ if __name__ == "__main__":
     fig_distributions(HERE / "fig_distributions.pdf")
     fig_regime(HERE / "fig_regime.pdf")
     fig_coverage(HERE / "fig_coverage.pdf")
+    copy_pipeline_figures()
     print("done.")

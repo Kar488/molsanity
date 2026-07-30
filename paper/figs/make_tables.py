@@ -612,10 +612,8 @@ def tab_regime():
             pooled.setdefault(r.get("regime", "?"), []).append(r)
     fields = [("occ_spearman", "occlusion $\\rho$"),
               ("gt_auroc", "GT AUROC"),
-              ("stability", "stability"),
-              ("motif_top1_share", "motif top-1"),
-              ("confidence", "confidence")]
-    L = ["\\begin{table*}[t]", "\\centering",
+              ("stability", "stability")]
+    L = ["\\begin{table}[t]", "\\centering",
          "\\caption{\\textbf{Reliability stratified by confidence/correctness "
          "regime}, pooled over the "
          + str(sum(len(v) for v in pooled.values()))
@@ -629,7 +627,6 @@ def tab_regime():
          "\\label{tab:regime}",
          "\\footnotesize",
          "\\renewcommand{\\arraystretch}{1.25}",
-         "\\resizebox{\\textwidth}{!}{%",
          "\\begin{tabular}{l" + "rr" * len(fields) + "}",
          "\\toprule",
          "\\textbf{regime} & "
@@ -646,7 +643,7 @@ def tab_regime():
                     if r.get(f) is not None and not math.isnan(r[f])]
             cells += [n(st.mean(vals)) if vals else "---", str(len(vals))]
         L.append(reg.replace("_", "-") + " & " + " & ".join(cells) + " \\\\")
-    L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
+    L += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
     write("tab_regime.tex", "\n".join(L) + "\n")
 
 
@@ -663,7 +660,7 @@ def tab_molecular():
         if seen >= half:
             cut = i + 1
             break
-    parts = [datasets[:cut], datasets[cut:]]
+    parts = [datasets]   # one reference table; two rotated pages read as a wall
     blocks: dict[str, list] = {}
     for r in rows:
         blocks.setdefault(r["dataset"], []).append(r)
@@ -684,9 +681,10 @@ def tab_molecular():
             "highest occlusion $\\rho$ per dataset (emphasis only).}")
     for pi, part in enumerate(parts):
         sub = [r for r in rows if r["dataset"] in part]
+        suffix = "" if len(parts) == 1 else f", {pi + 1} of {len(parts)}"
         L = ["\\begin{sidewaystable*}[p]", "\\centering",
              "\\captionsetup{width=0.95\\textheight}",
-             "\\caption{" + head + f", {pi + 1} of {len(parts)}" + tail,
+             "\\caption{" + head + suffix + tail,
              "\\label{tab:molecular" + ("" if pi == 0 else chr(97 + pi)) + "}",
              "\\renewcommand{\\arraystretch}{1.3}",
              "\\resizebox{0.95\\textheight}{!}{%",
@@ -714,7 +712,8 @@ def tab_molecular():
                 n(b.get("unfaithfulness")),
             ]) + " \\\\")
         L += ["\\bottomrule", "\\end{tabular}}", "\\end{sidewaystable*}"]
-        write(f"tab_molecular_{pi + 1}.tex", "\n".join(L) + "\n")
+        name = "tab_molecular.tex" if len(parts) == 1 else f"tab_molecular_{pi + 1}.tex"
+        write(name, "\n".join(L) + "\n")
 
 
 # -------------------------------------------------------------- regression

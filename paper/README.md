@@ -71,6 +71,24 @@ only the split changes) possible.
   faithful-but-wrong cells, medians per regime) are derived by
   `make_tables.py`, so prose, tables and figures cannot disagree.
 
+## Releasing the artifacts (checkpoints + DOI)
+
+The trained weights are archived under `results/artifacts/checkpoints/` by the
+notebook's publish step, so a clone already answers "can you share your
+checkpoints?". For a citable, permanent record — what a journal will ask for —
+tag a release and let Zenodo archive it:
+
+1. Sign in at <https://zenodo.org> with GitHub, then flip the switch for
+   `Kar488/molsanity` under *GitHub* in your Zenodo account. One-time.
+2. Tag and publish a GitHub release (e.g. `v1.0.0`). Zenodo archives the
+   tarball automatically and mints a DOI.
+3. Paste that DOI into the *Data and code availability* section of the paper
+   (it currently reads *[DOI to be inserted on deposition]*).
+
+`CITATION.cff` and `.zenodo.json` in the repository root supply the title,
+author, ORCID, licence and keywords, so the deposit is populated correctly
+rather than from the repo description.
+
 ## Requirements
 
 `xelatex` with TeX Gyre Pagella (+ Pagella Math; falls back to Latin Modern

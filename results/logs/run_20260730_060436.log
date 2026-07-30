@@ -1,0 +1,701 @@
+2026-07-30 06:04:39,428 | INFO    | molsanity | === MolSanity run: full.yaml (seed=0) ===
+2026-07-30 06:04:44,404 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__IntegratedGradients__scaffold] running (fba575de0397d1a2)
+2026-07-30 06:04:45,143 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:04:45,159 | INFO    | molsanity | SynthMotifs checksum recorded: 30b91fad87ac
+2026-07-30 06:04:45,165 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:04:45,733 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:04:48,618 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 06:04:53,973 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 19 | test_acc=0.950 test_auc=1.000 T=0.183
+2026-07-30 06:04:53,987 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:05:07,915 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:07,937 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:07,975 | INFO    | molsanity | [cell SynthMotifs__GINE__IntegratedGradients__scaffold] DONE — acc=0.95 gt_auroc=0.9011999999999999 n=20 (capped)
+2026-07-30 06:05:07,990 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__IntegratedGradients__random] running (e26d99535fc29e1f)
+2026-07-30 06:05:08,371 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:08,387 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:09,766 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 06:05:15,275 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 19 | test_acc=1.000 test_auc=1.000 T=0.100
+2026-07-30 06:05:15,287 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:05:28,740 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:28,741 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:28,770 | INFO    | molsanity | [cell SynthMotifs__GINE__IntegratedGradients__random] DONE — acc=1.00 gt_auroc=0.998 n=20 (capped)
+2026-07-30 06:05:28,786 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__Saliency__scaffold] running (d052fcaa872b43af)
+2026-07-30 06:05:29,152 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:29,166 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:29,497 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:05:29,533 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:05:31,025 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__Saliency__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:31,026 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:31,054 | INFO    | molsanity | [cell SynthMotifs__GINE__Saliency__scaffold] DONE — acc=0.95 gt_auroc=0.9752000000000001 n=20 (capped)
+2026-07-30 06:05:31,069 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__Saliency__random] running (8f1b1ca978d02c61)
+2026-07-30 06:05:31,441 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:31,455 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:31,476 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:05:32,965 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__Saliency__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:32,966 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:33,011 | INFO    | molsanity | [cell SynthMotifs__GINE__Saliency__random] DONE — acc=1.00 gt_auroc=0.9992000000000001 n=20 (capped)
+2026-07-30 06:05:33,027 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__InputXGradient__scaffold] running (ebbe13f02b0c44ab)
+2026-07-30 06:05:33,393 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:33,407 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:33,736 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:05:33,757 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:05:35,241 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__InputXGradient__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:35,243 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:35,272 | INFO    | molsanity | [cell SynthMotifs__GINE__InputXGradient__scaffold] DONE — acc=0.95 gt_auroc=0.9683999999999999 n=20 (capped)
+2026-07-30 06:05:35,300 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__InputXGradient__random] running (14f9641c4a228337)
+2026-07-30 06:05:35,673 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:35,688 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:35,710 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:05:37,165 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__InputXGradient__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:37,166 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:37,194 | INFO    | molsanity | [cell SynthMotifs__GINE__InputXGradient__random] DONE — acc=1.00 gt_auroc=0.9916 n=20 (capped)
+2026-07-30 06:05:37,212 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__GuidedBackprop__scaffold] running (92fa24d1e316e843)
+2026-07-30 06:05:37,579 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:37,607 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:37,937 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:05:37,959 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:05:39,468 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__GuidedBackprop__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:39,469 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:39,499 | INFO    | molsanity | [cell SynthMotifs__GINE__GuidedBackprop__scaffold] DONE — acc=0.95 gt_auroc=0.9279999999999999 n=20 (capped)
+2026-07-30 06:05:39,515 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__GuidedBackprop__random] running (e5133dc16faa5e3d)
+2026-07-30 06:05:39,888 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:39,902 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:39,924 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:05:41,732 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__GuidedBackprop__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:05:41,733 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:05:41,766 | INFO    | molsanity | [cell SynthMotifs__GINE__GuidedBackprop__random] DONE — acc=1.00 gt_auroc=1.0 n=20 (capped)
+2026-07-30 06:05:41,782 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__GNNExplainer__scaffold] running (7ba996dd6a4b7e9f)
+2026-07-30 06:05:42,154 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:05:42,172 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:05:42,527 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:05:42,549 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:06:16,172 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__GNNExplainer__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:06:16,173 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:06:16,202 | INFO    | molsanity | [cell SynthMotifs__GINE__GNNExplainer__scaffold] DONE — acc=0.95 gt_auroc=0.6680000000000001 n=20 (capped)
+2026-07-30 06:06:16,216 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__GNNExplainer__random] running (6126ffcb1146f4d5)
+2026-07-30 06:06:16,581 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:06:16,595 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:06:16,616 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:06:50,474 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GINE__GNNExplainer__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:06:50,475 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:06:50,505 | INFO    | molsanity | [cell SynthMotifs__GINE__GNNExplainer__random] DONE — acc=1.00 gt_auroc=0.4744 n=20 (capped)
+2026-07-30 06:06:50,520 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__PGExplainer__scaffold] running (9f7d4583b76a142b)
+2026-07-30 06:06:50,887 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:06:50,901 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:06:51,231 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:06:51,253 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:06:51,340 | ERROR   | molsanity | [cell SynthMotifs__GINE__PGExplainer__scaffold] FAILED — Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm) (traceback -> logs/error_SynthMotifs__GINE__PGExplainer__scaffold_20260730_060436.log)
+2026-07-30 06:06:51,358 | INFO    | molsanity | [stage cell_SynthMotifs__GINE__PGExplainer__random] running (55d160fe911fe15e)
+2026-07-30 06:06:51,740 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:06:51,755 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:06:51,776 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:06:51,819 | ERROR   | molsanity | [cell SynthMotifs__GINE__PGExplainer__random] FAILED — Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm) (traceback -> logs/error_SynthMotifs__GINE__PGExplainer__random_20260730_060436.log)
+2026-07-30 06:06:51,837 | INFO    | molsanity | [stage cell_SynthMotifs__GCN__IntegratedGradients__scaffold] running (fa4e2731684c208c)
+2026-07-30 06:06:52,207 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:06:52,220 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:06:52,550 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:06:54,032 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_d9216bef68cf8971_early.pt
+2026-07-30 06:06:59,775 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 34 | test_acc=0.700 test_auc=1.000 T=1.107
+2026-07-30 06:06:59,785 | INFO    | molsanity | Saved checkpoint gcn_d9216bef68cf8971.pt
+2026-07-30 06:07:16,453 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GCN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:07:16,454 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:07:16,497 | INFO    | molsanity | [cell SynthMotifs__GCN__IntegratedGradients__scaffold] DONE — acc=0.70 gt_auroc=0.9867999999999999 n=20 (capped)
+2026-07-30 06:07:16,512 | INFO    | molsanity | [stage cell_SynthMotifs__GCN__IntegratedGradients__random] running (a1e311ad44f00922)
+2026-07-30 06:07:16,876 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:07:16,890 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:07:18,305 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_604a180f83e0893f_early.pt
+2026-07-30 06:07:24,089 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 27 | test_acc=0.600 test_auc=1.000 T=0.393
+2026-07-30 06:07:24,100 | INFO    | molsanity | Saved checkpoint gcn_604a180f83e0893f.pt
+2026-07-30 06:07:40,780 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GCN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:07:40,782 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:07:40,824 | INFO    | molsanity | [cell SynthMotifs__GCN__IntegratedGradients__random] DONE — acc=0.60 gt_auroc=0.4796 n=20 (capped)
+2026-07-30 06:07:40,841 | INFO    | molsanity | [stage cell_SynthMotifs__GAT__IntegratedGradients__scaffold] running (4ab32a49eed2eec9)
+2026-07-30 06:07:41,210 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:07:41,226 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:07:41,558 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:07:44,092 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_2224546572f492f6_early.pt
+2026-07-30 06:07:53,803 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 13 | test_acc=0.950 test_auc=0.990 T=0.461
+2026-07-30 06:07:53,815 | INFO    | molsanity | Saved checkpoint gat_2224546572f492f6.pt
+2026-07-30 06:08:20,942 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GAT__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:08:20,943 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:08:20,987 | INFO    | molsanity | [cell SynthMotifs__GAT__IntegratedGradients__scaffold] DONE — acc=0.95 gt_auroc=0.5916 n=20 (capped)
+2026-07-30 06:08:21,002 | INFO    | molsanity | [stage cell_SynthMotifs__GAT__IntegratedGradients__random] running (a7f55c09b1626a4e)
+2026-07-30 06:08:21,391 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:08:21,406 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:08:23,860 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_d5ce67978fe34ff0_early.pt
+2026-07-30 06:08:33,856 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 26 | test_acc=1.000 test_auc=1.000 T=0.399
+2026-07-30 06:08:33,869 | INFO    | molsanity | Saved checkpoint gat_d5ce67978fe34ff0.pt
+2026-07-30 06:09:01,212 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__GAT__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:09:01,213 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:09:01,253 | INFO    | molsanity | [cell SynthMotifs__GAT__IntegratedGradients__random] DONE — acc=1.00 gt_auroc=0.8739999999999999 n=20 (capped)
+2026-07-30 06:09:01,269 | INFO    | molsanity | [stage cell_SynthMotifs__MPNN__IntegratedGradients__scaffold] running (e7603a1451efb5b1)
+2026-07-30 06:09:01,637 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:09:01,652 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:09:01,982 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:09:03,566 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> mpnn_b28164e08cc2ab85_early.pt
+2026-07-30 06:09:09,824 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 33 | test_acc=0.650 test_auc=0.980 T=1.335
+2026-07-30 06:09:09,848 | INFO    | molsanity | Saved checkpoint mpnn_b28164e08cc2ab85.pt
+2026-07-30 06:09:25,741 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__MPNN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:09:25,742 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:09:25,781 | INFO    | molsanity | [cell SynthMotifs__MPNN__IntegratedGradients__scaffold] DONE — acc=0.65 gt_auroc=0.7116 n=20 (capped)
+2026-07-30 06:09:25,797 | INFO    | molsanity | [stage cell_SynthMotifs__MPNN__IntegratedGradients__random] running (d165f5b1272d72b6)
+2026-07-30 06:09:26,165 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:09:26,180 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:09:27,763 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> mpnn_5fb3b98dab354a6c_early.pt
+2026-07-30 06:09:34,074 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 43 | test_acc=1.000 test_auc=1.000 T=0.714
+2026-07-30 06:09:34,094 | INFO    | molsanity | Saved checkpoint mpnn_5fb3b98dab354a6c.pt
+2026-07-30 06:09:50,033 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__MPNN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:09:50,034 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:09:50,078 | INFO    | molsanity | [cell SynthMotifs__MPNN__IntegratedGradients__random] DONE — acc=1.00 gt_auroc=0.8388 n=20 (capped)
+2026-07-30 06:09:50,093 | INFO    | molsanity | [stage cell_SynthMotifs__AttentiveFP__IntegratedGradients__scaffold] running (065284d0592ebfc5)
+2026-07-30 06:09:50,463 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:09:50,477 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:09:50,809 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 06:09:53,897 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> attentivefp_edbf3eb9f79c130a_early.pt
+2026-07-30 06:10:06,044 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 79 | test_acc=0.850 test_auc=0.970 T=0.365
+2026-07-30 06:10:06,060 | INFO    | molsanity | Saved checkpoint attentivefp_edbf3eb9f79c130a.pt
+2026-07-30 06:10:40,597 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__AttentiveFP__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:10:40,598 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:10:40,642 | INFO    | molsanity | [cell SynthMotifs__AttentiveFP__IntegratedGradients__scaffold] DONE — acc=0.85 gt_auroc=0.8856000000000002 n=20 (capped)
+2026-07-30 06:10:40,661 | INFO    | molsanity | [stage cell_SynthMotifs__AttentiveFP__IntegratedGradients__random] running (85d9fc9af12620c6)
+2026-07-30 06:10:41,039 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 06:10:41,055 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 06:10:44,058 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> attentivefp_82744bcba3c1d6f0_early.pt
+2026-07-30 06:10:56,096 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 124 | test_acc=1.000 test_auc=1.000 T=0.951
+2026-07-30 06:10:56,110 | INFO    | molsanity | Saved checkpoint attentivefp_82744bcba3c1d6f0.pt
+2026-07-30 06:11:30,477 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SynthMotifs__AttentiveFP__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:11:30,478 | INFO    | molsanity | Skipping molecule SVG (no aligned mol for case_molecule.svg)
+2026-07-30 06:11:30,508 | INFO    | molsanity | [cell SynthMotifs__AttentiveFP__IntegratedGradients__random] DONE — acc=1.00 gt_auroc=0.7156 n=20 (capped)
+2026-07-30 06:11:30,522 | INFO    | molsanity | [stage cell_MUTAG__GINE__IntegratedGradients__scaffold] running (2f8f102a194c4ba1)
+2026-07-30 06:11:30,574 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:30,866 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:32,220 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 06:11:37,599 | INFO    | molsanity | Training done: best val_acc=0.889 @epoch 121 | test_acc=0.750 test_auc=0.912 T=2.819
+2026-07-30 06:11:37,613 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:11:38,091 | ERROR   | molsanity | [cell MUTAG__GINE__IntegratedGradients__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 06:11:38,123 | INFO    | molsanity | [stage cell_MUTAG__GINE__IntegratedGradients__random] running (f70a6756ec930eef)
+2026-07-30 06:11:38,166 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:39,513 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 06:11:44,892 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 5 | test_acc=0.550 test_auc=0.823 T=10.000
+2026-07-30 06:11:44,904 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:11:45,338 | ERROR   | molsanity | [cell MUTAG__GINE__IntegratedGradients__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__IntegratedGradients__random_20260730_060436.log)
+2026-07-30 06:11:45,354 | INFO    | molsanity | [stage cell_MUTAG__GINE__Saliency__scaffold] running (1219d43dd74952fa)
+2026-07-30 06:11:45,395 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:45,675 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:45,695 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:11:45,749 | ERROR   | molsanity | [cell MUTAG__GINE__Saliency__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__Saliency__scaffold_20260730_060436.log)
+2026-07-30 06:11:45,779 | INFO    | molsanity | [stage cell_MUTAG__GINE__Saliency__random] running (fd574b34687d413c)
+2026-07-30 06:11:45,821 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:45,845 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:11:45,899 | ERROR   | molsanity | [cell MUTAG__GINE__Saliency__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__Saliency__random_20260730_060436.log)
+2026-07-30 06:11:45,915 | INFO    | molsanity | [stage cell_MUTAG__GINE__InputXGradient__scaffold] running (1000094c6670922c)
+2026-07-30 06:11:45,960 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:46,241 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:46,265 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:11:46,319 | ERROR   | molsanity | [cell MUTAG__GINE__InputXGradient__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__InputXGradient__scaffold_20260730_060436.log)
+2026-07-30 06:11:46,336 | INFO    | molsanity | [stage cell_MUTAG__GINE__InputXGradient__random] running (7b05f06f4bc7618c)
+2026-07-30 06:11:46,395 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:46,419 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:11:46,474 | ERROR   | molsanity | [cell MUTAG__GINE__InputXGradient__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__InputXGradient__random_20260730_060436.log)
+2026-07-30 06:11:46,491 | INFO    | molsanity | [stage cell_MUTAG__GINE__GuidedBackprop__scaffold] running (f0c27476289e8641)
+2026-07-30 06:11:46,535 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:46,815 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:46,837 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:11:46,892 | ERROR   | molsanity | [cell MUTAG__GINE__GuidedBackprop__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__GuidedBackprop__scaffold_20260730_060436.log)
+2026-07-30 06:11:46,909 | INFO    | molsanity | [stage cell_MUTAG__GINE__GuidedBackprop__random] running (6aefd37feb66badc)
+2026-07-30 06:11:46,951 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:46,974 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:11:47,044 | ERROR   | molsanity | [cell MUTAG__GINE__GuidedBackprop__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__GuidedBackprop__random_20260730_060436.log)
+2026-07-30 06:11:47,061 | INFO    | molsanity | [stage cell_MUTAG__GINE__GNNExplainer__scaffold] running (f64156fd045b5f38)
+2026-07-30 06:11:47,104 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:47,395 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:47,416 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:11:48,499 | ERROR   | molsanity | [cell MUTAG__GINE__GNNExplainer__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__GNNExplainer__scaffold_20260730_060436.log)
+2026-07-30 06:11:48,516 | INFO    | molsanity | [stage cell_MUTAG__GINE__GNNExplainer__random] running (f3a5f25f941381a1)
+2026-07-30 06:11:48,559 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:48,582 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:11:49,663 | ERROR   | molsanity | [cell MUTAG__GINE__GNNExplainer__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GINE__GNNExplainer__random_20260730_060436.log)
+2026-07-30 06:11:49,693 | INFO    | molsanity | [stage cell_MUTAG__GINE__PGExplainer__scaffold] running (0cae73e24d06ee63)
+2026-07-30 06:11:49,734 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:50,012 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:50,032 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:11:50,062 | ERROR   | molsanity | [cell MUTAG__GINE__PGExplainer__scaffold] FAILED — Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm) (traceback -> logs/error_MUTAG__GINE__PGExplainer__scaffold_20260730_060436.log)
+2026-07-30 06:11:50,079 | INFO    | molsanity | [stage cell_MUTAG__GINE__PGExplainer__random] running (514ec998fb07d481)
+2026-07-30 06:11:50,122 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:50,146 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:11:50,174 | ERROR   | molsanity | [cell MUTAG__GINE__PGExplainer__random] FAILED — Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm) (traceback -> logs/error_MUTAG__GINE__PGExplainer__random_20260730_060436.log)
+2026-07-30 06:11:50,191 | INFO    | molsanity | [stage cell_MUTAG__GCN__IntegratedGradients__scaffold] running (595ceb6d48b66afa)
+2026-07-30 06:11:50,232 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:50,508 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:11:51,886 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_d9216bef68cf8971_early.pt
+2026-07-30 06:11:57,556 | INFO    | molsanity | Training done: best val_acc=0.889 @epoch 2 | test_acc=0.350 test_auc=0.791 T=10.000
+2026-07-30 06:11:57,566 | INFO    | molsanity | Saved checkpoint gcn_d9216bef68cf8971.pt
+2026-07-30 06:11:58,127 | ERROR   | molsanity | [cell MUTAG__GCN__IntegratedGradients__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GCN__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 06:11:58,143 | INFO    | molsanity | [stage cell_MUTAG__GCN__IntegratedGradients__random] running (d36d270e44466607)
+2026-07-30 06:11:58,185 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:11:59,551 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_604a180f83e0893f_early.pt
+2026-07-30 06:12:05,132 | INFO    | molsanity | Training done: best val_acc=0.875 @epoch 63 | test_acc=0.650 test_auc=0.604 T=0.651
+2026-07-30 06:12:05,142 | INFO    | molsanity | Saved checkpoint gcn_604a180f83e0893f.pt
+2026-07-30 06:12:05,709 | ERROR   | molsanity | [cell MUTAG__GCN__IntegratedGradients__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GCN__IntegratedGradients__random_20260730_060436.log)
+2026-07-30 06:12:05,739 | INFO    | molsanity | [stage cell_MUTAG__GAT__IntegratedGradients__scaffold] running (e581b4cd2b42da4b)
+2026-07-30 06:12:05,786 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:12:06,070 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:12:08,462 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_2224546572f492f6_early.pt
+2026-07-30 06:12:18,095 | INFO    | molsanity | Training done: best val_acc=0.889 @epoch 89 | test_acc=0.750 test_auc=0.868 T=1.609
+2026-07-30 06:12:18,109 | INFO    | molsanity | Saved checkpoint gat_2224546572f492f6.pt
+2026-07-30 06:12:19,406 | ERROR   | molsanity | [cell MUTAG__GAT__IntegratedGradients__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GAT__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 06:12:19,425 | INFO    | molsanity | [stage cell_MUTAG__GAT__IntegratedGradients__random] running (a00671ec747387cd)
+2026-07-30 06:12:19,473 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:12:21,937 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_d5ce67978fe34ff0_early.pt
+2026-07-30 06:12:31,715 | INFO    | molsanity | Training done: best val_acc=0.906 @epoch 113 | test_acc=0.550 test_auc=0.583 T=0.530
+2026-07-30 06:12:31,728 | INFO    | molsanity | Saved checkpoint gat_d5ce67978fe34ff0.pt
+2026-07-30 06:12:32,678 | ERROR   | molsanity | [cell MUTAG__GAT__IntegratedGradients__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__GAT__IntegratedGradients__random_20260730_060436.log)
+2026-07-30 06:12:32,696 | INFO    | molsanity | [stage cell_MUTAG__MPNN__IntegratedGradients__scaffold] running (20f5622d6b99a027)
+2026-07-30 06:12:32,742 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:12:33,033 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:12:34,577 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> mpnn_b28164e08cc2ab85_early.pt
+2026-07-30 06:12:40,601 | INFO    | molsanity | Training done: best val_acc=0.944 @epoch 47 | test_acc=0.750 test_auc=0.879 T=1.798
+2026-07-30 06:12:40,624 | INFO    | molsanity | Saved checkpoint mpnn_b28164e08cc2ab85.pt
+2026-07-30 06:12:41,132 | ERROR   | molsanity | [cell MUTAG__MPNN__IntegratedGradients__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__MPNN__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 06:12:41,161 | INFO    | molsanity | [stage cell_MUTAG__MPNN__IntegratedGradients__random] running (d06a084afa663d8c)
+2026-07-30 06:12:41,203 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:12:42,740 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> mpnn_5fb3b98dab354a6c_early.pt
+2026-07-30 06:12:48,844 | INFO    | molsanity | Training done: best val_acc=0.969 @epoch 109 | test_acc=0.750 test_auc=0.677 T=0.582
+2026-07-30 06:12:48,864 | INFO    | molsanity | Saved checkpoint mpnn_5fb3b98dab354a6c.pt
+2026-07-30 06:12:49,369 | ERROR   | molsanity | [cell MUTAG__MPNN__IntegratedGradients__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__MPNN__IntegratedGradients__random_20260730_060436.log)
+2026-07-30 06:12:49,386 | INFO    | molsanity | [stage cell_MUTAG__AttentiveFP__IntegratedGradients__scaffold] running (8eaa9e083770f17b)
+2026-07-30 06:12:49,428 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:12:49,719 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 06:12:52,726 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> attentivefp_edbf3eb9f79c130a_early.pt
+2026-07-30 06:13:04,846 | INFO    | molsanity | Training done: best val_acc=0.722 @epoch 76 | test_acc=0.800 test_auc=0.912 T=4.561
+2026-07-30 06:13:04,867 | INFO    | molsanity | Saved checkpoint attentivefp_edbf3eb9f79c130a.pt
+2026-07-30 06:13:06,051 | ERROR   | molsanity | [cell MUTAG__AttentiveFP__IntegratedGradients__scaffold] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__AttentiveFP__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 06:13:06,068 | INFO    | molsanity | [stage cell_MUTAG__AttentiveFP__IntegratedGradients__random] running (a2f9418a8676359f)
+2026-07-30 06:13:06,110 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 06:13:09,138 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> attentivefp_82744bcba3c1d6f0_early.pt
+2026-07-30 06:13:21,031 | INFO    | molsanity | Training done: best val_acc=0.844 @epoch 1 | test_acc=0.600 test_auc=0.958 T=0.100
+2026-07-30 06:13:21,045 | INFO    | molsanity | Saved checkpoint attentivefp_82744bcba3c1d6f0.pt
+2026-07-30 06:13:22,271 | ERROR   | molsanity | [cell MUTAG__AttentiveFP__IntegratedGradients__random] FAILED — can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first. (traceback -> logs/error_MUTAG__AttentiveFP__IntegratedGradients__random_20260730_060436.log)
+2026-07-30 06:13:22,288 | INFO    | molsanity | [stage cell_BBBP__GINE__IntegratedGradients__scaffold] running (b0eeac2093ebaa45)
+2026-07-30 06:13:25,496 | INFO    | molsanity | BBBP checksum recorded: 37d8fa85e636
+2026-07-30 06:13:25,503 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:13:28,984 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:13:28,985 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:13:28,986 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:13:40,467 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 06:14:25,099 | INFO    | molsanity | Training done: best val_acc=0.975 @epoch 53 | test_acc=0.942 test_auc=0.932 T=0.388
+2026-07-30 06:14:25,112 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:15:31,000 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:15:31,010 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:15:31,048 | INFO    | molsanity | [cell BBBP__GINE__IntegratedGradients__scaffold] DONE — acc=0.95 gt_auroc=nan n=100 (capped)
+2026-07-30 06:15:31,063 | INFO    | molsanity | [stage cell_BBBP__GINE__IntegratedGradients__random] running (1ea83cc1bc1c7ab8)
+2026-07-30 06:15:31,415 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:15:42,514 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 06:16:26,472 | INFO    | molsanity | Training done: best val_acc=0.887 @epoch 127 | test_acc=0.859 test_auc=0.886 T=1.592
+2026-07-30 06:16:26,495 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:17:31,731 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:17:31,740 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:17:31,778 | INFO    | molsanity | [cell BBBP__GINE__IntegratedGradients__random] DONE — acc=0.82 gt_auroc=nan n=100 (capped)
+2026-07-30 06:17:31,793 | INFO    | molsanity | [stage cell_BBBP__GCN__IntegratedGradients__scaffold] running (a27b541a0f37046f)
+2026-07-30 06:17:32,410 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:17:35,919 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:17:35,920 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:17:35,921 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:17:47,269 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_d9216bef68cf8971_early.pt
+2026-07-30 06:18:32,312 | INFO    | molsanity | Training done: best val_acc=0.980 @epoch 29 | test_acc=0.981 test_auc=0.966 T=0.104
+2026-07-30 06:18:32,324 | INFO    | molsanity | Saved checkpoint gcn_d9216bef68cf8971.pt
+2026-07-30 06:19:54,422 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GCN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:19:54,432 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GCN__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:19:54,472 | INFO    | molsanity | [cell BBBP__GCN__IntegratedGradients__scaffold] DONE — acc=0.98 gt_auroc=nan n=100 (capped)
+2026-07-30 06:19:54,488 | INFO    | molsanity | [stage cell_BBBP__GCN__IntegratedGradients__random] running (f437ea82ff469f68)
+2026-07-30 06:19:54,860 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:20:06,332 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_604a180f83e0893f_early.pt
+2026-07-30 06:20:51,569 | INFO    | molsanity | Training done: best val_acc=0.879 @epoch 142 | test_acc=0.849 test_auc=0.873 T=1.181
+2026-07-30 06:20:51,582 | INFO    | molsanity | Saved checkpoint gcn_604a180f83e0893f.pt
+2026-07-30 06:22:13,685 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GCN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:22:13,694 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GCN__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:22:13,746 | INFO    | molsanity | [cell BBBP__GCN__IntegratedGradients__random] DONE — acc=0.79 gt_auroc=nan n=100 (capped)
+2026-07-30 06:22:13,761 | INFO    | molsanity | [stage cell_BBBP__GAT__IntegratedGradients__scaffold] running (67bbc70838bcc886)
+2026-07-30 06:22:14,121 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:22:17,628 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:22:17,629 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:22:17,629 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:22:37,634 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_2224546572f492f6_early.pt
+2026-07-30 06:23:56,414 | INFO    | molsanity | Training done: best val_acc=0.995 @epoch 61 | test_acc=0.990 test_auc=0.805 T=0.308
+2026-07-30 06:23:56,427 | INFO    | molsanity | Saved checkpoint gat_2224546572f492f6.pt
+2026-07-30 06:26:10,123 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GAT__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:26:10,133 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GAT__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:26:10,182 | INFO    | molsanity | [cell BBBP__GAT__IntegratedGradients__scaffold] DONE — acc=0.98 gt_auroc=nan n=100 (capped)
+2026-07-30 06:26:10,201 | INFO    | molsanity | [stage cell_BBBP__GAT__IntegratedGradients__random] running (4145aea00ae4fb9a)
+2026-07-30 06:26:10,561 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:26:30,321 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_d5ce67978fe34ff0_early.pt
+2026-07-30 06:27:49,880 | INFO    | molsanity | Training done: best val_acc=0.881 @epoch 125 | test_acc=0.829 test_auc=0.885 T=1.534
+2026-07-30 06:27:49,893 | INFO    | molsanity | Saved checkpoint gat_d5ce67978fe34ff0.pt
+2026-07-30 06:30:04,844 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GAT__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:30:04,852 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GAT__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:30:04,889 | INFO    | molsanity | [cell BBBP__GAT__IntegratedGradients__random] DONE — acc=0.78 gt_auroc=nan n=100 (capped)
+2026-07-30 06:30:04,904 | INFO    | molsanity | [stage cell_BBBP__MPNN__IntegratedGradients__scaffold] running (2f3da4d860bae420)
+2026-07-30 06:30:05,261 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:30:08,724 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:30:08,725 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:30:08,726 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:30:21,113 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> mpnn_b28164e08cc2ab85_early.pt
+2026-07-30 06:31:09,963 | INFO    | molsanity | Training done: best val_acc=0.980 @epoch 135 | test_acc=0.922 test_auc=0.922 T=0.692
+2026-07-30 06:31:09,983 | INFO    | molsanity | Saved checkpoint mpnn_b28164e08cc2ab85.pt
+2026-07-30 06:32:26,723 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__MPNN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:32:26,733 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__MPNN__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:32:26,769 | INFO    | molsanity | [cell BBBP__MPNN__IntegratedGradients__scaffold] DONE — acc=0.95 gt_auroc=nan n=100 (capped)
+2026-07-30 06:32:26,784 | INFO    | molsanity | [stage cell_BBBP__MPNN__IntegratedGradients__random] running (452725639926ae74)
+2026-07-30 06:32:27,140 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:32:39,535 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> mpnn_5fb3b98dab354a6c_early.pt
+2026-07-30 06:33:28,845 | INFO    | molsanity | Training done: best val_acc=0.878 @epoch 121 | test_acc=0.902 test_auc=0.914 T=1.500
+2026-07-30 06:33:28,866 | INFO    | molsanity | Saved checkpoint mpnn_5fb3b98dab354a6c.pt
+2026-07-30 06:34:45,258 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__MPNN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:34:45,267 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__MPNN__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:34:45,306 | INFO    | molsanity | [cell BBBP__MPNN__IntegratedGradients__random] DONE — acc=0.84 gt_auroc=nan n=100 (capped)
+2026-07-30 06:34:45,335 | INFO    | molsanity | [stage cell_BBBP__AttentiveFP__IntegratedGradients__scaffold] running (b574bda81b5d3cac)
+2026-07-30 06:34:45,691 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:34:49,168 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:34:49,169 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:34:49,169 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:35:13,586 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> attentivefp_edbf3eb9f79c130a_early.pt
+2026-07-30 06:36:50,129 | INFO    | molsanity | Training done: best val_acc=0.995 @epoch 140 | test_acc=0.947 test_auc=0.961 T=0.503
+2026-07-30 06:36:50,143 | INFO    | molsanity | Saved checkpoint attentivefp_edbf3eb9f79c130a.pt
+2026-07-30 06:39:39,527 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__AttentiveFP__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:39:39,538 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__AttentiveFP__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:39:39,576 | INFO    | molsanity | [cell BBBP__AttentiveFP__IntegratedGradients__scaffold] DONE — acc=0.95 gt_auroc=nan n=100 (capped)
+2026-07-30 06:39:39,602 | INFO    | molsanity | [stage cell_BBBP__AttentiveFP__IntegratedGradients__random] running (8f628afcf34e14c8)
+2026-07-30 06:39:40,235 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:40:04,635 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> attentivefp_82744bcba3c1d6f0_early.pt
+2026-07-30 06:41:42,051 | INFO    | molsanity | Training done: best val_acc=0.860 @epoch 124 | test_acc=0.868 test_auc=0.855 T=1.357
+2026-07-30 06:41:42,065 | INFO    | molsanity | Saved checkpoint attentivefp_82744bcba3c1d6f0.pt
+2026-07-30 06:44:33,369 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__AttentiveFP__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:44:33,378 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__AttentiveFP__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:44:33,420 | INFO    | molsanity | [cell BBBP__AttentiveFP__IntegratedGradients__random] DONE — acc=0.77 gt_auroc=nan n=100 (capped)
+2026-07-30 06:44:33,435 | INFO    | molsanity | [stage cell_BBBP__GINE__GNNExplainer__scaffold] running (0a462f4adde82dcd)
+2026-07-30 06:44:33,792 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:44:37,272 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:44:37,273 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:44:37,273 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:44:37,294 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:47:24,908 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GINE__GNNExplainer__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:47:24,918 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GINE__GNNExplainer__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:47:24,967 | INFO    | molsanity | [cell BBBP__GINE__GNNExplainer__scaffold] DONE — acc=0.95 gt_auroc=nan n=100 (capped)
+2026-07-30 06:47:24,984 | INFO    | molsanity | [stage cell_BBBP__GINE__GNNExplainer__random] running (74ed8eb9069ffaba)
+2026-07-30 06:47:25,343 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:47:25,407 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:50:13,024 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BBBP__GINE__GNNExplainer__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:50:13,032 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BBBP__GINE__GNNExplainer__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:50:13,079 | INFO    | molsanity | [cell BBBP__GINE__GNNExplainer__random] DONE — acc=0.82 gt_auroc=nan n=100 (capped)
+2026-07-30 06:50:13,094 | INFO    | molsanity | [stage cell_BBBP__GINE__PGExplainer__scaffold] running (aa1c5b790766559a)
+2026-07-30 06:50:13,451 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:50:16,925 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 06:50:16,925 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 06:50:16,926 | INFO    | molsanity | Scaffold split: 2038 scaffolds -> train 1629 / val 204 / test 206
+2026-07-30 06:50:16,946 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:50:16,996 | ERROR   | molsanity | [cell BBBP__GINE__PGExplainer__scaffold] FAILED — Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm) (traceback -> logs/error_BBBP__GINE__PGExplainer__scaffold_20260730_060436.log)
+2026-07-30 06:50:17,020 | INFO    | molsanity | [stage cell_BBBP__GINE__PGExplainer__random] running (33549ece1a79d082)
+2026-07-30 06:50:17,372 | INFO    | molsanity | Loaded BBBP: 2039 graphs, checksum 37d8fa85e636
+2026-07-30 06:50:17,435 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:50:17,755 | ERROR   | molsanity | [cell BBBP__GINE__PGExplainer__random] FAILED — Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm) (traceback -> logs/error_BBBP__GINE__PGExplainer__random_20260730_060436.log)
+2026-07-30 06:50:17,784 | INFO    | molsanity | [stage cell_BACE__GINE__IntegratedGradients__scaffold] running (f60c1a7b16d3bbc1)
+2026-07-30 06:50:21,654 | INFO    | molsanity | BACE checksum recorded: a4e30c60ce22
+2026-07-30 06:50:21,660 | INFO    | molsanity | Loaded BACE: 1513 graphs, checksum a4e30c60ce22
+2026-07-30 06:50:24,899 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 1) from train to val for coverage
+2026-07-30 06:50:24,900 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 1) from train to test for coverage
+2026-07-30 06:50:24,900 | INFO    | molsanity | Scaffold split: 1513 scaffolds -> train 1208 / val 152 / test 153
+2026-07-30 06:50:33,549 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 06:51:06,988 | INFO    | molsanity | Training done: best val_acc=1.000 @epoch 29 | test_acc=0.346 test_auc=0.651 T=7.480
+2026-07-30 06:51:07,003 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 06:52:12,745 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BACE__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:52:12,758 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BACE__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:52:12,800 | INFO    | molsanity | [cell BACE__GINE__IntegratedGradients__scaffold] DONE — acc=0.34 gt_auroc=nan n=100 (capped)
+2026-07-30 06:52:12,819 | INFO    | molsanity | [stage cell_BACE__GINE__IntegratedGradients__random] running (d69eb96b7076beee)
+2026-07-30 06:52:13,116 | INFO    | molsanity | Loaded BACE: 1513 graphs, checksum a4e30c60ce22
+2026-07-30 06:52:21,417 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 06:52:54,441 | INFO    | molsanity | Training done: best val_acc=0.857 @epoch 146 | test_acc=0.789 test_auc=0.846 T=1.022
+2026-07-30 06:52:54,456 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 06:53:59,819 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BACE__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:53:59,830 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BACE__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:53:59,867 | INFO    | molsanity | [cell BACE__GINE__IntegratedGradients__random] DONE — acc=0.73 gt_auroc=nan n=100 (capped)
+2026-07-30 06:53:59,896 | INFO    | molsanity | [stage cell_BACE__GCN__IntegratedGradients__scaffold] running (1a6add1327f96869)
+2026-07-30 06:54:00,176 | INFO    | molsanity | Loaded BACE: 1513 graphs, checksum a4e30c60ce22
+2026-07-30 06:54:03,426 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 1) from train to val for coverage
+2026-07-30 06:54:03,427 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 1) from train to test for coverage
+2026-07-30 06:54:03,428 | INFO    | molsanity | Scaffold split: 1513 scaffolds -> train 1208 / val 152 / test 153
+2026-07-30 06:54:11,955 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_d9216bef68cf8971_early.pt
+2026-07-30 06:54:45,715 | INFO    | molsanity | Training done: best val_acc=0.980 @epoch 63 | test_acc=0.830 test_auc=0.507 T=0.433
+2026-07-30 06:54:45,726 | INFO    | molsanity | Saved checkpoint gcn_d9216bef68cf8971.pt
+2026-07-30 06:56:07,226 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BACE__GCN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:56:07,237 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BACE__GCN__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:56:07,287 | INFO    | molsanity | [cell BACE__GCN__IntegratedGradients__scaffold] DONE — acc=0.85 gt_auroc=nan n=100 (capped)
+2026-07-30 06:56:07,303 | INFO    | molsanity | [stage cell_BACE__GCN__IntegratedGradients__random] running (527bd7755c8f4cba)
+2026-07-30 06:56:07,591 | INFO    | molsanity | Loaded BACE: 1513 graphs, checksum a4e30c60ce22
+2026-07-30 06:56:16,123 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_604a180f83e0893f_early.pt
+2026-07-30 06:56:49,849 | INFO    | molsanity | Training done: best val_acc=0.821 @epoch 132 | test_acc=0.743 test_auc=0.839 T=0.890
+2026-07-30 06:56:49,860 | INFO    | molsanity | Saved checkpoint gcn_604a180f83e0893f.pt
+2026-07-30 06:58:11,535 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/BACE__GCN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 06:58:11,557 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/BACE__GCN__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 06:58:11,593 | INFO    | molsanity | [cell BACE__GCN__IntegratedGradients__random] DONE — acc=0.64 gt_auroc=nan n=100 (capped)
+2026-07-30 06:58:11,608 | INFO    | molsanity | [stage cell_ESOL__GINE__IntegratedGradients__scaffold] running (4a8ff2a98a292177)
+2026-07-30 06:58:13,404 | INFO    | molsanity | ESOL checksum recorded: 158f23403345
+2026-07-30 06:58:13,411 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 06:58:14,643 | INFO    | molsanity | Scaffold split: 1112 scaffolds -> train 902 / val 112 / test 114
+2026-07-30 06:58:20,876 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_27781b40d90e5ab7_early.pt
+2026-07-30 06:58:45,198 | INFO    | molsanity | Training done (regression): best val_rmse=0.848 @epoch 119 | test_rmse=0.929 test_r2=0.778
+2026-07-30 06:58:45,213 | INFO    | molsanity | Saved checkpoint gine_27781b40d90e5ab7.pt
+2026-07-30 06:59:47,898 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 06:59:47,907 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 06:59:47,953 | INFO    | molsanity | [cell ESOL__GINE__IntegratedGradients__scaffold] DONE — rmse=0.929 r2=0.778 n=100 (capped)
+2026-07-30 06:59:47,968 | INFO    | molsanity | [stage cell_ESOL__GINE__IntegratedGradients__random] running (812236433e7064b8)
+2026-07-30 06:59:48,167 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 06:59:54,346 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_996e9d20884147d8_early.pt
+2026-07-30 07:00:18,601 | INFO    | molsanity | Training done (regression): best val_rmse=0.850 @epoch 137 | test_rmse=0.788 test_r2=0.869
+2026-07-30 07:00:18,616 | INFO    | molsanity | Saved checkpoint gine_996e9d20884147d8.pt
+2026-07-30 07:01:21,185 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:01:21,194 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:01:21,240 | INFO    | molsanity | [cell ESOL__GINE__IntegratedGradients__random] DONE — rmse=0.788 r2=0.869 n=100 (capped)
+2026-07-30 07:01:21,256 | INFO    | molsanity | [stage cell_ESOL__GCN__IntegratedGradients__scaffold] running (85475148f6c05b3e)
+2026-07-30 07:01:21,455 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 07:01:22,660 | INFO    | molsanity | Scaffold split: 1112 scaffolds -> train 902 / val 112 / test 114
+2026-07-30 07:01:29,068 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_400023f0b0b0ba2e_early.pt
+2026-07-30 07:01:54,319 | INFO    | molsanity | Training done (regression): best val_rmse=0.903 @epoch 143 | test_rmse=1.017 test_r2=0.734
+2026-07-30 07:01:54,332 | INFO    | molsanity | Saved checkpoint gcn_400023f0b0b0ba2e.pt
+2026-07-30 07:03:12,968 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GCN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:03:12,976 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GCN__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:03:13,012 | INFO    | molsanity | [cell ESOL__GCN__IntegratedGradients__scaffold] DONE — rmse=1.017 r2=0.734 n=100 (capped)
+2026-07-30 07:03:13,028 | INFO    | molsanity | [stage cell_ESOL__GCN__IntegratedGradients__random] running (5a7c74e2a5a38b11)
+2026-07-30 07:03:13,227 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 07:03:19,621 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_fc07e9630fca9be7_early.pt
+2026-07-30 07:03:44,835 | INFO    | molsanity | Training done (regression): best val_rmse=0.840 @epoch 103 | test_rmse=0.951 test_r2=0.809
+2026-07-30 07:03:44,854 | INFO    | molsanity | Saved checkpoint gcn_fc07e9630fca9be7.pt
+2026-07-30 07:05:03,199 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GCN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:05:03,207 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GCN__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:05:03,242 | INFO    | molsanity | [cell ESOL__GCN__IntegratedGradients__random] DONE — rmse=0.951 r2=0.809 n=100 (capped)
+2026-07-30 07:05:03,258 | INFO    | molsanity | [stage cell_ESOL__GAT__IntegratedGradients__scaffold] running (1805b29889960c8c)
+2026-07-30 07:05:03,462 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 07:05:04,651 | INFO    | molsanity | Scaffold split: 1112 scaffolds -> train 902 / val 112 / test 114
+2026-07-30 07:05:15,745 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_0ca230937198a30c_early.pt
+2026-07-30 07:05:59,457 | INFO    | molsanity | Training done (regression): best val_rmse=0.844 @epoch 129 | test_rmse=0.793 test_r2=0.838
+2026-07-30 07:05:59,470 | INFO    | molsanity | Saved checkpoint gat_0ca230937198a30c.pt
+2026-07-30 07:08:07,775 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GAT__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:08:07,785 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GAT__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:08:07,824 | INFO    | molsanity | [cell ESOL__GAT__IntegratedGradients__scaffold] DONE — rmse=0.793 r2=0.838 n=100 (capped)
+2026-07-30 07:08:07,857 | INFO    | molsanity | [stage cell_ESOL__GAT__IntegratedGradients__random] running (9178e2a6894c3db8)
+2026-07-30 07:08:08,337 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 07:08:19,363 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gat_7412c308ec264910_early.pt
+2026-07-30 07:09:02,960 | INFO    | molsanity | Training done (regression): best val_rmse=0.719 @epoch 147 | test_rmse=0.730 test_r2=0.888
+2026-07-30 07:09:02,972 | INFO    | molsanity | Saved checkpoint gat_7412c308ec264910.pt
+2026-07-30 07:11:12,188 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GAT__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:11:12,196 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GAT__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:11:12,243 | INFO    | molsanity | [cell ESOL__GAT__IntegratedGradients__random] DONE — rmse=0.730 r2=0.888 n=100 (capped)
+2026-07-30 07:11:12,261 | INFO    | molsanity | [stage cell_ESOL__GINE__GNNExplainer__scaffold] running (cb25478a2a2584e6)
+2026-07-30 07:11:12,461 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 07:11:13,681 | INFO    | molsanity | Scaffold split: 1112 scaffolds -> train 902 / val 112 / test 114
+2026-07-30 07:11:13,702 | INFO    | molsanity | Loaded existing checkpoint gine_27781b40d90e5ab7.pt
+2026-07-30 07:13:58,969 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GINE__GNNExplainer__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:13:58,978 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GINE__GNNExplainer__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:13:59,028 | INFO    | molsanity | [cell ESOL__GINE__GNNExplainer__scaffold] DONE — rmse=0.929 r2=0.778 n=100 (capped)
+2026-07-30 07:13:59,043 | INFO    | molsanity | [stage cell_ESOL__GINE__GNNExplainer__random] running (6ef99a2596d10e9b)
+2026-07-30 07:13:59,252 | INFO    | molsanity | Loaded ESOL: 1128 graphs, checksum 158f23403345
+2026-07-30 07:13:59,272 | INFO    | molsanity | Loaded existing checkpoint gine_996e9d20884147d8.pt
+2026-07-30 07:16:48,289 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ESOL__GINE__GNNExplainer__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:16:48,298 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ESOL__GINE__GNNExplainer__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:16:48,347 | INFO    | molsanity | [cell ESOL__GINE__GNNExplainer__random] DONE — rmse=0.788 r2=0.869 n=100 (capped)
+2026-07-30 07:16:48,362 | INFO    | molsanity | [stage cell_FreeSolv__GINE__IntegratedGradients__scaffold] running (b47e6a0e409a49b0)
+2026-07-30 07:16:49,534 | INFO    | molsanity | FreeSolv checksum recorded: d1510bda958c
+2026-07-30 07:16:49,541 | INFO    | molsanity | Loaded FreeSolv: 642 graphs, checksum d1510bda958c
+2026-07-30 07:16:50,053 | INFO    | molsanity | Scaffold split: 631 scaffolds -> train 513 / val 64 / test 65
+2026-07-30 07:16:53,842 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_27781b40d90e5ab7_early.pt
+2026-07-30 07:17:05,007 | ERROR   | molsanity | [cell FreeSolv__GINE__IntegratedGradients__scaffold] FAILED — Expected more than 1 value per channel when training, got input size torch.Size([1, 64]) (traceback -> logs/error_FreeSolv__GINE__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 07:17:05,029 | INFO    | molsanity | [stage cell_FreeSolv__GINE__IntegratedGradients__random] running (50c07b93379b19f7)
+2026-07-30 07:17:05,148 | INFO    | molsanity | Loaded FreeSolv: 642 graphs, checksum d1510bda958c
+2026-07-30 07:17:08,936 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_996e9d20884147d8_early.pt
+2026-07-30 07:17:24,154 | INFO    | molsanity | Training done (regression): best val_rmse=1.806 @epoch 128 | test_rmse=1.486 test_r2=0.803
+2026-07-30 07:17:24,172 | INFO    | molsanity | Saved checkpoint gine_996e9d20884147d8.pt
+2026-07-30 07:18:05,556 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/FreeSolv__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:18:05,564 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/FreeSolv__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:18:05,608 | INFO    | molsanity | [cell FreeSolv__GINE__IntegratedGradients__random] DONE — rmse=1.486 r2=0.803 n=65 (capped)
+2026-07-30 07:18:05,624 | INFO    | molsanity | [stage cell_Lipophilicity__GINE__IntegratedGradients__scaffold] running (c62011a2780def91)
+2026-07-30 07:18:12,300 | INFO    | molsanity | Lipophilicity checksum recorded: a202851cc78a
+2026-07-30 07:18:12,306 | INFO    | molsanity | Loaded Lipophilicity: 4200 graphs, checksum a202851cc78a
+2026-07-30 07:18:20,616 | INFO    | molsanity | Scaffold split: 4194 scaffolds -> train 3360 / val 420 / test 420
+2026-07-30 07:18:44,835 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_27781b40d90e5ab7_early.pt
+2026-07-30 07:20:19,679 | INFO    | molsanity | Training done (regression): best val_rmse=0.747 @epoch 140 | test_rmse=0.749 test_r2=0.614
+2026-07-30 07:20:19,693 | INFO    | molsanity | Saved checkpoint gine_27781b40d90e5ab7.pt
+2026-07-30 07:21:25,483 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/Lipophilicity__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:21:25,495 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/Lipophilicity__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:21:25,553 | INFO    | molsanity | [cell Lipophilicity__GINE__IntegratedGradients__scaffold] DONE — rmse=0.749 r2=0.614 n=100 (capped)
+2026-07-30 07:21:25,573 | INFO    | molsanity | [stage cell_Lipophilicity__GINE__IntegratedGradients__random] running (474c70b8e9a6048c)
+2026-07-30 07:21:26,302 | INFO    | molsanity | Loaded Lipophilicity: 4200 graphs, checksum a202851cc78a
+2026-07-30 07:21:49,516 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_996e9d20884147d8_early.pt
+2026-07-30 07:23:21,223 | INFO    | molsanity | Training done (regression): best val_rmse=0.825 @epoch 135 | test_rmse=0.737 test_r2=0.617
+2026-07-30 07:23:21,237 | INFO    | molsanity | Saved checkpoint gine_996e9d20884147d8.pt
+2026-07-30 07:24:27,097 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/Lipophilicity__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:24:27,110 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/Lipophilicity__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:24:27,182 | INFO    | molsanity | [cell Lipophilicity__GINE__IntegratedGradients__random] DONE — rmse=0.737 r2=0.617 n=100 (capped)
+2026-07-30 07:24:27,201 | INFO    | molsanity | [stage cell_ClinTox__GINE__IntegratedGradients__scaffold] running (4ad535a0d05af255)
+2026-07-30 07:24:29,635 | INFO    | molsanity | ClinTox: reduced to single task #1 (CT_TOX), 1480 labelled molecules
+2026-07-30 07:24:29,699 | INFO    | molsanity | ClinTox checksum recorded: 1eda8813cda8
+2026-07-30 07:24:29,705 | INFO    | molsanity | Loaded ClinTox: 1480 graphs, checksum 1eda8813cda8
+2026-07-30 07:24:32,317 | INFO    | molsanity | Scaffold split: 1480 scaffolds -> train 1184 / val 148 / test 148
+2026-07-30 07:24:40,616 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 07:25:13,325 | INFO    | molsanity | Training done: best val_acc=0.981 @epoch 140 | test_acc=0.770 test_auc=0.845 T=1.039
+2026-07-30 07:25:13,341 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 07:26:19,389 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ClinTox__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:26:19,400 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ClinTox__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:26:19,457 | INFO    | molsanity | [cell ClinTox__GINE__IntegratedGradients__scaffold] DONE — acc=0.80 gt_auroc=nan n=100 (capped)
+2026-07-30 07:26:19,474 | INFO    | molsanity | [stage cell_ClinTox__GINE__IntegratedGradients__random] running (7d18c4b428535ae7)
+2026-07-30 07:26:19,800 | INFO    | molsanity | ClinTox: reduced to single task #1 (CT_TOX), 1480 labelled molecules
+2026-07-30 07:26:19,866 | INFO    | molsanity | Loaded ClinTox: 1480 graphs, checksum 1eda8813cda8
+2026-07-30 07:26:28,189 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 07:27:01,264 | INFO    | molsanity | Training done: best val_acc=0.937 @epoch 131 | test_acc=0.655 test_auc=0.910 T=1.854
+2026-07-30 07:27:01,278 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 07:28:07,368 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ClinTox__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:28:07,378 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ClinTox__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:28:07,436 | INFO    | molsanity | [cell ClinTox__GINE__IntegratedGradients__random] DONE — acc=0.71 gt_auroc=nan n=100 (capped)
+2026-07-30 07:28:07,452 | INFO    | molsanity | [stage cell_ClinTox__GINE__GNNExplainer__scaffold] running (78a2b53981cf6416)
+2026-07-30 07:28:07,776 | INFO    | molsanity | ClinTox: reduced to single task #1 (CT_TOX), 1480 labelled molecules
+2026-07-30 07:28:07,841 | INFO    | molsanity | Loaded ClinTox: 1480 graphs, checksum 1eda8813cda8
+2026-07-30 07:28:10,453 | INFO    | molsanity | Scaffold split: 1480 scaffolds -> train 1184 / val 148 / test 148
+2026-07-30 07:28:10,475 | INFO    | molsanity | Loaded existing checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 07:30:59,676 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ClinTox__GINE__GNNExplainer__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:30:59,688 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ClinTox__GINE__GNNExplainer__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:30:59,740 | INFO    | molsanity | [cell ClinTox__GINE__GNNExplainer__scaffold] DONE — acc=0.80 gt_auroc=nan n=100 (capped)
+2026-07-30 07:30:59,756 | INFO    | molsanity | [stage cell_ClinTox__GINE__GNNExplainer__random] running (6d45e73d67979899)
+2026-07-30 07:31:00,362 | INFO    | molsanity | ClinTox: reduced to single task #1 (CT_TOX), 1480 labelled molecules
+2026-07-30 07:31:00,427 | INFO    | molsanity | Loaded ClinTox: 1480 graphs, checksum 1eda8813cda8
+2026-07-30 07:31:00,459 | INFO    | molsanity | Loaded existing checkpoint gine_81524887c7adee3c.pt
+2026-07-30 07:33:49,280 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/ClinTox__GINE__GNNExplainer__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:33:49,288 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/ClinTox__GINE__GNNExplainer__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:33:49,341 | INFO    | molsanity | [cell ClinTox__GINE__GNNExplainer__random] DONE — acc=0.71 gt_auroc=nan n=100 (capped)
+2026-07-30 07:33:49,356 | INFO    | molsanity | [stage cell_SIDER__GINE__IntegratedGradients__scaffold] running (f0e135a5cbe9ed65)
+2026-07-30 07:33:52,119 | INFO    | molsanity | SIDER: reduced to single task #0 (Hepatobiliary disorders), 1427 labelled molecules
+2026-07-30 07:33:52,186 | INFO    | molsanity | SIDER checksum recorded: 42bf0d88fb5e
+2026-07-30 07:33:52,206 | INFO    | molsanity | Loaded SIDER: 1427 graphs, checksum 42bf0d88fb5e
+2026-07-30 07:33:55,350 | INFO    | molsanity | Scaffold split: 1427 scaffolds -> train 1141 / val 142 / test 144
+2026-07-30 07:34:03,465 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 07:34:35,793 | INFO    | molsanity | Training done: best val_acc=0.675 @epoch 9 | test_acc=0.549 test_auc=0.650 T=1.669
+2026-07-30 07:34:35,808 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 07:35:40,918 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SIDER__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:35:40,928 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/SIDER__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:35:40,979 | INFO    | molsanity | [cell SIDER__GINE__IntegratedGradients__scaffold] DONE — acc=0.57 gt_auroc=nan n=100 (capped)
+2026-07-30 07:35:40,994 | INFO    | molsanity | [stage cell_SIDER__GINE__IntegratedGradients__random] running (911e5bb2b7143ae2)
+2026-07-30 07:35:41,313 | INFO    | molsanity | SIDER: reduced to single task #0 (Hepatobiliary disorders), 1427 labelled molecules
+2026-07-30 07:35:41,380 | INFO    | molsanity | Loaded SIDER: 1427 graphs, checksum 42bf0d88fb5e
+2026-07-30 07:35:49,602 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 07:36:22,485 | INFO    | molsanity | Training done: best val_acc=0.694 @epoch 115 | test_acc=0.660 test_auc=0.682 T=1.527
+2026-07-30 07:36:22,501 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 07:37:28,986 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SIDER__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:37:28,995 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/SIDER__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:37:29,049 | INFO    | molsanity | [cell SIDER__GINE__IntegratedGradients__random] DONE — acc=0.71 gt_auroc=nan n=100 (capped)
+2026-07-30 07:37:29,065 | INFO    | molsanity | [stage cell_SIDER__GCN__IntegratedGradients__scaffold] running (b99aeda40fa02fa9)
+2026-07-30 07:37:29,382 | INFO    | molsanity | SIDER: reduced to single task #0 (Hepatobiliary disorders), 1427 labelled molecules
+2026-07-30 07:37:29,449 | INFO    | molsanity | Loaded SIDER: 1427 graphs, checksum 42bf0d88fb5e
+2026-07-30 07:37:32,560 | INFO    | molsanity | Scaffold split: 1427 scaffolds -> train 1141 / val 142 / test 144
+2026-07-30 07:37:40,937 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_d9216bef68cf8971_early.pt
+2026-07-30 07:38:14,734 | INFO    | molsanity | Training done: best val_acc=0.679 @epoch 74 | test_acc=0.618 test_auc=0.663 T=1.052
+2026-07-30 07:38:14,746 | INFO    | molsanity | Saved checkpoint gcn_d9216bef68cf8971.pt
+2026-07-30 07:39:37,473 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SIDER__GCN__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:39:37,483 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/SIDER__GCN__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:39:37,526 | INFO    | molsanity | [cell SIDER__GCN__IntegratedGradients__scaffold] DONE — acc=0.65 gt_auroc=nan n=100 (capped)
+2026-07-30 07:39:37,542 | INFO    | molsanity | [stage cell_SIDER__GCN__IntegratedGradients__random] running (802b8d1e22037900)
+2026-07-30 07:39:38,135 | INFO    | molsanity | SIDER: reduced to single task #0 (Hepatobiliary disorders), 1427 labelled molecules
+2026-07-30 07:39:38,204 | INFO    | molsanity | Loaded SIDER: 1427 graphs, checksum 42bf0d88fb5e
+2026-07-30 07:39:46,595 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gcn_604a180f83e0893f_early.pt
+2026-07-30 07:40:20,447 | INFO    | molsanity | Training done: best val_acc=0.693 @epoch 135 | test_acc=0.632 test_auc=0.677 T=1.115
+2026-07-30 07:40:20,462 | INFO    | molsanity | Saved checkpoint gcn_604a180f83e0893f.pt
+2026-07-30 07:41:44,851 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/SIDER__GCN__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:41:44,861 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/SIDER__GCN__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:41:44,906 | INFO    | molsanity | [cell SIDER__GCN__IntegratedGradients__random] DONE — acc=0.64 gt_auroc=nan n=100 (capped)
+2026-07-30 07:41:44,922 | INFO    | molsanity | [stage cell_Tox21__GINE__IntegratedGradients__scaffold] running (32a6cb9aab0d1c17)
+2026-07-30 07:41:54,295 | INFO    | molsanity | Tox21: reduced to single task #0 (NR-AR), 7258 labelled molecules
+2026-07-30 07:41:54,550 | INFO    | molsanity | Tox21 checksum recorded: 09988a6b0bfc
+2026-07-30 07:41:54,558 | INFO    | molsanity | Loaded Tox21: 7258 graphs, checksum 09988a6b0bfc
+2026-07-30 07:42:04,442 | INFO    | molsanity | Scaffold split: 7226 scaffolds -> train 5806 / val 725 / test 727
+2026-07-30 07:42:43,563 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 07:45:19,168 | INFO    | molsanity | Training done: best val_acc=0.805 @epoch 20 | test_acc=0.941 test_auc=0.822 T=0.391
+2026-07-30 07:45:19,182 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 07:46:30,566 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/Tox21__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:46:30,577 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/Tox21__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:46:30,650 | INFO    | molsanity | [cell Tox21__GINE__IntegratedGradients__scaffold] DONE — acc=0.96 gt_auroc=nan n=100 (capped)
+2026-07-30 07:46:30,665 | INFO    | molsanity | [stage cell_Tox21__GINE__IntegratedGradients__random] running (80342e5b83f45c61)
+2026-07-30 07:46:32,487 | INFO    | molsanity | Tox21: reduced to single task #0 (NR-AR), 7258 labelled molecules
+2026-07-30 07:46:32,740 | INFO    | molsanity | Loaded Tox21: 7258 graphs, checksum 09988a6b0bfc
+2026-07-30 07:47:11,965 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 07:49:49,250 | INFO    | molsanity | Training done: best val_acc=0.813 @epoch 78 | test_acc=0.939 test_auc=0.849 T=0.403
+2026-07-30 07:49:49,264 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 07:50:59,668 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/Tox21__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:50:59,677 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/Tox21__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:50:59,754 | INFO    | molsanity | [cell Tox21__GINE__IntegratedGradients__random] DONE — acc=0.97 gt_auroc=nan n=100 (capped)
+2026-07-30 07:50:59,775 | INFO    | molsanity | [stage cell_BA-2Motifs__GINE__IntegratedGradients__scaffold] running (94c9353ddb80328a)
+2026-07-30 07:51:01,028 | INFO    | molsanity | BA-2Motifs checksum recorded: fecc0a8aa094
+2026-07-30 07:51:01,036 | INFO    | molsanity | Loaded BA-2Motifs: 1000 graphs, checksum fecc0a8aa094
+2026-07-30 07:51:02,214 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to val for coverage
+2026-07-30 07:51:02,215 | INFO    | molsanity | class-aware split: moved scaffold group (1 mols, class 0) from train to test for coverage
+2026-07-30 07:51:02,215 | INFO    | molsanity | Scaffold split: 996 scaffolds -> train 798 / val 101 / test 101
+2026-07-30 07:51:02,275 | ERROR   | molsanity | [cell BA-2Motifs__GINE__IntegratedGradients__scaffold] FAILED — linear(): argument 'input' (position 1) must be Tensor, not NoneType (traceback -> logs/error_BA-2Motifs__GINE__IntegratedGradients__scaffold_20260730_060436.log)
+2026-07-30 07:51:02,299 | INFO    | molsanity | [stage cell_BA-2Motifs__GINE__IntegratedGradients__random] running (4f72cad24f40eeb9)
+2026-07-30 07:51:02,438 | INFO    | molsanity | Loaded BA-2Motifs: 1000 graphs, checksum fecc0a8aa094
+2026-07-30 07:51:02,514 | ERROR   | molsanity | [cell BA-2Motifs__GINE__IntegratedGradients__random] FAILED — linear(): argument 'input' (position 1) must be Tensor, not NoneType (traceback -> logs/error_BA-2Motifs__GINE__IntegratedGradients__random_20260730_060436.log)
+2026-07-30 07:51:02,553 | INFO    | molsanity | [stage cell_ShapeGGen__GINE__IntegratedGradients__scaffold] running (438e32441bc1e7f3)
+2026-07-30 07:51:02,554 | WARNING | molsanity | [cell ShapeGGen__GINE__IntegratedGradients__scaffold] SKIPPED — ShapeGGen requires GraphXAI which is not installed (No module named 'graphxai'). Skipping and logging per Hard Rule 4.
+2026-07-30 07:51:02,574 | INFO    | molsanity | [stage cell_ShapeGGen__GINE__IntegratedGradients__random] running (1fe2ca25854c768f)
+2026-07-30 07:51:02,574 | WARNING | molsanity | [cell ShapeGGen__GINE__IntegratedGradients__random] SKIPPED — ShapeGGen requires GraphXAI which is not installed (No module named 'graphxai'). Skipping and logging per Hard Rule 4.
+2026-07-30 07:51:02,594 | INFO    | molsanity | [stage cell_DILI__GINE__IntegratedGradients__scaffold] running (b1337d4b15f33c4a)
+2026-07-30 07:51:04,137 | INFO    | molsanity | DILI: skipped 3 unparseable molecules
+2026-07-30 07:51:04,163 | INFO    | molsanity | DILI checksum recorded: 65deb1aabaed
+2026-07-30 07:51:04,171 | INFO    | molsanity | Loaded DILI (TDC Tox/DILI): 472 graphs, checksum 65deb1aabaed
+2026-07-30 07:51:04,965 | INFO    | molsanity | Scaffold split: 472 scaffolds -> train 377 / val 47 / test 48
+2026-07-30 07:51:07,724 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 07:51:18,560 | INFO    | molsanity | Training done: best val_acc=0.881 @epoch 57 | test_acc=0.688 test_auc=0.824 T=0.916
+2026-07-30 07:51:18,574 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 07:51:50,729 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/DILI__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:51:50,738 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/DILI__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:51:50,772 | INFO    | molsanity | [cell DILI__GINE__IntegratedGradients__scaffold] DONE — acc=0.69 gt_auroc=nan n=48 (capped)
+2026-07-30 07:51:50,787 | INFO    | molsanity | [stage cell_DILI__GINE__IntegratedGradients__random] running (5955e0fa3a6c8ed3)
+2026-07-30 07:51:51,252 | INFO    | molsanity | DILI: skipped 3 unparseable molecules
+2026-07-30 07:51:51,277 | INFO    | molsanity | Loaded DILI (TDC Tox/DILI): 472 graphs, checksum 65deb1aabaed
+2026-07-30 07:51:53,990 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 07:52:04,975 | INFO    | molsanity | Training done: best val_acc=0.895 @epoch 84 | test_acc=0.688 test_auc=0.719 T=1.423
+2026-07-30 07:52:04,991 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 07:52:37,506 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/DILI__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:52:37,513 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/DILI__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:52:37,547 | INFO    | molsanity | [cell DILI__GINE__IntegratedGradients__random] DONE — acc=0.69 gt_auroc=nan n=48 (capped)
+2026-07-30 07:52:37,576 | INFO    | molsanity | [stage cell_hERG__GINE__IntegratedGradients__scaffold] running (c37e94b044d60e35)
+2026-07-30 07:52:39,206 | INFO    | molsanity | hERG checksum recorded: 998f4e965b89
+2026-07-30 07:52:39,212 | INFO    | molsanity | Loaded hERG (TDC Tox/hERG): 655 graphs, checksum 998f4e965b89
+2026-07-30 07:52:40,445 | INFO    | molsanity | Scaffold split: 655 scaffolds -> train 524 / val 65 / test 66
+2026-07-30 07:52:44,570 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_5281be77a9e8e1fc_early.pt
+2026-07-30 07:53:00,763 | INFO    | molsanity | Training done: best val_acc=0.929 @epoch 38 | test_acc=0.727 test_auc=0.805 T=0.968
+2026-07-30 07:53:00,777 | INFO    | molsanity | Saved checkpoint gine_5281be77a9e8e1fc.pt
+2026-07-30 07:53:44,616 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/hERG__GINE__IntegratedGradients__scaffold/gt_validation.pdf (+ .svg)
+2026-07-30 07:53:44,625 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/hERG__GINE__IntegratedGradients__scaffold/case_molecule.svg (GT atoms: [])
+2026-07-30 07:53:44,672 | INFO    | molsanity | [cell hERG__GINE__IntegratedGradients__scaffold] DONE — acc=0.73 gt_auroc=nan n=66 (capped)
+2026-07-30 07:53:44,688 | INFO    | molsanity | [stage cell_hERG__GINE__IntegratedGradients__random] running (6eae5f9d391e3015)
+2026-07-30 07:53:45,422 | INFO    | molsanity | Loaded hERG (TDC Tox/hERG): 655 graphs, checksum 998f4e965b89
+2026-07-30 07:53:49,464 | INFO    | molsanity | Saved early checkpoint @epoch 30 -> gine_81524887c7adee3c_early.pt
+2026-07-30 07:54:05,706 | INFO    | molsanity | Training done: best val_acc=0.852 @epoch 79 | test_acc=0.803 test_auc=0.824 T=0.712
+2026-07-30 07:54:05,720 | INFO    | molsanity | Saved checkpoint gine_81524887c7adee3c.pt
+2026-07-30 07:54:50,065 | INFO    | molsanity | Wrote GT-validation figure: artifacts/figures/hERG__GINE__IntegratedGradients__random/gt_validation.pdf (+ .svg)
+2026-07-30 07:54:50,077 | INFO    | molsanity | Wrote molecule attribution SVG: artifacts/figures/hERG__GINE__IntegratedGradients__random/case_molecule.svg (GT atoms: [])
+2026-07-30 07:54:50,115 | INFO    | molsanity | [cell hERG__GINE__IntegratedGradients__random] DONE — acc=0.80 gt_auroc=nan n=66 (capped)
+2026-07-30 07:54:51,050 | INFO    | molsanity | Wrote BENCHMARK.md (59 cells)
+2026-07-30 07:54:51,443 | INFO    | molsanity | Wrote BENCHMARK_GT.md (faithfulness-vs-ground-truth)
+2026-07-30 07:54:51,965 | INFO    | molsanity | Wrote summary figure: artifacts/figures/_summary/attributor_gt_bar_SynthMotifs.pdf
+2026-07-30 07:54:52,362 | INFO    | molsanity | Wrote summary figure: artifacts/figures/_summary/regime_stratification.pdf
+2026-07-30 07:54:52,730 | INFO    | molsanity | Wrote rich figure: artifacts/figures/_summary/heatmap_gt.pdf
+2026-07-30 07:54:53,972 | INFO    | molsanity | Wrote composite figure: artifacts/figures/_summary/results_composite.pdf
+2026-07-30 07:54:54,020 | INFO    | molsanity | Loaded MUTAG: 188 graphs, checksum de1d4cec357f
+2026-07-30 07:54:54,306 | INFO    | molsanity | Scaffold split: 52 scaffolds -> train 150 / val 18 / test 20
+2026-07-30 07:54:54,330 | INFO    | molsanity | Loaded existing checkpoint gine_c98efc007771f38d.pt
+2026-07-30 07:55:00,221 | INFO    | molsanity | Wrote molecule grid: artifacts/figures/_summary/molgrid_MUTAG.pdf
+2026-07-30 07:55:00,589 | INFO    | molsanity | Generated SynthMotifs: 200 graphs (house/cycle), exact node GT
+2026-07-30 07:55:00,603 | INFO    | molsanity | Loaded SynthMotifs: 200 graphs, checksum 30b91fad87ac
+2026-07-30 07:55:00,937 | INFO    | molsanity | Scaffold split: 200 scaffolds -> train 160 / val 20 / test 20
+2026-07-30 07:55:00,958 | INFO    | molsanity | Loaded existing checkpoint gine_c98efc007771f38d.pt
+2026-07-30 07:55:06,899 | INFO    | molsanity | Wrote molecule grid: artifacts/figures/_summary/molgrid_SynthMotifs.pdf
+2026-07-30 07:55:06,904 | INFO    | molsanity | Wrote 6 summary figure(s)
+2026-07-30 07:55:07,248 | WARNING | molsanity | Dissociation figure generation failed: need two analysed regimes for the dissociation figure
+2026-07-30 07:55:09,174 | INFO    | molsanity | Collected figures -> figures/ (171 files, 59 cells)
+2026-07-30 07:55:09,175 | INFO    | molsanity | === Run complete: {'done': 59, 'failed': 27, 'skipped': 2, 'running': 0} ===

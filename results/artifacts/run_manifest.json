@@ -1,0 +1,23 @@
+{
+  "seed": 0,
+  "config_hash": "58975fd946550cda",
+  "timestamp": "20260730_164248",
+  "python": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
+  "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
+  "processor": "x86_64",
+  "git_rev": "6cf82cd9483f2532cd670d19f21891550954a987",
+  "versions": {
+    "numpy": "2.0.2",
+    "scipy": "1.16.3",
+    "sklearn": "1.6.1",
+    "torch": "2.11.0+cu128",
+    "torch_geometric": "2.8.0.post1",
+    "rdkit": "2026.03.4",
+    "captum": "0.9.0"
+  },
+  "cuda": {
+    "available": true,
+    "device_count": 1
+  },
+  "config_name": "full.yaml"
+}

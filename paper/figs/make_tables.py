@@ -6,11 +6,14 @@ Writes into paper/generated/:
   macros.tex        \\newcommand for every number quoted in the prose
   tab_*.tex         booktabs tables
 
-Nothing is hand-typed: all values come from RESULTS.md / BENCHMARK.md /
-BENCHMARK_GT.json via ``msdata``. Re-run after new grid cells land.
+Nothing is hand-typed: values come from the committed ``results/`` folder via
+``msdata`` — the audit matrices, the run ledger, and the per-molecule records
+under ``results/artifacts/audit/``. Re-run after a new run lands.
 """
 from __future__ import annotations
 
+import math
+import statistics as st
 import sys
 from pathlib import Path
 
@@ -24,14 +27,19 @@ OUT.mkdir(exist_ok=True)
 
 CLS, REG = D.load_results()
 BENCH = D.load_benchmark()
-GTB = D.load_benchmark_gt()
-PAIRED = D.load_paired()
+RECS = D.load_records()
 COV = D.coverage()
+MAN = D.load_manifest()
 
 SHORT = {"IntegratedGradients": "IG", "Saliency": "Saliency",
          "InputXGradient": "Input$\\times$Grad", "GuidedBackprop": "GuidedBP",
          "GNNExplainer": "GNNExpl.", "PGExplainer": "PGExpl."}
 ESC = {"&": "\\&", "%": "\\%", "_": "\\_", "#": "\\#"}
+ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
+              "GuidedBackprop", "GNNExplainer", "PGExplainer"]
+# The one cell family with an exact ground truth, several attributors, and both
+# splits — i.e. a within-dataset in-distribution vs. scaffold-shift contrast.
+ARM = ("SynthMotifs", "GINE")
 
 
 def tex(s: str) -> str:
@@ -41,25 +49,32 @@ def tex(s: str) -> str:
 
 
 def n(v, nd=3, dash="---"):
-    if v is None:
+    """Table number; negatives get a real minus sign."""
+    if v is None or (isinstance(v, float) and math.isnan(v)):
         return dash
     s = f"{v:.{nd}f}"
     return "$-$" + s[1:] if s.startswith("-") else s
+
+
+def pfmt(p, dash="---"):
+    if p is None or (isinstance(p, float) and math.isnan(p)):
+        return dash
+    return "$<$0.001" if p < 0.001 else f"{p:.3f}"
 
 
 def bold(s, on=True):
     return f"\\textbf{{{s}}}" if on else s
 
 
-def key(r):
-    return (r["dataset"], r["backbone"], r["attributor"], r["split"])
-
-
-BIDX = {key(r): r for r in BENCH}
+BIDX = {D.cell_key(r): r for r in BENCH}
 
 
 def bench_of(r):
-    return BIDX.get(key(r), {})
+    return BIDX.get(D.cell_key(r), {})
+
+
+def prov_mark(r):
+    return "" if r["provenance"] == "current" else "\\,\\textsuperscript{c}"
 
 
 def write(name, body):
@@ -67,222 +82,296 @@ def write(name, body):
     print(f"  wrote {OUT / name}")
 
 
+def cell_row(ds, bb, at, sp):
+    for r in CLS:
+        if D.cell_key(r) == (ds, bb, at, sp):
+            return r
+    return None
+
+
 # ------------------------------------------------------------------ macros
 def macros():
     m = []
 
-    def n(v, nd=3, dash="---"):
-        """Macro-safe number: negatives are wrapped so they typeset as a real
-        minus sign whether the macro is used in text or in math mode."""
-        if v is None:
-            return dash
+    def num(v, nd=3):
+        """Macro-safe number (negatives typeset correctly in text or math)."""
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return "---"
         s = f"{v:.{nd}f}"
         return "\\ensuremath{" + s + "}" if s.startswith("-") else s
 
     def add(cmd, val):
         m.append(f"\\newcommand{{\\{cmd}}}{{{val}}}")
 
-    add("nCellsDone", COV["n_done_total"])
-    add("nCellsPlanned", COV["n_planned"])
-    add("nCellsPlanDone", COV["n_done_in_plan"])
-    add("nCellsExtra", COV["n_extra"])
-    add("nCellsPending", COV["n_planned"] - COV["n_done_in_plan"])
-    add("nDatasetsDone", len(COV["datasets_done"]))
-    add("nBackbonesDone", len(COV["backbones_done"]))
-    add("nAttributorsDone", len(COV["attributors_done"]))
+    # --- run provenance ----------------------------------------------------
+    add("runConfig", tex(MAN["config_name"]))
+    add("runStamp", MAN["timestamp"].replace("_", "-"))
+    add("runSeed", MAN["seed"])
+    add("runTorch", MAN["versions"]["torch"])
+    add("runPyG", MAN["versions"]["torch_geometric"])
+    add("runRDKit", MAN["versions"]["rdkit"])
+    add("runCaptum", MAN["versions"]["captum"])
+    add("runGitRev", MAN["git_rev"][:7])
+
+    led = COV["ledger"]
+    add("nDone", led["done"])
+    add("nFailed", led["failed"])
+    add("nSkipped", led["skipped"])
+    add("nAttempted", sum(led.values()))
+    add("nPlanned", COV["n_planned"])
+    add("nCurrentInPlan", COV["n_current_in_plan"])
+    add("nCarried", COV["n_carried"])
+    add("nRecordCells", len(RECS))
+    add("nRecords", sum(len(v) for v in RECS.values()))
     add("nClsRows", len(CLS))
     add("nRegRows", len(REG))
-    add("nGtCells", sum(1 for r in BENCH if r["gt_auroc"] is not None))
-    add("nNoGtCells", sum(1 for r in BENCH if r["gt_auroc"] is None))
-    pending_random = sum(1 for p in COV["pending"] if p[3] == "random")
-    add("nPendingRandom", pending_random)
-    add("nPendingScaffold", len(COV["pending"]) - pending_random)
+    add("nRowsTotal", len(CLS) + len(REG))
+    add("nDatasetsCurrent", len(COV["datasets_current"]))
+    add("nBackbonesCurrent", len(COV["backbones_current"]))
+    add("nAttributorsCurrent", len(COV["attributors_current"]))
+    add("nDatasetsAll", len({r["dataset"] for r in list(CLS) + list(REG)}))
+    add("nAttributorsAll", len({r["attributor"] for r in list(CLS) + list(REG)}))
 
-    # --- MUTAG x GINE x scaffold: the faithful-but-wrong quartet -----------
-    def cell(ds, bb, at, sp):
-        return BIDX[(ds, bb, at, sp)]
+    fails = D.failure_reasons()
+    for msg, cells in fails.items():
+        if "numpy" in msg:
+            add("nFailCudaNumpy", len(cells))
+        elif "same device" in msg:
+            add("nFailDeviceMismatch", len(cells))
+        elif "more than 1 value per channel" in msg:
+            add("nFailBatchNorm", len(cells))
+        elif "NoneType" in msg:
+            add("nFailNoneType", len(cells))
+    add("nFailReasons", len(fails))
+    mutag_failed = sum(1 for e in D.load_ledger()
+                       if e["dataset"] == "MUTAG" and e["status"] == "failed")
+    add("nMutagFailed", mutag_failed)
 
-    for at, tag in [("Saliency", "Sal"), ("InputXGradient", "IxG"),
-                    ("IntegratedGradients", "IG"), ("GNNExplainer", "GNNE"),
-                    ("GuidedBackprop", "GBP"), ("PGExplainer", "PGE")]:
-        try:
-            c = cell("MUTAG", "GINE", at, "scaffold")
-        except KeyError:
-            continue
-        add(f"mutag{tag}Gt", n(c["gt_auroc"]))
-        add(f"mutag{tag}Occ", n(c["occ_spearman"]))
-        add(f"mutag{tag}Fid", n(c["fidelity_plus"]))
-        add(f"mutag{tag}Char", n(c["characterization"]))
-    for at, tag in [("Saliency", "Sal"), ("IntegratedGradients", "IG"),
-                    ("GNNExplainer", "GNNE"), ("GuidedBackprop", "GBP"),
-                    ("InputXGradient", "IxG"), ("PGExplainer", "PGE")]:
-        try:
-            c = cell("SynthMotifs", "GINE", at, "scaffold")
-        except KeyError:
-            continue
-        add(f"synth{tag}Gt", n(c["gt_auroc"]))
-        add(f"synth{tag}Occ", n(c["occ_spearman"]))
-
-    # --- backbone sweeps at IG -------------------------------------------
-    for ds, pre in [("SynthMotifs", "synth"), ("MUTAG", "mutag")]:
-        rows = [r for r in BENCH if r["dataset"] == ds and r["split"] == "scaffold"
-                and r["attributor"] == "IntegratedGradients"
-                and r["gt_auroc"] is not None]
-        for r in rows:
-            add(f"{pre}{r['backbone']}IgGt", n(r["gt_auroc"]))
-            add(f"{pre}{r['backbone']}IgOcc", n(r["occ_spearman"]))
-        if rows:
-            best = max(rows, key=lambda r: r["gt_auroc"])
-            worst = min(rows, key=lambda r: r["gt_auroc"])
-            add(f"{pre}IgBestBackbone", best["backbone"])
-            add(f"{pre}IgWorstBackbone", worst["backbone"])
-            add(f"{pre}IgSpread", n(best["gt_auroc"] - worst["gt_auroc"]))
-
-    # --- selection experiment --------------------------------------------
-    for blk in GTB:
-        pre = "xl" if blk["dataset"] == "SynthMotifsXL" else "shift"
-        add(f"{pre}Dataset", blk["dataset"])
-        add(f"{pre}Split", blk["split"])
-        add(f"{pre}GtBest", SHORT.get(blk["gt_best"], blk["gt_best"]))
-        add(f"{pre}NMol", list(blk["per_attributor"].values())[0]["n_mol"])
-        for k, v in blk["rank_correlation"].items():
-            add(f"{pre}Rho{k.replace('_','').capitalize()}", n(v["rho"]))
-        for sel in blk["selections"]:
-            t = sel["faithfulness_metric"].replace("_", "").capitalize()
-            add(f"{pre}Pick{t}", SHORT.get(sel["faithfulness_pick"],
-                                           sel["faithfulness_pick"]))
-            add(f"{pre}PickGt{t}", n(sel["faithfulness_pick_gt_auroc"]))
-            if sel["paired_gt_pvalue"] is not None:
-                add(f"{pre}P{t}", f"{sel['paired_gt_pvalue']:.4f}")
-                add(f"{pre}Gap{t}", n(sel["paired_gt_gap_median"]))
-        add(f"{pre}NMismatch", sum(1 for s in blk["selections"] if s["mismatch"]))
-
-    # --- regime-level aggregates -----------------------------------------
-    import statistics as st  # noqa: E402
-    for reg in ("synthetic", "classification", "regression"):
-        vals = [r["occ_spearman"] for r in BENCH
-                if r["regime"] == reg and r["occ_spearman"] is not None]
-        add(f"med{reg.capitalize()}Occ", n(st.median(vals)))
-        add(f"n{reg.capitalize()}Cells", len(vals))
-        neg = sum(1 for v in vals if v < 0)
-        add(f"nNeg{reg.capitalize()}", neg)
-    stab = [r["stability"] for r in BENCH if r["stability"] is not None]
-    add("medStability", n(st.median(stab)))
-    add("minStability", n(min(stab)))
-    add("nStabilityCells", len(stab))
-
-    # --- faithful-but-wrong tally (the headline phenomenon, counted) -------
-    gt_cells = [r for r in BENCH if r["gt_auroc"] is not None
+    # --- ground-truth cells -------------------------------------------------
+    gt_cells = [r for r in CLS if r["gt_auroc"] is not None
                 and r["occ_spearman"] is not None]
-    add("nGtOccCells", len(gt_cells))
+    add("nGtCells", len(gt_cells))
+    add("nGtCurrent", sum(1 for r in gt_cells if r["provenance"] == "current"))
     fbw = [r for r in gt_cells if r["occ_spearman"] > 0 and r["gt_auroc"] < 0.5]
     add("nFaithfulButWrong", len(fbw))
     add("nAntiAligned", sum(1 for r in gt_cells if r["gt_auroc"] < 0.5))
+    add("nNoGtCells", sum(1 for r in list(CLS) + list(REG)
+                          if r.get("gt_auroc") is None))
 
-    # --- does the attributor ranking survive a change of dataset? ----------
-    def spearman(a, b):
-        def rank(v):
-            order = sorted(range(len(v)), key=lambda i: v[i])
-            r = [0.0] * len(v)
-            i = 0
-            while i < len(order):
-                j = i
-                while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
-                    j += 1
-                avg = (i + j) / 2 + 1
-                for k in range(i, j + 1):
-                    r[order[k]] = avg
-                i = j + 1
-            return r
-        ra, rb = rank(a), rank(b)
-        ma, mb = sum(ra) / len(ra), sum(rb) / len(rb)
-        num = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
-        da = sum((x - ma) ** 2 for x in ra) ** 0.5
-        db = sum((y - mb) ** 2 for y in rb) ** 0.5
-        return num / (da * db) if da and db else float("nan")
+    # --- the within-dataset shift contrast (this run, exact ground truth) ---
+    ds, bb = ARM
+    add("armDataset", ds)
+    add("armBackbone", bb)
+    for sp, pre in (("random", "ind"), ("scaffold", "shift")):
+        sel = D.selection_test(ds, bb, sp)
+        if sel is None:
+            continue
+        pa = sel["per_attributor"]
+        add(f"{pre}NAttr", len(sel["attributors"]))
+        add(f"{pre}NMol", max(v["n_mol"] for v in pa.values()))
+        add(f"{pre}GtBest", SHORT.get(sel["gt_best"], sel["gt_best"]))
+        add(f"{pre}GtBestVal", num(pa[sel["gt_best"]]["gt_auroc_mean"]))
+        add(f"{pre}NMismatch", sum(1 for s in sel["selections"] if s["mismatch"]))
+        add(f"{pre}NMetrics", len(sel["selections"]))
+        for a, v in pa.items():
+            tag = {"IntegratedGradients": "IG", "Saliency": "Sal",
+                   "InputXGradient": "IxG", "GuidedBackprop": "GBP",
+                   "GNNExplainer": "GNNE", "PGExplainer": "PGE"}[a]
+            add(f"{pre}{tag}Gt", num(v["gt_auroc_mean"]))
+            add(f"{pre}{tag}Occ", num(v["occ_spearman"]))
+        for s in sel["selections"]:
+            t = s["faithfulness_metric"].replace("_", "").capitalize()
+            add(f"{pre}Pick{t}", SHORT.get(s["faithfulness_pick"],
+                                           s["faithfulness_pick"]))
+            add(f"{pre}PickGt{t}", num(s["faithfulness_pick_gt_auroc"]))
+            if s["paired_gt_pvalue"] is not None:
+                p = s["paired_gt_pvalue"]
+                add(f"{pre}P{t}", "\\ensuremath{<}0.001" if p < 0.001 else f"{p:.3f}")
+                add(f"{pre}Gap{t}", num(s["paired_gt_gap_median"]))
+                add(f"{pre}NPaired{t}", s["n_paired"])
+        for k, v in sel["rank_correlation"].items():
+            add(f"{pre}Rho{k.replace('_', '').capitalize()}", num(v["rho"]))
+        # attributor ranking correlation between the two splits is added below
 
-    def gt_by(dataset, split, keyfield, fixed):
+    # attributor GT ordering: does it survive the change of split?
+    def gt_by_attr(sp):
         out = {}
-        for r in BENCH:
-            if (r["dataset"] == dataset and r["split"] == split
-                    and r["gt_auroc"] is not None
-                    and all(r[k] == v for k, v in fixed.items())):
-                out[r[keyfield]] = r["gt_auroc"]
+        for a in ATTR_ORDER:
+            recs = RECS.get((ds, bb, a, sp))
+            if recs:
+                v = D.cell_mean(recs, "gt_auroc")
+                if not math.isnan(v):
+                    out[a] = v
         return out
+    A, B = gt_by_attr("random"), gt_by_attr("scaffold")
+    shared = sorted(set(A) & set(B))
+    rho, _ = D.spearman([A[k] for k in shared], [B[k] for k in shared])
+    add("armAttrRankRho", num(rho))
+    add("armAttrRankN", len(shared))
 
-    pairs = [("attrRankRho", gt_by("SynthMotifs", "scaffold", "attributor",
-                                   {"backbone": "GINE"}),
-              gt_by("MUTAG", "scaffold", "attributor", {"backbone": "GINE"})),
-             ("attrRankRhoXL", gt_by("SynthMotifsXL", "random", "attributor",
-                                     {"backbone": "GINE"}),
-              gt_by("MUTAG", "scaffold", "attributor", {"backbone": "GINE"})),
-             ("backboneRankRho", gt_by("SynthMotifs", "scaffold", "backbone",
-                                       {"attributor": "IntegratedGradients"}),
-              gt_by("MUTAG", "scaffold", "backbone",
-                    {"attributor": "IntegratedGradients"}))]
-    for cmd, A, B in pairs:
-        shared = sorted(set(A) & set(B))
-        add(cmd, n(spearman([A[k] for k in shared], [B[k] for k in shared])))
-        add(cmd + "N", len(shared))
+    # --- MUTAG (carried from the earlier reduced-budget run) ---------------
+    for at, tag in [("Saliency", "Sal"), ("InputXGradient", "IxG"),
+                    ("IntegratedGradients", "IG"), ("GNNExplainer", "GNNE"),
+                    ("GuidedBackprop", "GBP"), ("PGExplainer", "PGE")]:
+        r = cell_row("MUTAG", "GINE", at, "scaffold")
+        if r:
+            add(f"mutag{tag}Gt", num(r["gt_auroc"]))
+            add(f"mutag{tag}Occ", num(r["occ_spearman"]))
+    grad = [cell_row("MUTAG", "GINE", a, "scaffold")["occ_spearman"]
+            for a in ("Saliency", "InputXGradient", "IntegratedGradients")
+            if cell_row("MUTAG", "GINE", a, "scaffold")]
+    if len(grad) > 1:
+        add("mutagGradOccSpread", num(max(grad) - min(grad)))
 
-    # --- per-attributor median stability ----------------------------------
+    # --- backbone sweeps at IG, both splits --------------------------------
+    for sp, pre in (("scaffold", "bbShift"), ("random", "bbInd")):
+        rows = [r for r in CLS if r["dataset"] == ds and r["split"] == sp
+                and r["attributor"] == "IntegratedGradients"
+                and r["gt_auroc"] is not None]
+        for r in rows:
+            add(f"{pre}{r['backbone']}", num(r["gt_auroc"]))
+        if rows:
+            best = max(rows, key=lambda r: r["gt_auroc"])
+            worst = min(rows, key=lambda r: r["gt_auroc"])
+            add(f"{pre}Best", best["backbone"])
+            add(f"{pre}BestVal", num(best["gt_auroc"]))
+            add(f"{pre}Worst", worst["backbone"])
+            add(f"{pre}WorstVal", num(worst["gt_auroc"]))
+            add(f"{pre}Spread", num(best["gt_auroc"] - worst["gt_auroc"]))
+            add(f"{pre}N", len(rows))
+    Ab = {r["backbone"]: r["gt_auroc"] for r in CLS
+          if r["dataset"] == ds and r["split"] == "random"
+          and r["attributor"] == "IntegratedGradients" and r["gt_auroc"] is not None}
+    Bb = {r["backbone"]: r["gt_auroc"] for r in CLS
+          if r["dataset"] == ds and r["split"] == "scaffold"
+          and r["attributor"] == "IntegratedGradients" and r["gt_auroc"] is not None}
+    sh = sorted(set(Ab) & set(Bb))
+    rho, _ = D.spearman([Ab[k] for k in sh], [Bb[k] for k in sh])
+    add("bbRankRho", num(rho))
+    add("bbRankN", len(sh))
+
+    # --- regression --------------------------------------------------------
+    rvals = [r for r in REG if r["occ_spearman"] is not None]
+    neg = [r for r in rvals if r["occ_spearman"] < 0]
+    pos = [r for r in rvals if r["occ_spearman"] >= 0]
+    add("nRegCells", len(rvals))
+    add("nRegNeg", len(neg))
+    add("nRegPos", len(pos))
+    add("medRegOcc", num(st.median([r["occ_spearman"] for r in rvals])))
+    add("regPosCells", ", ".join(sorted({f"{tex(r['dataset'])}$\\cdot${r['backbone']}"
+                                         for r in pos})))
+    fidmax = max((r["fid+"] for r in REG if r["fid+"] is not None), default=None)
+    add("maxRegFidPlus", num(fidmax, 2))
+
+    # --- regimes (pooled over all cells with records) ----------------------
+    pooled: dict[str, list] = {}
+    for recs in RECS.values():
+        for r in recs:
+            pooled.setdefault(r.get("regime", "?"), []).append(r)
+    for reg, tag in (("confident_correct", "CC"), ("confident_error", "CE"),
+                     ("borderline", "BL")):
+        sub = pooled.get(reg, [])
+        add(f"nReg{tag}", len(sub))
+        for f, ftag in (("occ_spearman", "Occ"), ("gt_auroc", "Gt"),
+                        ("stability", "Stab")):
+            vals = [r[f] for r in sub
+                    if r.get(f) is not None and not math.isnan(r[f])]
+            add(f"reg{tag}{ftag}", num(st.mean(vals)) if vals else "---")
+            add(f"nReg{tag}{ftag}", len(vals))
+    add("nRegimeMol", sum(len(v) for v in pooled.values()))
+
+    # --- calibration linkage, per cell (pooling is a Simpson trap) ---------
+    links = []
+    for k, recs in RECS.items():
+        if D.regime_of(k[0]) == "regression":
+            continue
+        cl = D.calibration_linkage(recs)
+        if not math.isnan(cl["spearman"]):
+            links.append(cl)
+    add("nCalibCells", len(links))
+    add("medCalibRho", num(st.median([c["spearman"] for c in links])))
+    add("nCalibSigPos", sum(1 for c in links if c["spearman"] > 0 and c["pvalue"] < 0.05))
+    add("nCalibSigNeg", sum(1 for c in links if c["spearman"] < 0 and c["pvalue"] < 0.05))
+    add("nCalibPos", sum(1 for c in links if c["spearman"] > 0))
+    allrec = [r for k, v in RECS.items() if D.regime_of(k[0]) != "regression"
+              for r in v]
+    add("pooledCalibRho", num(D.calibration_linkage(allrec)["spearman"]))
+
+    # --- stability ---------------------------------------------------------
+    stab = [r["stability"] for r in BENCH if r["stability"] is not None]
+    add("medStability", num(st.median(stab)))
+    add("minStability", num(min(stab)))
+    add("nStabilityCells", len(stab))
     for at, tag in [("IntegratedGradients", "IG"), ("Saliency", "Sal"),
                     ("InputXGradient", "IxG"), ("GuidedBackprop", "GBP"),
                     ("GNNExplainer", "GNNE"), ("PGExplainer", "PGE")]:
         vals = [r["stability"] for r in BENCH
                 if r["attributor"] == at and r["stability"] is not None]
         if vals:
-            add(f"stab{tag}", n(st.median(vals)))
+            add(f"stab{tag}", num(st.median(vals)))
             add(f"nStab{tag}", len(vals))
 
-    # --- the anti-predictive-but-faithful cell -----------------------------
-    worst = min((r for r in CLS if r["auc"] is not None), key=lambda r: r["auc"])
-    add("worstAucDataset", tex(worst["dataset"]))
-    add("worstAucBackbone", worst["backbone"])
-    add("worstAuc", n(worst["auc"]))
-    add("worstAucAcc", n(worst["acc"]))
-    add("worstAucOcc", n(worst["occ_spearman"]))
-    add("worstAucChar", n(bench_of(worst).get("characterization")))
-
-    # --- gradient-family faithfulness spread on the MUTAG shift cell -------
-    grad = [BIDX[("MUTAG", "GINE", a, "scaffold")]["occ_spearman"]
-            for a in ("Saliency", "InputXGradient", "IntegratedGradients")
-            if ("MUTAG", "GINE", a, "scaffold") in BIDX]
-    if len(grad) > 1:
-        add("mutagGradOccSpread", n(max(grad) - min(grad)))
-
-    # --- coherence band + ESOL fit, quoted in the prose --------------------
-    mol_cls = [r for r in CLS if r["gt_auroc"] is None and r["motif_top1"] is not None]
-    mol_all = mol_cls + [r for r in REG if r["motif_top1"] is not None]
-    vals = [r["motif_top1"] for r in mol_all]
-    add("motifTopMin", n(min(vals)))
-    add("motifTopMax", n(max(vals)))
+    # --- coherence + fit quoted in the prose -------------------------------
+    mol = [r for r in list(CLS) + list(REG)
+           if r["dataset"] not in D.SYNTHETIC and r["motif_top1"] is not None]
+    vals = [r["motif_top1"] for r in mol]
+    add("motifTopMin", num(min(vals)))
+    add("motifTopMax", num(max(vals)))
     add("nMolecularCells", len(vals))
     add("nMotifInBand", sum(1 for v in vals if 0.6 <= v <= 0.9))
     esol = [r for r in REG if r["dataset"] == "ESOL" and r["r2"] is not None]
     if esol:
-        add("esolRtwoMin", n(min(r["r2"] for r in esol)))
-        add("esolRtwoMax", n(max(r["r2"] for r in esol)))
-        add("nEsolBackbones", len({r["backbone"] for r in esol}))
+        add("esolRtwoMin", num(min(r["r2"] for r in esol)))
+        add("esolRtwoMax", num(max(r["r2"] for r in esol)))
 
-    # --- paired contrasts quoted in the prose ------------------------------
-    block = PAIRED.get("MUTAG · GINE · scaffold split", [])
-    for r in block:
-        pair = {r["A"], r["B"]}
-        if pair == {"IntegratedGradients", "Saliency"}:
-            add("mutagIGvsSalP", f"{r['p']:.3f}")
-            add("mutagIGvsSalN", str(int(r["n"])))
-        if pair == {"IntegratedGradients", "InputXGradient"}:
-            add("mutagIGvsIxGP", f"{r['p']:.3f}")
+    # --- honest negatives: exemplar cells, chosen by the data --------------
+    mol_cur = [r for r in CLS if r["provenance"] == "current"
+               and r["dataset"] not in D.SYNTHETIC
+               and r["auc"] is not None and r["occ_spearman"] is not None]
 
-    # accuracy / calibration extremes actually present in the matrix
-    accs = [(r["acc"], r["auc"], r["dataset"], r["backbone"]) for r in CLS
-            if r["acc"] is not None and r["auc"] is not None]
-    degenerate = [a for a in accs if a[0] >= 0.99 and a[1] < 0.9]
-    add("nDegenerateRows", len(degenerate))
+    def exemplar(pre, r):
+        add(pre + "Dataset", tex(r["dataset"]))
+        add(pre + "Backbone", r["backbone"])
+        add(pre + "Split", r["split"])
+        add(pre + "Acc", num(r["acc"]))
+        add(pre + "Auc", num(r["auc"]))
+        add(pre + "Occ", num(r["occ_spearman"]))
+        add(pre + "Ece", num(r["ece"]))
+
+    exemplar("bestAuc", max(mol_cur, key=lambda r: r["auc"]))
+    exemplar("mostFaithful", max(mol_cur, key=lambda r: r["occ_spearman"]))
+    exemplar("mostAnti", min(mol_cur, key=lambda r: r["occ_spearman"]))
+    worst = min(mol_cur, key=lambda r: r["auc"])
+    exemplar("worstAuc", worst)
+    hi = [r for r in CLS if r["acc"] is not None and r["acc"] >= 0.95
+          and r["auc"] is not None]
+    add("nHighAccRows", len(hi))
+    add("minHighAccAuc", num(min(r["auc"] for r in hi)))
+    tox = [r for r in CLS if r["dataset"] == "Tox21" and r["auc"] is not None]
+    if tox:
+        add("nToxRows", len(tox))
+        add("toxAccMin", num(min(r["acc"] for r in tox)))
+        add("toxAccMax", num(max(r["acc"] for r in tox)))
+        add("toxAucMin", num(min(r["auc"] for r in tox)))
+        add("toxAucMax", num(max(r["auc"] for r in tox)))
     eces = [r["ece"] for r in CLS if r["ece"] is not None]
-    add("maxEce", n(max(eces)))
-    add("medEce", n(st.median(eces)))
+    add("maxEce", num(max(eces)))
+    add("medEce", num(st.median(eces)))
+
+    # --- split effect on faithfulness, paired within cell family ----------
+    pairs = []
+    for (dsx, bbx, atx, spx) in RECS:
+        if spx != "scaffold":
+            continue
+        other = (dsx, bbx, atx, "random")
+        if other in RECS:
+            a = D.cell_mean(RECS[(dsx, bbx, atx, spx)], "occ_spearman")
+            b = D.cell_mean(RECS[other], "occ_spearman")
+            if not math.isnan(a) and not math.isnan(b):
+                pairs.append((dsx, bbx, atx, a, b))
+    add("nSplitPairs", len(pairs))
+    add("nSplitOccDrop", sum(1 for p in pairs if p[3] < p[4]))
+    add("medSplitOccDelta", num(st.median([p[3] - p[4] for p in pairs])))
 
     write("macros.tex", "\n".join(m) + "\n")
 
@@ -291,7 +380,6 @@ def macros():
 def tab_tier1():
     rows = [r for r in CLS if r["gt_auroc"] is not None]
     rows.sort(key=lambda r: (r["dataset"], r["split"], r["backbone"], r["attributor"]))
-    # best GT AUROC / best occlusion rho within each dataset x split block
     blocks: dict[tuple, list] = {}
     for r in rows:
         blocks.setdefault((r["dataset"], r["split"]), []).append(r)
@@ -302,15 +390,19 @@ def tab_tier1():
                 for v in blocks.values() if len(v) > 1}
 
     L = ["\\begin{table*}[t]", "\\centering",
-         "\\caption{\\textbf{Tier-1 cells: the only cells where attribution "
-         "\\emph{correctness} is measurable.} All committed cells that carry a "
-         "node-level ground truth --- exact for the synthetic sets, a "
-         "chemically motivated nitro-motif proxy for MUTAG. GT AUROC $=0.5$ is "
-         "chance; below $0.5$ the attribution is anti-aligned with the true "
-         "motif. Occlusion $\\rho$ is the attribution--occlusion rank agreement "
-         "(higher $=$ more faithful to the model). Bold marks the best GT AUROC "
-         "and the best occlusion $\\rho$ within each dataset$\\times$split block "
-         "(emphasis only; values are unaltered).}",
+         "\\caption{\\textbf{Every committed cell in which attribution "
+         "\\emph{correctness} is measurable.} Ground truth is exact for the "
+         "synthetic sets and a chemically motivated nitro-motif proxy for "
+         "MUTAG. GT AUROC $=0.5$ is chance; below $0.5$ the attribution is "
+         "anti-aligned with the true motif. Occlusion $\\rho$ is the "
+         "attribution--occlusion rank agreement (higher $=$ more faithful to "
+         "the model). Rows marked \\textsuperscript{c} are \\emph{carried}: "
+         "they survive in the results matrix from an earlier reduced-budget "
+         "CPU run because the corresponding cell failed in the latest run "
+         "(Table~\\ref{tab:ledger}); every other row was produced by the run "
+         "in Table~\\ref{tab:ledger}. Bold marks the best GT AUROC and the best "
+         "occlusion $\\rho$ within each dataset$\\times$split block (emphasis "
+         "only; values are unaltered).}",
          "\\label{tab:tier1}",
          "\\small",
          "\\renewcommand{\\arraystretch}{1.3}",
@@ -329,10 +421,10 @@ def tab_tier1():
             L.append("\\addlinespace[2pt]")
         prev = (r["dataset"], r["split"])
         L.append(" & ".join([
-            tex(r["dataset"]), r["backbone"], SHORT.get(r["attributor"], r["attributor"]),
-            r["split"], f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
-            bold(n(r["gt_auroc"]), id(r) in best_gt),
-            n(r["gt_auprc"]),
+            tex(r["dataset"]) + prov_mark(r), r["backbone"],
+            SHORT.get(r["attributor"], r["attributor"]), r["split"],
+            f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
+            bold(n(r["gt_auroc"]), id(r) in best_gt), n(r["gt_auprc"]),
             bold(n(r["occ_spearman"]), id(r) in best_occ),
             n(r["fid+"]), n(r["fid-"]), n(b.get("stability")),
         ]) + " \\\\")
@@ -340,48 +432,232 @@ def tab_tier1():
     write("tab_tier1.tex", "\n".join(L) + "\n")
 
 
+# --------------------------------------------------------------- run ledger
+def tab_ledger():
+    led = D.load_ledger()
+    per: dict[str, dict] = {}
+    for e in led:
+        d = per.setdefault(e["dataset"], {"done": 0, "failed": 0, "skipped": 0})
+        d[e["status"]] = d.get(e["status"], 0) + 1
+    carried: dict[str, int] = {}
+    for k in COV["carried_cells"]:
+        carried[k[0]] = carried.get(k[0], 0) + 1
+
+    L = ["\\begin{table}[t]", "\\centering",
+         "\\caption{\\textbf{The run ledger.} Outcome of every cell the "
+         "\\texttt{" + tex(MAN["config_name"]) + "} sweep attempted, as recorded "
+         "in \\texttt{results/PROGRESS.md}. \\emph{carried} counts cells whose "
+         "row still appears in the results matrix from an earlier "
+         "reduced-budget CPU run because this run's attempt failed --- those "
+         "rows are marked \\textsuperscript{c} throughout this paper and are "
+         "never mixed into a this-run aggregate.}",
+         "\\label{tab:ledger}",
+         "\\footnotesize",
+         "\\renewcommand{\\arraystretch}{1.25}",
+         "\\begin{tabular}{lrrrr}",
+         "\\toprule",
+         "\\textbf{dataset} & \\textbf{done} & \\textbf{failed} & "
+         "\\textbf{skipped} & \\textbf{carried} \\\\",
+         "\\midrule"]
+    for ds in sorted(per):
+        d = per[ds]
+        L.append(f"{tex(ds)} & {d.get('done', 0)} & {d.get('failed', 0)} & "
+                 f"{d.get('skipped', 0)} & {carried.get(ds, 0)} \\\\")
+    t = COV["ledger"]
+    L += ["\\midrule",
+          f"\\textbf{{total}} & \\textbf{{{t['done']}}} & "
+          f"\\textbf{{{t['failed']}}} & \\textbf{{{t['skipped']}}} & "
+          f"\\textbf{{{COV['n_carried']}}} \\\\",
+          "\\bottomrule", "\\end{tabular}"]
+    reasons = sorted(D.failure_reasons().items(), key=lambda kv: -len(kv[1]))
+    L.append("\\\\[4pt]\\raggedright\\footnotesize \\textbf{Failure reasons.} ")
+    L.append("; ".join(f"{len(v)}~$\\times$ ``{tex(k[:66])}\\dots''"
+                       for k, v in reasons) + ".")
+    L.append("\\end{table}")
+    write("tab_ledger.tex", "\n".join(L) + "\n")
+
+
+# ------------------------------------------------------- selection experiment
+def tab_selection():
+    ds, bb = ARM
+    arms = [("random", "in-distribution"), ("scaffold", "scaffold shift")]
+    L = ["\\begin{table*}[t]", "\\centering",
+         "\\caption{\\textbf{Does a faithfulness-only ranking pick the "
+         "ground-truth-best attributor?} Both arms are the same dataset, the "
+         "same backbone and the same "
+         + str(len(D.selection_test(ds, bb, "scaffold")["attributors"]))
+         + " attributors --- only the split changes --- so the contrast "
+         "isolates distribution shift rather than confounding it with a change "
+         "of dataset. Each row ranks the attributors by one "
+         "faithfulness/fidelity metric and asks whether its top choice is the "
+         "one the exact node ground truth ranks best. $p$ is a paired Wilcoxon "
+         "test on per-molecule GT AUROC between the selected and the "
+         "ground-truth-best attributor, over the molecules both audited. "
+         "Recomputed here from the committed per-molecule records: the "
+         "shipped \\texttt{BENCHMARK\\_GT.md} is empty for this run because "
+         "both of its target cells failed (Table~\\ref{tab:ledger}).}",
+         "\\label{tab:selection}",
+         "\\small",
+         "\\renewcommand{\\arraystretch}{1.3}",
+         "\\resizebox{\\textwidth}{!}{%",
+         "\\begin{tabular}{llllrlrcrr}",
+         "\\toprule",
+         "\\textbf{regime} & \\textbf{cell} & \\textbf{ranking metric} & "
+         "\\textbf{its top pick} & \\textbf{pick GT} & \\textbf{GT-best} & "
+         "\\textbf{GT-best} & \\textbf{mismatch} & \\textbf{Wilcoxon $p$} & "
+         "\\textbf{$\\rho$(faith,GT)} \\\\",
+         "\\midrule"]
+    names = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
+             "characterization": "characterisation"}
+    for ai, (sp, label) in enumerate(arms):
+        sel = D.selection_test(ds, bb, sp)
+        if sel is None:
+            continue
+        if ai:
+            L.append("\\addlinespace[2pt]")
+        nmol = max(v["n_mol"] for v in sel["per_attributor"].values())
+        cell = tex(ds) + "$\\cdot$" + bb + ", " + sp + ", $n$=" + str(nmol)
+        for si, s in enumerate(sel["selections"]):
+            rho = sel["rank_correlation"][s["faithfulness_metric"]]["rho"]
+            L.append(" & ".join([
+                label if si == 0 else "", cell if si == 0 else "",
+                names[s["faithfulness_metric"]],
+                SHORT.get(s["faithfulness_pick"], s["faithfulness_pick"]),
+                n(s["faithfulness_pick_gt_auroc"]),
+                SHORT.get(s["gt_best"], s["gt_best"]), n(s["gt_best_gt_auroc"]),
+                "\\textbf{yes}" if s["mismatch"] else "no",
+                pfmt(s["paired_gt_pvalue"]), n(rho),
+            ]) + " \\\\")
+    L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
+    write("tab_selection.tex", "\n".join(L) + "\n")
+
+
+# ------------------------------------------------------------- paired stats
+def tab_paired():
+    ds, bb = ARM
+    L = ["\\begin{table}[t]", "\\centering",
+         "\\caption{\\textbf{Paired attributor comparisons on shared "
+         "molecules}, computed from the committed per-molecule records "
+         "(Wilcoxon signed-rank on per-molecule occlusion faithfulness, "
+         "$\\Delta = A - B$). Same cell family as "
+         "Table~\\ref{tab:selection}. $p$ values are unadjusted for "
+         "multiplicity and should be read as descriptive at these sample "
+         "sizes.}",
+         "\\label{tab:paired}",
+         "\\footnotesize",
+         "\\renewcommand{\\arraystretch}{1.2}",
+         "\\begin{tabular}{lrrr}",
+         "\\toprule",
+         "\\textbf{A vs.\\ B} & \\textbf{$n$} & \\textbf{median $\\Delta$} & "
+         "\\textbf{$p$} \\\\",
+         "\\midrule"]
+    for bi, sp in enumerate(("random", "scaffold")):
+        cells = D.attributor_cells(ds, bb, sp)
+        attrs = [a for a in ATTR_ORDER if a in cells]
+        if len(attrs) < 2:
+            continue
+        if bi:
+            L.append("\\addlinespace[3pt]")
+        L.append("\\multicolumn{4}{l}{\\itshape " + tex(ds) + ", " + bb + ", "
+                 + sp + " split} \\\\")
+        L.append("\\addlinespace[1pt]")
+        for i, a in enumerate(attrs):
+            for b in attrs[i + 1:]:
+                A, B = D.by_graph(cells[a]), D.by_graph(cells[b])
+                shared = sorted(set(A) & set(B))
+                w = D.paired_wilcoxon([A[g]["occ_spearman"] for g in shared],
+                                      [B[g]["occ_spearman"] for g in shared])
+                L.append(" & ".join([
+                    f"{SHORT.get(a, a)} vs.\\ {SHORT.get(b, b)}",
+                    str(w["n"]), n(w["median_delta"]), pfmt(w["p"]),
+                ]) + " \\\\")
+    L += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
+    write("tab_paired.tex", "\n".join(L) + "\n")
+
+
+# ------------------------------------------------------------ regime table
+def tab_regime():
+    pooled: dict[str, list] = {}
+    for recs in RECS.values():
+        for r in recs:
+            pooled.setdefault(r.get("regime", "?"), []).append(r)
+    fields = [("occ_spearman", "occlusion $\\rho$"),
+              ("gt_auroc", "GT AUROC"),
+              ("stability", "stability"),
+              ("motif_top1_share", "motif top-1"),
+              ("confidence", "confidence")]
+    L = ["\\begin{table*}[t]", "\\centering",
+         "\\caption{\\textbf{Reliability stratified by confidence/correctness "
+         "regime}, pooled over the "
+         + str(sum(len(v) for v in pooled.values()))
+         + " per-molecule records this run committed. A molecule is "
+         "\\emph{confident-correct} or \\emph{confident-error} when its "
+         "temperature-scaled confidence is at least $0.8$, \\emph{borderline} "
+         "otherwise. $n$ is given per metric because ground truth exists for "
+         "only a minority of molecules --- in particular the confident-error "
+         "GT mean rests on too few molecules to interpret, and is printed "
+         "rather than hidden.}",
+         "\\label{tab:regime}",
+         "\\footnotesize",
+         "\\renewcommand{\\arraystretch}{1.25}",
+         "\\resizebox{\\textwidth}{!}{%",
+         "\\begin{tabular}{l" + "rr" * len(fields) + "}",
+         "\\toprule",
+         "\\textbf{regime} & "
+         + " & ".join("\\multicolumn{2}{c}{\\textbf{" + lab + "}}"
+                      for _, lab in fields) + " \\\\",
+         " & " + " & ".join("\\textit{mean} & \\textit{n}" for _ in fields)
+         + " \\\\",
+         "\\midrule"]
+    for reg in ("confident_correct", "confident_error", "borderline"):
+        sub = pooled.get(reg, [])
+        cells = []
+        for f, _ in fields:
+            vals = [r[f] for r in sub
+                    if r.get(f) is not None and not math.isnan(r[f])]
+            cells += [n(st.mean(vals)) if vals else "---", str(len(vals))]
+        L.append(reg.replace("_", "-") + " & " + " & ".join(cells) + " \\\\")
+    L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
+    write("tab_regime.tex", "\n".join(L) + "\n")
+
+
 # --------------------------------------------------- molecular classification
 def tab_molecular():
-    """Split across two rotated tables so each fits the page at the same
-    \\resizebox{0.95\\textheight} scaling (35 rows do not fit in one)."""
     rows = [r for r in CLS if r["gt_auroc"] is None]
-    rows.sort(key=lambda r: (r["dataset"], r["backbone"], r["attributor"]))
+    rows.sort(key=lambda r: (r["dataset"], r["backbone"], r["attributor"],
+                             r["split"]))
     datasets = sorted({r["dataset"] for r in rows})
     half = len(rows) / 2
     cut, seen = len(datasets), 0
-    for i, ds in enumerate(datasets):
-        seen += sum(1 for r in rows if r["dataset"] == ds)
+    for i, dsx in enumerate(datasets):
+        seen += sum(1 for r in rows if r["dataset"] == dsx)
         if seen >= half:
             cut = i + 1
             break
     parts = [datasets[:cut], datasets[cut:]]
-
     blocks: dict[str, list] = {}
     for r in rows:
         blocks.setdefault(r["dataset"], []).append(r)
     best_occ = {id(max(v, key=lambda r: (r["occ_spearman"] is not None,
                                          r["occ_spearman"])))
                 for v in blocks.values() if len(v) > 1}
-
-    caption_head = ("\\textbf{Molecular classification cells (no node-level "
-                    "ground truth available)")
-    caption_tail = (".} Every committed classification cell on a real molecular "
-                    "dataset. The ground-truth localisation column does not "
-                    "exist for these datasets --- no per-atom labels are "
-                    "published --- so only model-side reliability can be "
-                    "measured, which is precisely the gap the Tier-1 cells are "
-                    "needed to close. \\emph{charact.} is the GraphFramEx "
-                    "characterisation score and \\emph{unfaith.} the PyG/DIG "
-                    "unfaithfulness metric, computed on the same molecules. "
-                    "Bold marks the best occlusion $\\rho$ per dataset "
-                    "(emphasis only).}")
-
+    head = ("\\textbf{Molecular classification cells (no node-level ground "
+            "truth available)")
+    tail = (".} Every committed classification cell on a real molecular "
+            "dataset. The ground-truth localisation column does not exist for "
+            "these datasets --- no per-atom labels are published --- so only "
+            "model-side reliability can be measured, which is precisely the "
+            "gap the Tier-1 cells are needed to close. \\emph{charact.} is the "
+            "GraphFramEx characterisation score and \\emph{unfaith.} the "
+            "PyG/DIG unfaithfulness metric, computed on the same molecules; "
+            "both are blank for carried rows (\\textsuperscript{c}), whose "
+            "per-molecule records this run did not regenerate. Bold marks the "
+            "highest occlusion $\\rho$ per dataset (emphasis only).}")
     for pi, part in enumerate(parts):
         sub = [r for r in rows if r["dataset"] in part]
         L = ["\\begin{sidewaystable*}[p]", "\\centering",
              "\\captionsetup{width=0.95\\textheight}",
-             "\\caption{" + caption_head
-             + f", {pi + 1} of {len(parts)}" + caption_tail,
+             "\\caption{" + head + f", {pi + 1} of {len(parts)}" + tail,
              "\\label{tab:molecular" + ("" if pi == 0 else chr(97 + pi)) + "}",
              "\\renewcommand{\\arraystretch}{1.3}",
              "\\resizebox{0.95\\textheight}{!}{%",
@@ -400,11 +676,10 @@ def tab_molecular():
                 L.append("\\addlinespace[2pt]")
             prev = r["dataset"]
             L.append(" & ".join([
-                tex(r["dataset"]), r["backbone"],
-                SHORT.get(r["attributor"], r["attributor"]),
-                r["split"], f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
-                n(r["ece"]), n(r["motif_top1"]),
-                bold(n(r["occ_spearman"]), id(r) in best_occ),
+                tex(r["dataset"]) + prov_mark(r), r["backbone"],
+                SHORT.get(r["attributor"], r["attributor"]), r["split"],
+                f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]), n(r["ece"]),
+                n(r["motif_top1"]), bold(n(r["occ_spearman"]), id(r) in best_occ),
                 n(r["occ_top1"]), n(r["fid+"]), n(r["fid-"]),
                 n(b.get("stability")), n(b.get("characterization")),
                 n(b.get("unfaithfulness")),
@@ -415,20 +690,24 @@ def tab_molecular():
 
 # -------------------------------------------------------------- regression
 def tab_regression():
-    rows = sorted(REG, key=lambda r: (r["dataset"], r["backbone"], r["attributor"]))
-    neg = [r for r in REG if r["occ_spearman"] is not None and r["occ_spearman"] < 0]
-    pos = [r for r in REG if r["occ_spearman"] is not None and r["occ_spearman"] >= 0]
-    NEG_REG = len(neg)
-    POS_REG = (", ".join(f"{tex(r['dataset'])} under {r['backbone']}" for r in pos)
-               if pos else "none")
+    rows = sorted(REG, key=lambda r: (r["dataset"], r["backbone"],
+                                      r["attributor"], r["split"]))
+    vals = [r for r in REG if r["occ_spearman"] is not None]
+    neg = [r for r in vals if r["occ_spearman"] < 0]
+    pos = sorted({f"{tex(r['dataset'])}$\\cdot${r['backbone']}" for r in vals
+                  if r["occ_spearman"] >= 0})
     L = ["\\begin{table*}[t]", "\\centering",
          "\\caption{\\textbf{Molecular regression cells.} Occlusion "
          "faithfulness is computed in output space (predicted-value shift) "
-         "rather than probability space. In " + str(NEG_REG) + " of the "
-         + str(len(REG)) + " committed regression cells the "
+         "rather than probability space. In " + str(len(neg)) + " of the "
+         + str(len(vals)) + " committed regression cells the "
          "attribution--occlusion agreement is \\emph{negative} --- the atoms an "
          "attributor ranks highest are not the atoms whose removal moves the "
-         "prediction most --- the sole exception being " + POS_REG + ". Bold "
+         "prediction most --- while " + ", ".join(pos) + " run positive. Note "
+         "the Fidelity$\\pm$ columns leave the $[-1,1]$ range a probability-space "
+         "fidelity would occupy (up to " + n(max(r["fid+"] for r in REG
+                                                 if r["fid+"] is not None), 2)
+         + "), which is why we report but do not interpret their sign. Bold "
          "marks the highest occlusion $\\rho$ per dataset (emphasis only). "
          "PGExplainer is classification-only and therefore absent by "
          "construction.}",
@@ -441,12 +720,13 @@ def tab_regression():
          "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "
          "\\textbf{split} & \\textbf{$n$} & \\textbf{RMSE} & \\textbf{MAE} & "
          "\\textbf{$R^2$} & \\textbf{motif top-1} & \\textbf{occ.\\ $\\rho$} & "
-         "\\textbf{occ.\\ top-1} & \\textbf{sparsity} & \\textbf{stab.} \\\\",
+         "\\textbf{occ.\\ top-1} & \\textbf{Fid+} & \\textbf{stab.} \\\\",
          "\\midrule"]
     blocks: dict[str, list] = {}
     for r in rows:
         blocks.setdefault(r["dataset"], []).append(r)
-    best = {id(max(v, key=lambda r: r["occ_spearman"])) for v in blocks.values()}
+    best = {id(max(v, key=lambda r: r["occ_spearman"]))
+            for v in blocks.values() if len(v) > 1}
     prev = None
     for r in rows:
         b = bench_of(r)
@@ -454,108 +734,18 @@ def tab_regression():
             L.append("\\addlinespace[2pt]")
         prev = r["dataset"]
         L.append(" & ".join([
-            tex(r["dataset"]), r["backbone"], SHORT.get(r["attributor"], r["attributor"]),
-            r["split"], f"{int(r['n_mol'])}", n(r["rmse"]), n(r["mae"]), n(r["r2"]),
+            tex(r["dataset"]) + prov_mark(r), r["backbone"],
+            SHORT.get(r["attributor"], r["attributor"]), r["split"],
+            f"{int(r['n_mol'])}", n(r["rmse"]), n(r["mae"]), n(r["r2"]),
             n(r["motif_top1"]), bold(n(r["occ_spearman"]), id(r) in best),
-            n(r["occ_top1"]), n(r["sparsity"]), n(b.get("stability")),
+            n(r["occ_top1"]), n(r["fid+"], 2), n(b.get("stability")),
         ]) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
     write("tab_regression.tex", "\n".join(L) + "\n")
 
 
-# ------------------------------------------------------- selection experiment
-def tab_selection():
-    L = ["\\begin{table*}[t]", "\\centering",
-         "\\caption{\\textbf{Does a faithfulness-only ranking pick the "
-         "ground-truth-best attributor?} Each row ranks the six attributors on "
-         "the same molecules by one faithfulness/fidelity metric and asks "
-         "whether its top choice is the attributor the ground truth ranks best. "
-         "In distribution the answer is yes for every metric; under scaffold "
-         "shift the two field-standard metrics choose an attributor that is "
-         "anti-aligned with the ground truth, and the rank correlation between "
-         "faithfulness and correctness collapses. $p$ is a paired Wilcoxon test "
-         "on per-molecule GT AUROC between the selected and the "
-         "ground-truth-best attributor.}",
-         "\\label{tab:selection}",
-         "\\small",
-         "\\renewcommand{\\arraystretch}{1.3}",
-         "\\resizebox{\\textwidth}{!}{%",
-         "\\begin{tabular}{llllrlrcrr}",
-         "\\toprule",
-         "\\textbf{regime} & \\textbf{cell} & \\textbf{ranking metric} & "
-         "\\textbf{its top pick} & \\textbf{pick GT} & \\textbf{GT-best} & "
-         "\\textbf{GT-best} & \\textbf{mismatch} & \\textbf{Wilcoxon $p$} & "
-         "\\textbf{$\\rho$(faith,GT)} \\\\",
-         "\\midrule"]
-    names = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
-             "characterization": "characterisation"}
-    regimes = {"SynthMotifsXL": "in-distribution", "MUTAG": "scaffold shift"}
-    for bi, blk in enumerate(GTB):
-        if bi:
-            L.append("\\addlinespace[2pt]")
-        nmol = list(blk["per_attributor"].values())[0]["n_mol"]
-        cell = (tex(blk["dataset"]) + "$\\cdot$" + blk["backbone"]
-                + ", $n$=" + str(nmol))
-        for si, sel in enumerate(blk["selections"]):
-            rho = blk["rank_correlation"][sel["faithfulness_metric"]]["rho"]
-            p = sel["paired_gt_pvalue"]
-            L.append(" & ".join([
-                regimes.get(blk["dataset"], "") if si == 0 else "",
-                cell if si == 0 else "",
-                names[sel["faithfulness_metric"]],
-                SHORT.get(sel["faithfulness_pick"], sel["faithfulness_pick"]),
-                n(sel["faithfulness_pick_gt_auroc"]),
-                SHORT.get(sel["gt_best"], sel["gt_best"]),
-                n(sel["gt_best_gt_auroc"]),
-                "\\textbf{yes}" if sel["mismatch"] else "no",
-                "---" if p is None else f"{p:.4f}",
-                n(rho),
-            ]) + " \\\\")
-    L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
-    write("tab_selection.tex", "\n".join(L) + "\n")
-
-
-# ------------------------------------------------------------ paired stats
-def tab_paired():
-    wanted = [k for k in PAIRED
-              if k.startswith("SynthMotifsXL") or k.startswith("MUTAG · GINE · scaffold")]
-    L = ["\\begin{table}[t]", "\\centering",
-         "\\caption{\\textbf{Paired attributor comparisons on shared "
-         "molecules} (Wilcoxon signed-rank on per-molecule occlusion "
-         "faithfulness). The powered in-distribution cell separates the "
-         "attributor families decisively; the small shift cell mostly cannot, "
-         "which is itself a reason not to rank attributors on faithfulness "
-         "alone. $p$ values are unadjusted for multiplicity and are printed at "
-         "the precision of the committed artifact, in which $0.000$ denotes "
-         "$p<0.0005$.}",
-         "\\label{tab:paired}",
-         "\\footnotesize",
-         "\\renewcommand{\\arraystretch}{1.2}",
-         "\\begin{tabular}{lrrr}",
-         "\\toprule",
-         "\\textbf{A vs.\\ B} & \\textbf{$n$} & "
-         "\\textbf{median $\\Delta$} & \\textbf{$p$} \\\\",
-         "\\midrule"]
-    for bi, blockname in enumerate(wanted):
-        if bi:
-            L.append("\\addlinespace[3pt]")
-        rows = PAIRED[blockname]
-        label = tex(blockname.replace(" · ", ", "))
-        L.append("\\multicolumn{4}{l}{\\itshape " + label + "} \\\\")
-        L.append("\\addlinespace[1pt]")
-        for r in rows:
-            L.append(" & ".join([
-                f"{SHORT.get(r['A'], r['A'])} vs.\\ {SHORT.get(r['B'], r['B'])}",
-                f"{int(r['n'])}", n(r["median_delta"]),
-                "---" if r["p"] is None else f"{r['p']:.3f}",
-            ]) + " \\\\")
-    L += ["\\bottomrule", "\\end{tabular}", "\\end{table}"]
-    write("tab_paired.tex", "\n".join(L) + "\n")
-
-
 # ------------------------------------------------------------- related work
 def tab_related():
-    """Render the committed related-work matrix (paper/RELATED_WORK.md)."""
     txt = (D.REPO / "paper" / "RELATED_WORK.md").read_text()
     header, rows = None, []
     for h, rws in D._md_tables(txt):
@@ -568,8 +758,7 @@ def tab_related():
     def mark(c):
         c = c.strip().replace("**", "")
         c = c.replace("✓", "\\ding{51}").replace("✗", "\\ding{55}")
-        c = c.replace("~", "$\\sim$")
-        return tex(c)
+        return tex(c.replace("~", "$\\sim$"))
 
     L = ["\\begin{table*}[t]", "\\centering",
          "\\caption{\\textbf{Where the audit sits relative to existing "
@@ -578,74 +767,33 @@ def tab_related():
          "focus. The contribution is the combination, not any single row: "
          "ground-truth validation and faithfulness both exist elsewhere, but "
          "not jointly with cross-checkpoint stability, calibration linkage and "
-         "scaffold-shift stratification over a motif-native decomposition.}",
+         "shift stratification over a motif-native decomposition.}",
          "\\label{tab:related}",
          "\\small",
          "\\renewcommand{\\arraystretch}{1.3}",
          "\\resizebox{\\textwidth}{!}{%",
          "\\begin{tabular}{l" + "c" * (len(header) - 1) + "}",
          "\\toprule",
-         " & ".join(f"\\textbf{{{tex(h.replace('**',''))}}}" for h in header) + " \\\\",
-         "\\midrule"]
+         " & ".join(f"\\textbf{{{tex(h.replace('**', ''))}}}" for h in header)
+         + " \\\\", "\\midrule"]
     for r in rows:
         if len(r) != len(header):
             continue
-        L.append(" & ".join([tex(r[0].replace("**", ""))] +
-                            [mark(c) for c in r[1:]]) + " \\\\")
+        L.append(" & ".join([tex(r[0].replace("**", ""))]
+                            + [mark(c) for c in r[1:]]) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
     write("tab_related.tex", "\n".join(L) + "\n")
 
 
-# --------------------------------------------------------------- coverage
-def tab_coverage():
-    pend = COV["pending"]
-    by_ds: dict[str, list] = {}
-    for ds, bb, at, sp in pend:
-        by_ds.setdefault(ds, []).append((bb, at, sp))
-    L = ["\\begin{table}[t]", "\\centering",
-         "\\caption{\\textbf{What is still running.} The planned grid is "
-         "\\texttt{configs/full.yaml}; this draft reports the cells committed "
-         "so far. Pending cells are left blank everywhere in this paper --- "
-         "never imputed. The overwhelming majority of what is outstanding is "
-         "the in-distribution (random-split) reference arm; the two synthetic "
-         "sets whose download is blocked in this environment are listed as "
-         "blocked, not pending.}",
-         "\\label{tab:coverage}",
-         "\\footnotesize",
-         "\\renewcommand{\\arraystretch}{1.25}",
-         "\\begin{tabular}{lcc}",
-         "\\toprule",
-         "\\textbf{dataset} & \\textbf{cells committed} & "
-         "\\textbf{cells pending} \\\\",
-         "\\midrule"]
-    done_by_ds: dict[str, int] = {}
-    for r in BENCH:
-        done_by_ds[r["dataset"]] = done_by_ds.get(r["dataset"], 0) + 1
-    all_ds = sorted(set(done_by_ds) | set(by_ds))
-    for ds in all_ds:
-        note = ""
-        if ds in {"BA-2Motifs", "ShapeGGen"}:
-            note = "~\\textsuperscript{$\\dagger$}"
-        L.append(f"{tex(ds)}{note} & {done_by_ds.get(ds, 0)} & "
-                 f"{len(by_ds.get(ds, []))} \\\\")
-    L += ["\\midrule",
-          f"\\textbf{{total}} & \\textbf{{{COV['n_done_total']}}} & "
-          f"\\textbf{{{len(pend)}}} \\\\",
-          "\\bottomrule", "\\end{tabular}",
-          "\\\\[3pt]\\raggedright\\footnotesize $\\dagger$ blocked in this "
-          "environment (dependency/download unavailable), not merely unfinished.",
-          "\\end{table}"]
-    write("tab_coverage.tex", "\n".join(L) + "\n")
-
-
 if __name__ == "__main__":
-    print("Generating LaTeX tables and macros from committed results…")
+    print("Generating LaTeX tables and macros from results/ …")
     macros()
     tab_related()
+    tab_ledger()
     tab_tier1()
     tab_selection()
+    tab_paired()
+    tab_regime()
     tab_molecular()
     tab_regression()
-    tab_paired()
-    tab_coverage()
     print("done.")

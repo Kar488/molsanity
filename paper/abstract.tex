@@ -8,31 +8,31 @@ and not where it stops being trustworthy under the scaffold shift that
 characterises real drug-discovery workflows. We present \textbf{MolSanity}, a
 reliability-audit framework that wraps canonical attribution implementations
 (Captum, PyTorch Geometric, RDKit) rather than proposing a new attributor, and
-scores every (dataset × backbone × attributor) cell on six axes: motif-native
-coherence, occlusion--attribution faithfulness, ground-truth localisation
-where node labels exist, cross-checkpoint stability, calibration linkage, and
-confidence/correctness regime stratification. Across \nCellsDone{} committed
-audit cells spanning \nDatasetsDone{} datasets, \nBackbonesDone{} backbones and
-\nAttributorsDone{} attributors, the audit shows that \emph{faithfulness is not
-correctness}: in \nFaithfulButWrong{} of the \nGtOccCells{} cells where a
-node-level ground truth exists, an attribution that tracks the model
-positively (occlusion $\rho>0$) is nonetheless anti-aligned with the true motif
-(GT AUROC $<0.5$). On MUTAG under a Bemis--Murcko scaffold split, Saliency and
-Input$\times$Gradient are not distinguishable from Integrated Gradients in
-faithfulness ($\rho=\mutagSalOcc{}$, $\mutagIxGOcc{}$ vs.\ $\mutagIGOcc{}$;
-paired Wilcoxon $p=\mutagIGvsSalP{}$ and $p=\mutagIGvsIxGP{}$) while localising
-the mutagenic nitro motif at GT AUROC $\mutagSalGt{}$ and $\mutagIxGGt{}$
-against IG's $\mutagIGGt{}$. Ranking attributors by field-standard fidelity
-recovers the ground-truth-best method in distribution ($\rho$(faithfulness,
-truth) $=\xlRhoOccspearman{}$--$\xlRhoCharacterization{}$, no mismatch,
-$n=\xlNMol{}$) but fails under shift, where GraphFramEx characterisation
-selects the worst-localising attributor of six (paired Wilcoxon
-$p=\shiftPCharacterization{}$) and the rank correlation collapses to
-$\shiftRhoCharacterization{}$. The attributor ordering itself reverses between
-regimes ($\rho=\attrRankRho{}$ across six attributors), and the backbone
-ordering does not transfer between datasets ($\rho=\backboneRankRho{}$). We
-therefore argue that an attribution should never be reported without the regime
-it was audited in. Results reflect the latest committed run:
-\nCellsPlanDone{}/\nCellsPlanned{} cells of the planned grid are complete, the
-remainder are marked pending and left blank --- never imputed. Code, configs,
-checkpoints and every number in this paper are in the repository.
+scores every (dataset × backbone × attributor × split) cell on six axes:
+motif-native coherence, occlusion--attribution faithfulness, ground-truth
+localisation where node labels exist, cross-checkpoint stability, calibration
+linkage, and confidence/correctness regime stratification. Our central finding
+is that \emph{faithfulness is not correctness}, and that the gap opens under
+shift. On a synthetic task with \emph{exact} node ground truth, holding the
+dataset, the backbone and the attributor set fixed and changing only the split,
+a faithfulness-only ranking is harmless in distribution --- its top pick differs
+from the ground-truth-best attributor by $\indGapFidelityplus{}$ AUROC
+($p=\indPFidelityplus{}$) --- but under scaffold shift all
+$\shiftNMismatch{}$ of $\shiftNMetrics{}$ ranking metrics, including our own
+occlusion measure, select an attributor that is significantly worse than the
+ground-truth-best (median gap $\shiftGapCharacterization{}$ AUROC, paired
+Wilcoxon $p\shiftPCharacterization{}$), and the faithfulness--truth rank
+correlation falls from $\indRhoOccspearman{}$ to $\shiftRhoOccspearman{}$.
+Across all \nGtCells{} committed cells that carry a node-level ground truth,
+\nFaithfulButWrong{} are positively faithful to the model yet anti-aligned with
+the true motif. Reliability is not a property of the attributor alone: the
+backbone ordering does not survive the change of split
+($\rho=\bbRankRho{}$), and the best-performing, best-calibrated molecular cell
+in the matrix (\bestAucDataset{}·\bestAucBackbone{}, AUC $\bestAucAuc{}$, ECE
+$\bestAucEce{}$) carries the most anti-faithful attributions of any
+($\rho=\bestAucOcc{}$). Results are reported as of the committed
+\texttt{\runConfig{}} run, which completed \nDone{} of \nAttempted{} attempted
+cell-runs; the \nFailed{} failures and the \nCarried{} rows carried over from an
+earlier run are labelled as such throughout and never merged into a
+this-run aggregate. Every number, figure and table is regenerated from the
+committed artifacts by scripts in the repository.

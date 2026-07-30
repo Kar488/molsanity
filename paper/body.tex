@@ -118,18 +118,50 @@ MolSanity's position is that neither axis subsumes the other, and that what
 needs measuring is the \emph{joint} behaviour of the two under distribution
 shift.
 
-\paragraph{Frameworks, and the gap} GraphXAI~\cite{graphxai} supplies synthetic
-generators with exact ground truth and an evaluation library;
-GraphFramEx~\cite{graphframex} systematises fidelity-style evaluation across
-explainers and tasks; DIG~\cite{dig} packages methods and metrics; MolFaith
-\cite{molfaith} evaluates feature attributions on molecular property models
-under fidelity-based metrics. Table~\ref{tab:related} places MolSanity against
-them. The claim is deliberately narrow. No individual row of that table is
-novel; the combination is. Ground-truth localisation, faithfulness,
-cross-checkpoint stability and calibration linkage are computed together over a
-motif-native decomposition, stratified by scaffold shift, across five
-backbones, with the field-standard metrics recomputed on the same molecules so
-the comparison is head-to-head rather than cross-paper.
+\paragraph{Frameworks, and the explicit delta} Four lines of work are close
+enough that a citation is not a sufficient answer. Table~\ref{tab:related}
+scores all of them on the same capabilities; what follows states what each row
+of that table means.
+
+\emph{Sanchez-Lengeling et al.}~\cite{sanchezlengeling} is the nearest
+neighbour and the earliest. It built the first systematic attribution benchmark
+for molecular GNNs on tasks whose ground-truth substructure is known by
+construction, establishing that attribution methods should be scored against a
+known rationale rather than against how plausible a chemist finds the
+highlighting. MolSanity inherits that premise. What it adds is the faithfulness
+axis measured on the \emph{same} molecules and the joint behaviour of the two.
+A benchmark that reports correctness alone cannot show that a faithfulness-based
+choice of attributor is the wrong choice, because it never makes that choice.
+The selection-consistency test of \nameref{sec:selectiondef} makes it, and its
+outcome changes with the split.
+
+\emph{MolFaith}~\cite{molfaith} evaluates feature attributions on molecular
+property models under fidelity-based metrics, which is the situation a
+practitioner is actually in: no rationale labels exist, so faithfulness is all
+there is to rank on. Our results are a caution addressed to that setting. On the
+cells where we can check, the fidelity-based ranking and the ground-truth
+ranking agree in distribution and disagree under scaffold shift, and nothing in
+the fidelity numbers marks the difference.
+
+\emph{GraphXAI}~\cite{graphxai} and \emph{GraphFramEx}~\cite{graphframex} are
+general-graph frameworks: GraphXAI supplies generators with exact node ground
+truth and an evaluation library, GraphFramEx systematises fidelity-style
+evaluation across explainers and tasks. Both are broader than MolSanity across
+graph domains and narrower within chemistry. MolSanity scores chemically
+meaningful units (SSSR rings, Murcko scaffold, BRICS fragments) rather than
+individual atoms, and stratifies by the split that governs molecular
+deployment. \emph{DIG}~\cite{dig} is a library rather than a protocol; we wrap
+its unfaithfulness metric, and its SubgraphX implementation is the coverage gap
+recorded in \nameref{sec:limits}.
+
+\emph{What is new here, and what is not.} Ground-truth localisation,
+fidelity metrics, motif decompositions and scaffold splits all exist already.
+Two rows of Table~\ref{tab:related} we do not find in any of the four:
+cross-checkpoint stability and calibration linkage. The contribution we would
+defend is neither of those rows alone, but the result they were built to
+support, that the two evaluation traditions above invert under the shift
+molecular models are deployed into and that no metric on the faithfulness side
+signals it.
 
 \input{generated/tab_related}
 

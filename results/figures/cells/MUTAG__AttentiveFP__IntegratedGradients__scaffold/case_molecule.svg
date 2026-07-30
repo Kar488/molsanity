@@ -7,23 +7,23 @@
 width='500px' height='500px' viewBox='0 0 500 500'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='500.0' height='500.0' x='0.0' y='0.0'> </rect>
-<ellipse cx='37.2' cy='262.0' rx='12.2' ry='12.2' class='atom-0'  style='fill:#FF5555;fill-rule:evenodd;stroke:#FF5555;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='46.4' cy='201.9' rx='12.2' ry='12.2' class='atom-1'  style='fill:#FF5555;fill-rule:evenodd;stroke:#FF5555;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='103.1' cy='179.9' rx='12.2' ry='12.2' class='atom-2'  style='fill:#FF3F3F;fill-rule:evenodd;stroke:#FF3F3F;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='150.5' cy='218.0' rx='12.2' ry='12.2' class='atom-3'  style='fill:#FF8787;fill-rule:evenodd;stroke:#FF8787;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='207.2' cy='196.0' rx='12.2' ry='12.2' class='atom-4'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='254.6' cy='234.0' rx='12.2' ry='12.2' class='atom-5'  style='fill:#FF8585;fill-rule:evenodd;stroke:#FF8585;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='311.3' cy='212.0' rx='12.2' ry='12.2' class='atom-6'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='358.7' cy='250.1' rx='12.2' ry='12.2' class='atom-7'  style='fill:#FF3F3F;fill-rule:evenodd;stroke:#FF3F3F;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='349.5' cy='310.2' rx='12.2' ry='12.2' class='atom-8'  style='fill:#FF3D3D;fill-rule:evenodd;stroke:#FF3D3D;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='292.8' cy='332.2' rx='12.2' ry='12.2' class='atom-9'  style='fill:#FF3C3C;fill-rule:evenodd;stroke:#FF3C3C;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='245.4' cy='294.1' rx='12.2' ry='12.2' class='atom-10'  style='fill:#FF8686;fill-rule:evenodd;stroke:#FF8686;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='188.7' cy='316.2' rx='12.2' ry='12.2' class='atom-11'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='141.3' cy='278.1' rx='12.2' ry='12.2' class='atom-12'  style='fill:#FF8787;fill-rule:evenodd;stroke:#FF8787;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='84.6' cy='300.1' rx='12.2' ry='12.2' class='atom-13'  style='fill:#FF3F3F;fill-rule:evenodd;stroke:#FF3F3F;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='420.8' cy='228.0' rx='16.8' ry='12.2' class='atom-14'  style='fill:#FF4646;fill-rule:evenodd;stroke:#FF4646;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='462.8' cy='266.3' rx='12.2' ry='12.5' class='atom-15'  style='fill:#FFFEFE;fill-rule:evenodd;stroke:#FFFEFE;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='428.9' cy='168.1' rx='17.1' ry='12.5' class='atom-16'  style='fill:#FFFFFF;fill-rule:evenodd;stroke:#FFFFFF;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='37.2' cy='262.0' rx='12.2' ry='12.2' class='atom-0'  style='fill:#FF4242;fill-rule:evenodd;stroke:#FF4242;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='46.4' cy='201.9' rx='12.2' ry='12.2' class='atom-1'  style='fill:#FF4242;fill-rule:evenodd;stroke:#FF4242;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='103.1' cy='179.9' rx='12.2' ry='12.2' class='atom-2'  style='fill:#FF4C4C;fill-rule:evenodd;stroke:#FF4C4C;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='150.5' cy='218.0' rx='12.2' ry='12.2' class='atom-3'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='207.2' cy='196.0' rx='12.2' ry='12.2' class='atom-4'  style='fill:#FF5858;fill-rule:evenodd;stroke:#FF5858;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='254.6' cy='234.0' rx='12.2' ry='12.2' class='atom-5'  style='fill:#FF2929;fill-rule:evenodd;stroke:#FF2929;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='311.3' cy='212.0' rx='12.2' ry='12.2' class='atom-6'  style='fill:#FF6767;fill-rule:evenodd;stroke:#FF6767;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='358.7' cy='250.1' rx='12.2' ry='12.2' class='atom-7'  style='fill:#FF5151;fill-rule:evenodd;stroke:#FF5151;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='349.5' cy='310.2' rx='12.2' ry='12.2' class='atom-8'  style='fill:#FF5C5C;fill-rule:evenodd;stroke:#FF5C5C;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='292.8' cy='332.2' rx='12.2' ry='12.2' class='atom-9'  style='fill:#FF4F4F;fill-rule:evenodd;stroke:#FF4F4F;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='245.4' cy='294.1' rx='12.2' ry='12.2' class='atom-10'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='188.7' cy='316.2' rx='12.2' ry='12.2' class='atom-11'  style='fill:#FF5858;fill-rule:evenodd;stroke:#FF5858;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='141.3' cy='278.1' rx='12.2' ry='12.2' class='atom-12'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='84.6' cy='300.1' rx='12.2' ry='12.2' class='atom-13'  style='fill:#FF4C4C;fill-rule:evenodd;stroke:#FF4C4C;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='420.8' cy='228.0' rx='16.8' ry='12.2' class='atom-14'  style='fill:#FFFFFF;fill-rule:evenodd;stroke:#FFFFFF;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='462.8' cy='266.3' rx='12.2' ry='12.5' class='atom-15'  style='fill:#FFF2F2;fill-rule:evenodd;stroke:#FFF2F2;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='428.9' cy='168.1' rx='17.1' ry='12.5' class='atom-16'  style='fill:#FFF4F4;fill-rule:evenodd;stroke:#FFF4F4;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-0 atom-0 atom-1' d='M 37.2,262.0 L 46.4,201.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-0 atom-0 atom-1' d='M 47.0,258.2 L 54.7,208.5' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-0 atom-13' d='M 37.2,262.0 L 84.6,300.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />

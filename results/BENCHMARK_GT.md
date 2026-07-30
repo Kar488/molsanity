@@ -11,9 +11,28 @@
 correlation between the faithfulness metric and GT AUROC across attributors
 (≈1 → faithfulness tracks correctness; ≤0 → it does not).
 
-### SynthMotifsXL · random — _need >=2 attributors with records_
+### MUTAG · GINE · scaffold split — scaffold shift (motif-proxy GT)
 
-### MUTAG · scaffold — _need >=2 attributors with records_
+6 attributors on the same ~20 molecules.
+
+| attributor | GT AUROC | 95% CI | occ_spearman | Fidelity+ | characterization |
+| --- | --- | --- | --- | --- | --- |
+| GNNExplainer ⭐ | 0.671 | (0.547, 0.794) | 0.607 | 0.079 | 0.133 |
+| IntegratedGradients | 0.537 | (0.471, 0.604) | 0.419 | 0.084 | 0.133 |
+| PGExplainer | 0.108 | (0.068, 0.162) | 0.407 | 0.054 | 0.091 |
+| InputXGradient | 0.049 | (0.016, 0.083) | 0.640 | 0.165 | 0.259 |
+| GuidedBackprop | 0.016 | (0.000, 0.040) | 0.701 | 0.204 | 0.282 |
+| Saliency | 0.009 | (0.000, 0.026) | 0.611 | 0.158 | 0.238 |
+
+⭐ = attributor the exact/proxy ground truth ranks best.
+
+_Faithfulness-only selection test_ — would a framework ranking by each metric pick the GT-best attributor?
+
+| faithfulness metric | its top pick | pick GT AUROC | GT-best | GT-best AUROC | mismatch? | paired Wilcoxon p | rank corr ρ(faith,GT) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| occ_spearman | GuidedBackprop | 0.016 | GNNExplainer | 0.671 | **yes** | 0.0001 | -0.600 |
+| fidelity_plus | GuidedBackprop | 0.016 | GNNExplainer | 0.671 | **yes** | 0.0001 | -0.657 |
+| characterization | GuidedBackprop | 0.016 | GNNExplainer | 0.671 | **yes** | 0.0001 | -0.657 |
 
 ## What this shows
 

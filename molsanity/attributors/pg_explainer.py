@@ -49,7 +49,17 @@ class PGExplainerAttributor:
                 mod.momentum = 0.0
         self._wrapped = _ExplainerWrapper(self.model)
         self._explainer = self._build_explainer(lr)
+        # PyG builds PGExplainer's mask MLP on CPU regardless of where the model
+        # lives, and its lazily-initialised Linear materialises on the module's
+        # device — so on a GPU run the first forward hits cuda inputs against cpu
+        # weights. Move the algorithm with the model, and keep it there.
+        self._to_model_device()
         self._train(train_graphs or [], max_train_graphs, seed)
+
+    def _to_model_device(self):
+        device = next(self.model.parameters()).device
+        self._explainer.algorithm.to(device)
+        return device
 
     def _build_explainer(self, lr):
         from torch_geometric.explain import Explainer, PGExplainer
@@ -74,7 +84,7 @@ class PGExplainerAttributor:
         from ..utils import set_global_seed
 
         set_global_seed(seed)
-        device = next(self.model.parameters()).device
+        device = self._to_model_device()
         self.model.eval()
         graphs = list(train_graphs)[:max_train_graphs]
         if not graphs:
@@ -95,7 +105,7 @@ class PGExplainerAttributor:
 
     def attribute(self, data, target: int | None = None) -> Attribution:
         self.model.eval()
-        device = next(self.model.parameters()).device
+        device = self._to_model_device()
         data = data.to(device)
         pred_t, batch = self._pred_target(data, device)
         pred = int(pred_t)

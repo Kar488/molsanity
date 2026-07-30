@@ -636,7 +636,11 @@ outcomes, but they shape what this draft can claim: the molecular-proxy
 ground-truth arm rests entirely on rows carried from an earlier,
 reduced-budget CPU run, marked \textsuperscript{c} throughout. Those rows were
 produced at a different budget on different hardware and should not be compared
-numerically against this run's rows.
+numerically against this run's rows. All four defects have since been fixed in
+the repository, with regression tests
+(\texttt{tests/test\_\-gpu\_\-regressions.py}); recovering the affected cells
+requires a re-run, and this draft deliberately reports only what the committed
+run produced.
 
 \paragraph{Single split, single seed} Each cell is one deterministic split at
 one seed. Cross-checkpoint stability partially probes run-to-run variability,

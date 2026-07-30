@@ -1,6 +1,6 @@
 \begin{table*}[t]
 \centering
-\caption{\textbf{Reliability stratified by confidence/correctness regime}, pooled over the 4253 per-molecule records this run committed. A molecule is \emph{confident-correct} or \emph{confident-error} when its temperature-scaled confidence is at least $0.8$, \emph{borderline} otherwise. $n$ is given per metric because ground truth exists for only a minority of molecules --- in particular the confident-error GT mean rests on too few molecules to interpret, and is printed rather than hidden.}
+\caption{\textbf{Reliability stratified by confidence/correctness regime}, pooled over the 5158 per-molecule records this run committed. A molecule is \emph{confident-correct} or \emph{confident-error} when its temperature-scaled confidence is at least $0.8$, \emph{borderline} otherwise. $n$ is given per metric because ground truth exists for only a minority of molecules --- in particular the confident-error GT mean rests on too few molecules to interpret, and is printed rather than hidden.}
 \label{tab:regime}
 \footnotesize
 \renewcommand{\arraystretch}{1.25}
@@ -10,9 +10,9 @@
 \textbf{regime} & \multicolumn{2}{c}{\textbf{occlusion $\rho$}} & \multicolumn{2}{c}{\textbf{GT AUROC}} & \multicolumn{2}{c}{\textbf{stability}} & \multicolumn{2}{c}{\textbf{motif top-1}} & \multicolumn{2}{c}{\textbf{confidence}} \\
  & \textit{mean} & \textit{n} & \textit{mean} & \textit{n} & \textit{mean} & \textit{n} & \textit{mean} & \textit{n} & \textit{mean} & \textit{n} \\
 \midrule
-confident-correct & $-$0.218 & 1637 & 0.877 & 288 & 0.787 & 1603 & 0.684 & 1759 & 0.957 & 1759 \\
-confident-error & $-$0.061 & 109 & 0.616 & 2 & 0.846 & 108 & 0.782 & 114 & 0.909 & 114 \\
-borderline & 0.259 & 1279 & 0.655 & 70 & 0.807 & 1273 & 0.724 & 1315 & 0.639 & 1315 \\
+confident-correct & $-$0.201 & 1987 & 0.695 & 432 & 0.768 & 1931 & 0.691 & 2130 & 0.957 & 2130 \\
+confident-error & 0.028 & 150 & 0.327 & 26 & 0.853 & 144 & 0.802 & 155 & 0.908 & 155 \\
+borderline & 0.234 & 1707 & 0.409 & 342 & 0.797 & 1693 & 0.727 & 1743 & 0.632 & 1743 \\
 \bottomrule
 \end{tabular}}
 \end{table*}

@@ -37,9 +37,12 @@ SHORT = {"IntegratedGradients": "IG", "Saliency": "Saliency",
 ESC = {"&": "\\&", "%": "\\%", "_": "\\_", "#": "\\#"}
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
               "GuidedBackprop", "GNNExplainer", "PGExplainer"]
-# The one cell family with an exact ground truth, several attributors, and both
-# splits — i.e. a within-dataset in-distribution vs. scaffold-shift contrast.
-ARM = ("SynthMotifs", "GINE")
+# Cell families with a node-level ground truth, the full attributor set, and
+# BOTH splits — i.e. within-dataset in-distribution vs. scaffold-shift
+# contrasts, where only the split changes. MUTAG is the molecular one (proxy
+# ground truth) and leads; SynthMotifs carries exact ground truth.
+ARMS = [("MUTAG", "GINE", "mut"), ("SynthMotifs", "GINE", "syn")]
+ARM = ARMS[0][:2]
 
 
 def tex(s: str) -> str:
@@ -158,40 +161,68 @@ def macros():
     add("nNoGtCells", sum(1 for r in list(CLS) + list(REG)
                           if r.get("gt_auroc") is None))
 
-    # --- the within-dataset shift contrast (this run, exact ground truth) ---
-    ds, bb = ARM
-    add("armDataset", ds)
-    add("armBackbone", bb)
-    for sp, pre in (("random", "ind"), ("scaffold", "shift")):
-        sel = D.selection_test(ds, bb, sp)
-        if sel is None:
-            continue
-        pa = sel["per_attributor"]
-        add(f"{pre}NAttr", len(sel["attributors"]))
-        add(f"{pre}NMol", max(v["n_mol"] for v in pa.values()))
-        add(f"{pre}GtBest", SHORT.get(sel["gt_best"], sel["gt_best"]))
-        add(f"{pre}GtBestVal", num(pa[sel["gt_best"]]["gt_auroc_mean"]))
-        add(f"{pre}NMismatch", sum(1 for s in sel["selections"] if s["mismatch"]))
-        add(f"{pre}NMetrics", len(sel["selections"]))
-        for a, v in pa.items():
-            tag = {"IntegratedGradients": "IG", "Saliency": "Sal",
-                   "InputXGradient": "IxG", "GuidedBackprop": "GBP",
-                   "GNNExplainer": "GNNE", "PGExplainer": "PGE"}[a]
-            add(f"{pre}{tag}Gt", num(v["gt_auroc_mean"]))
-            add(f"{pre}{tag}Occ", num(v["occ_spearman"]))
-        for s in sel["selections"]:
-            t = s["faithfulness_metric"].replace("_", "").capitalize()
-            add(f"{pre}Pick{t}", SHORT.get(s["faithfulness_pick"],
-                                           s["faithfulness_pick"]))
-            add(f"{pre}PickGt{t}", num(s["faithfulness_pick_gt_auroc"]))
-            if s["paired_gt_pvalue"] is not None:
-                p = s["paired_gt_pvalue"]
-                add(f"{pre}P{t}", "\\ensuremath{<}0.001" if p < 0.001 else f"{p:.3f}")
-                add(f"{pre}Gap{t}", num(s["paired_gt_gap_median"]))
-                add(f"{pre}NPaired{t}", s["n_paired"])
-        for k, v in sel["rank_correlation"].items():
-            add(f"{pre}Rho{k.replace('_', '').capitalize()}", num(v["rho"]))
-        # attributor ranking correlation between the two splits is added below
+    # --- the within-dataset shift contrasts (only the split changes) --------
+    tags = {"IntegratedGradients": "IG", "Saliency": "Sal",
+            "InputXGradient": "IxG", "GuidedBackprop": "GBP",
+            "GNNExplainer": "GNNE", "PGExplainer": "PGE"}
+    add("nArms", len(ARMS))
+    for ds, bb, arm in ARMS:
+        add(f"{arm}Dataset", ds)
+        add(f"{arm}Backbone", bb)
+        for sp, half in (("random", "Ind"), ("scaffold", "Shift")):
+            sel = D.selection_test(ds, bb, sp)
+            if sel is None:
+                continue
+            pre = arm + half
+            pa = sel["per_attributor"]
+            add(f"{pre}NAttr", len(sel["attributors"]))
+            add(f"{pre}NMol", max(v["n_mol"] for v in pa.values()))
+            add(f"{pre}GtBest", SHORT.get(sel["gt_best"], sel["gt_best"]))
+            add(f"{pre}GtBestVal", num(pa[sel["gt_best"]]["gt_auroc_mean"]))
+            add(f"{pre}GtWorstVal", num(min(v["gt_auroc_mean"] for v in pa.values())))
+            add(f"{pre}NMismatch", sum(1 for x in sel["selections"] if x["mismatch"]))
+            add(f"{pre}NMetrics", len(sel["selections"]))
+            for a, v in pa.items():
+                add(f"{pre}{tags[a]}Gt", num(v["gt_auroc_mean"]))
+                add(f"{pre}{tags[a]}Occ", num(v["occ_spearman"]))
+            for x in sel["selections"]:
+                t = x["faithfulness_metric"].replace("_", "").capitalize()
+                add(f"{pre}Pick{t}", SHORT.get(x["faithfulness_pick"],
+                                               x["faithfulness_pick"]))
+                add(f"{pre}PickGt{t}", num(x["faithfulness_pick_gt_auroc"]))
+                if x["paired_gt_pvalue"] is not None:
+                    pv = x["paired_gt_pvalue"]
+                    add(f"{pre}P{t}",
+                        "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+                    add(f"{pre}Gap{t}", num(x["paired_gt_gap_median"]))
+                    add(f"{pre}NPaired{t}", x["n_paired"])
+            for k, v in sel["rank_correlation"].items():
+                add(f"{pre}Rho{k.replace('_', '').capitalize()}", num(v["rho"]))
+        # does the attributor GT ordering survive the change of split?
+        A = {a: D.cell_mean(RECS[(ds, bb, a, "random")], "gt_auroc")
+             for a in ATTR_ORDER if (ds, bb, a, "random") in RECS}
+        B = {a: D.cell_mean(RECS[(ds, bb, a, "scaffold")], "gt_auroc")
+             for a in ATTR_ORDER if (ds, bb, a, "scaffold") in RECS}
+        shared = [a for a in sorted(set(A) & set(B))
+                  if not math.isnan(A[a]) and not math.isnan(B[a])]
+        rho, _ = D.spearman([A[a] for a in shared], [B[a] for a in shared])
+        add(f"{arm}AttrRankRho", num(rho))
+        add(f"{arm}AttrRankN", len(shared))
+
+    # --- degenerate cells among the ground-truth arms ----------------------
+    degen = []
+    for (dsx, bbx, atx, spx), recs in RECS.items():
+        vals = [r["gt_auroc"] for r in recs
+                if r.get("gt_auroc") is not None and not math.isnan(r["gt_auroc"])]
+        if len(vals) >= 10 and len(set(round(v, 6) for v in vals)) == 1:
+            degen.append(((dsx, bbx, atx, spx), vals[0], len(vals)))
+    add("nDegenerateGtCells", len(degen))
+    if degen:
+        (k, v, nmol) = degen[0]
+        add("degenCell", tex(k[0]) + "$\\cdot$" + k[1] + "$\\cdot$"
+            + SHORT.get(k[2], k[2]) + ", " + k[3])
+        add("degenVal", num(v))
+        add("degenN", nmol)
 
     # attributor GT ordering: does it survive the change of split?
     def gt_by_attr(sp):
@@ -223,9 +254,11 @@ def macros():
     if len(grad) > 1:
         add("mutagGradOccSpread", num(max(grad) - min(grad)))
 
-    # --- backbone sweeps at IG, both splits --------------------------------
+    # --- backbone sweeps at IG, both splits, on the exact-GT dataset -------
+    bb_ds = "SynthMotifs"
+    add("bbDataset", bb_ds)
     for sp, pre in (("scaffold", "bbShift"), ("random", "bbInd")):
-        rows = [r for r in CLS if r["dataset"] == ds and r["split"] == sp
+        rows = [r for r in CLS if r["dataset"] == bb_ds and r["split"] == sp
                 and r["attributor"] == "IntegratedGradients"
                 and r["gt_auroc"] is not None]
         for r in rows:
@@ -240,10 +273,10 @@ def macros():
             add(f"{pre}Spread", num(best["gt_auroc"] - worst["gt_auroc"]))
             add(f"{pre}N", len(rows))
     Ab = {r["backbone"]: r["gt_auroc"] for r in CLS
-          if r["dataset"] == ds and r["split"] == "random"
+          if r["dataset"] == bb_ds and r["split"] == "random"
           and r["attributor"] == "IntegratedGradients" and r["gt_auroc"] is not None}
     Bb = {r["backbone"]: r["gt_auroc"] for r in CLS
-          if r["dataset"] == ds and r["split"] == "scaffold"
+          if r["dataset"] == bb_ds and r["split"] == "scaffold"
           and r["attributor"] == "IntegratedGradients" and r["gt_auroc"] is not None}
     sh = sorted(set(Ab) & set(Bb))
     rho, _ = D.spearman([Ab[k] for k in sh], [Bb[k] for k in sh])
@@ -479,62 +512,58 @@ def tab_ledger():
 
 # ------------------------------------------------------- selection experiment
 def tab_selection():
-    ds, bb = ARM
-    arms = [("random", "in-distribution"), ("scaffold", "scaffold shift")]
     L = ["\\begin{table*}[t]", "\\centering",
          "\\caption{\\textbf{Does a faithfulness-only ranking pick the "
-         "ground-truth-best attributor?} Both arms are the same dataset, the "
-         "same backbone and the same "
-         + str(len(D.selection_test(ds, bb, "scaffold")["attributors"]))
-         + " attributors --- only the split changes --- so the contrast "
-         "isolates distribution shift rather than confounding it with a change "
-         "of dataset. Each row ranks the attributors by one "
-         "faithfulness/fidelity metric and asks whether its top choice is the "
-         "one the exact node ground truth ranks best. $p$ is a paired Wilcoxon "
-         "test on per-molecule GT AUROC between the selected and the "
-         "ground-truth-best attributor, over the molecules both audited. "
-         "Recomputed here from the committed per-molecule records: the "
-         "shipped \\texttt{BENCHMARK\\_GT.md} is empty for this run because "
-         "both of its target cells failed (Table~\\ref{tab:ledger}).}",
+         "ground-truth-best attributor?} Two cell families, each audited on both "
+         "splits with the same backbone and the same six attributors, so within "
+         "a family only the split changes and the contrast isolates distribution "
+         "shift rather than confounding it with a change of dataset. Each row "
+         "ranks the attributors by one faithfulness/fidelity metric and asks "
+         "whether its top choice is the one the ground truth ranks best. $p$ is a "
+         "paired Wilcoxon test on per-molecule GT AUROC between the selected and "
+         "the ground-truth-best attributor, over the molecules both audited.}",
          "\\label{tab:selection}",
          "\\small",
          "\\renewcommand{\\arraystretch}{1.3}",
          "\\resizebox{\\textwidth}{!}{%",
          "\\begin{tabular}{llllrlrcrr}",
          "\\toprule",
-         "\\textbf{regime} & \\textbf{cell} & \\textbf{ranking metric} & "
+         "\\textbf{cell} & \\textbf{regime} & \\textbf{ranking metric} & "
          "\\textbf{its top pick} & \\textbf{pick GT} & \\textbf{GT-best} & "
          "\\textbf{GT-best} & \\textbf{mismatch} & \\textbf{Wilcoxon $p$} & "
          "\\textbf{$\\rho$(faith,GT)} \\\\",
          "\\midrule"]
     names = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
              "characterization": "characterisation"}
-    for ai, (sp, label) in enumerate(arms):
-        sel = D.selection_test(ds, bb, sp)
-        if sel is None:
-            continue
-        if ai:
-            L.append("\\addlinespace[2pt]")
-        nmol = max(v["n_mol"] for v in sel["per_attributor"].values())
-        cell = tex(ds) + "$\\cdot$" + bb + ", " + sp + ", $n$=" + str(nmol)
-        for si, s in enumerate(sel["selections"]):
-            rho = sel["rank_correlation"][s["faithfulness_metric"]]["rho"]
-            L.append(" & ".join([
-                label if si == 0 else "", cell if si == 0 else "",
-                names[s["faithfulness_metric"]],
-                SHORT.get(s["faithfulness_pick"], s["faithfulness_pick"]),
-                n(s["faithfulness_pick_gt_auroc"]),
-                SHORT.get(s["gt_best"], s["gt_best"]), n(s["gt_best_gt_auroc"]),
-                "\\textbf{yes}" if s["mismatch"] else "no",
-                pfmt(s["paired_gt_pvalue"]), n(rho),
-            ]) + " \\\\")
+    first = True
+    for ds, bb, _arm in ARMS:
+        for sp, label in (("random", "in-distribution"), ("scaffold", "scaffold shift")):
+            sel = D.selection_test(ds, bb, sp)
+            if sel is None:
+                continue
+            if not first:
+                L.append("\\addlinespace[2pt]")
+            first = False
+            nmol = max(v["n_mol"] for v in sel["per_attributor"].values())
+            cell = tex(ds) + "$\\cdot$" + bb + ", $n$=" + str(nmol)
+            for si, x in enumerate(sel["selections"]):
+                rho = sel["rank_correlation"][x["faithfulness_metric"]]["rho"]
+                L.append(" & ".join([
+                    cell if si == 0 else "", label if si == 0 else "",
+                    names[x["faithfulness_metric"]],
+                    SHORT.get(x["faithfulness_pick"], x["faithfulness_pick"]),
+                    n(x["faithfulness_pick_gt_auroc"]),
+                    SHORT.get(x["gt_best"], x["gt_best"]), n(x["gt_best_gt_auroc"]),
+                    "\\textbf{yes}" if x["mismatch"] else "no",
+                    pfmt(x["paired_gt_pvalue"]), n(rho),
+                ]) + " \\\\")
     L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
     write("tab_selection.tex", "\n".join(L) + "\n")
 
 
 # ------------------------------------------------------------- paired stats
 def tab_paired():
-    ds, bb = ARM
+    ds, bb = ARM  # the molecular arm; the exact-GT arm is in the repository
     L = ["\\begin{table}[t]", "\\centering",
          "\\caption{\\textbf{Paired attributor comparisons on shared "
          "molecules}, computed from the committed per-molecule records "

@@ -30,7 +30,7 @@ RES = REPO / "results"
 AUDIT = RES / "artifacts" / "audit"
 
 # --- dataset regimes -------------------------------------------------------
-SYNTHETIC = {"SynthMotifs", "SynthMotifsXL"}
+SYNTHETIC = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs"}
 REGRESSION = {"ESOL", "FreeSolv", "Lipophilicity"}
 
 
@@ -42,7 +42,7 @@ def regime_of(dataset: str) -> str:
     return "classification"
 
 
-GT_EXACT = {"SynthMotifs", "SynthMotifsXL"}   # exact node-level ground truth
+GT_EXACT = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs"}  # exact node GT by design
 GT_PROXY = {"MUTAG"}                          # chemically motivated nitro proxy
 
 KEY_COLS = {"dataset", "backbone", "attributor", "split", "method A", "method B"}

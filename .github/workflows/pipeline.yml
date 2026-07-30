@@ -1,0 +1,72 @@
+name: molsanity-pipeline
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "Config to run (smoke or full)"
+        required: false
+        default: "smoke"
+
+jobs:
+  smoke:
+    name: smoke pipeline + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install CPU torch
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package (graph + dev)
+        run: |
+          pip install -e ".[dev]"
+          pip install torch-geometric captum rdkit
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Smoke pipeline (tiny subset)
+        run: python -m molsanity.run_all --config configs/smoke.yaml
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-artifacts
+          path: |
+            artifacts/**
+            logs/**
+            RESULTS.md
+          if-no-files-found: ignore
+
+  full:
+    name: full matrix (manual / self-hosted)
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.config == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev]"
+          pip install torch-geometric captum rdkit
+      - name: Full pipeline
+        run: python -m molsanity.run_all --config configs/full.yaml

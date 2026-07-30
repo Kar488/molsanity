@@ -1,0 +1,83 @@
+# Matrix config — a broad-but-tractable run (minutes, CPU). Reduced, HONEST
+# budget (labelled as such in reports): fewer epochs / IG steps / eval molecules
+# than configs/full.yaml. Populates RESULTS.md + BENCHMARK.md across the matrix.
+seed: 0
+budget:
+  epochs: 30
+  ig_steps: 15
+  pg_epochs: 20
+  max_eval_molecules: 20
+
+split:
+  kind: scaffold
+  frac_train: 0.8
+  frac_val: 0.1
+
+model:
+  hidden_channels: 32
+  num_layers: 3
+  dropout: 0.5
+  pool: mean
+
+train:
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: 32
+
+cells:
+  # SynthMotifs: EXACT node ground truth (validates the audit itself)
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: Saliency}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: InputXGradient}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: GuidedBackprop}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: GNNExplainer}
+  # SynthMotifs × backbones (IG) — how EXACT-GT localisation varies by backbone
+  - {dataset: SynthMotifs, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: SynthMotifs, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # MUTAG (quasi-GT) × backbones (IG)
+  - {dataset: MUTAG, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # MUTAG × GINE × attributors (head-to-head, paired on shared molecules)
+  - {dataset: MUTAG, backbone: GINE,        attributor: Saliency}
+  - {dataset: MUTAG, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: MUTAG, backbone: GINE,        attributor: GuidedBackprop}
+  - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: MUTAG, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: SynthMotifs, backbone: GINE,  attributor: PGExplainer}
+  # Tier-2 real molecular task (no GT)
+  - {dataset: BBBP,  backbone: GINE,        attributor: IntegratedGradients}
+  # (BBBP GINE below is kept as one documented degenerate example — reduced-budget
+  # scaffold folds on imbalanced BBBP collapse to a majority-class predictor;
+  # meaningful Tier-2 classification needs the full budget + a balanced split.
+  # See LIMITATIONS.md. The regression breadth below is the model-agnostic story.)
+  # Tier-2 regression × backbones (RMSE/MAE/R2; audit in output space).
+  # Gradient battery + GNNExplainer/PGExplainer on the trained GINE reuse the
+  # committed checkpoint — extends faithfulness-vs-correctness to REGRESSION.
+  - {dataset: ESOL,     backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: ESOL,     backbone: GINE,     attributor: Saliency}
+  - {dataset: ESOL,     backbone: GINE,     attributor: InputXGradient}
+  - {dataset: ESOL,     backbone: GINE,     attributor: GuidedBackprop}
+  - {dataset: ESOL,     backbone: GINE,     attributor: GNNExplainer}
+  # (PGExplainer is classification-only in its current wrapper — omitted for
+  #  regression; see LIMITATIONS.md. GNNExplainer covers the perturbation family.)
+  - {dataset: ESOL,     backbone: GCN,      attributor: IntegratedGradients}
+  - {dataset: ESOL,     backbone: GAT,      attributor: IntegratedGradients}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: IntegratedGradients}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: Saliency}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: InputXGradient}
+  - {dataset: FreeSolv, backbone: GINE,     attributor: GNNExplainer}
+  - {dataset: FreeSolv, backbone: GCN,      attributor: IntegratedGradients}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: Saliency}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: InputXGradient}
+  - {dataset: Lipophilicity, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: Lipophilicity, backbone: GAT,  attributor: IntegratedGradients}
+  # Random-split (in-distribution) reference vs the scaffold-shift regime
+  - {dataset: MUTAG, backbone: GINE, attributor: IntegratedGradients, split: random}
+  - {dataset: MUTAG, backbone: GINE, attributor: Saliency,            split: random}
+  - {dataset: SynthMotifs, backbone: GINE, attributor: IntegratedGradients, split: random}

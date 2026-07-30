@@ -1,0 +1,28 @@
+# Smoke config — CI / minutes. Tiny but honest end-to-end slice.
+seed: 0
+budget:
+  epochs: 30
+  ig_steps: 15
+  max_eval_molecules: 20   # cap audited molecules per cell (labelled in reports)
+
+split:
+  kind: scaffold           # primary regime = scaffold shift
+  frac_train: 0.8
+  frac_val: 0.1
+
+model:
+  hidden_channels: 32
+  num_layers: 3
+  dropout: 0.5
+  pool: mean
+
+train:
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: 32
+
+# The matrix. Smoke = the single verified vertical slice.
+cells:
+  - dataset: MUTAG
+    backbone: GINE
+    attributor: IntegratedGradients

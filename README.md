@@ -71,7 +71,8 @@ model yet fail to recover the true motif. On MUTAG under a **scaffold split**
   0.54 → MPNN 0.36 → GCN 0.20 → GAT/AttentiveFP ≈ 0.13 (anti-aligned); AttentiveFP
   is even *anti-faithful* (occlusion ≈ −0.88). Reliability is model-dependent.
   On **SynthMotifs** (with *exact* node ground truth) the same backbone spread is
-  confirmed at IG: GCN **0.92** > AttentiveFP 0.82 ≈ MPNN 0.81 > GAT 0.72 > GINE —
+  confirmed at IG: GCN **0.920** > AttentiveFP 0.821 > MPNN 0.807 > GINE 0.742 >
+  GAT 0.718 —
   i.e. the "best" backbone for attribution reliability is itself dataset-dependent,
   now shown against exact truth, not a proxy.
 - **The attributor ranking flips with the regime.** On **SynthMotifs** (a

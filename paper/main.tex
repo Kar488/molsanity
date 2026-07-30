@@ -1,0 +1,71 @@
+% MolSanity — arXiv-style preprint. Compile with: xelatex main.tex (x2)
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[letterpaper,margin=0.72in,columnsep=0.28in]{geometry}
+
+% --- fonts (XeLaTeX) -------------------------------------------------------
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{TeX Gyre Pagella}
+\setmathfont{Latin Modern Math}
+
+% --- core packages ---------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[font=small,labelfont=bf,skip=5pt]{caption}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% --- accent + section headings --------------------------------------------
+\definecolor{accent}{HTML}{2A78D6}
+\newcommand{\secsq}{\textcolor{accent}{\rule[0.06em]{0.52em}{0.52em}}\hspace{0.42em}}
+\titleformat{\section}{\normalfont\large\bfseries}{\secsq\thesection}{0.5em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.05em}{0.42em}
+\titlespacing*{\subsection}{0pt}{0.75em}{0.3em}
+
+% --- running header --------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\itshape MolSanity: auditing attribution reliability under scaffold shift}
+\fancyhead[R]{\small\thepage}
+
+% --- spacing ---------------------------------------------------------------
+\setlength{\parskip}{0pt}
+\setlength{\abovecaptionskip}{6pt}
+\setlength{\belowcaptionskip}{0pt}
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{12pt plus 2pt minus 2pt}
+\graphicspath{{figs/}}
+
+% Numbers computed from the committed results (paper/figs/make_tables.py).
+\input{figs/numbers}
+
+\begin{document}
+
+\twocolumn[{%
+\begin{center}
+{\LARGE\bfseries MolSanity: Auditing the Reliability of Feature\\[0.18em]
+Attributions for Molecular GNNs under Scaffold Shift\par}
+\vspace{0.9em}
+{\large MolSanity contributors\par}
+\vspace{0.25em}
+{\small\itshape Correspondence: see the project repository\par}
+\vspace{0.35em}
+{\small\url{https://github.com/Kar488/molsanity}\par}
+\vspace{1.1em}
+\begin{minipage}{0.86\textwidth}
+\input{abstract}
+\end{minipage}
+\vspace{1.2em}
+\end{center}
+}]
+
+\input{body}
+
+\end{document}

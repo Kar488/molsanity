@@ -1,0 +1,703 @@
+\section{Introduction}
+
+Graph neural networks (GNNs) are now standard for molecular property prediction
+(MPP), and post-hoc feature attribution is the standard way practitioners ask
+\emph{why} a model made a call. A medicinal chemist looking at a toxicity
+prediction wants to know which substructure drove it. Integrated Gradients
+\cite{sundararajan2017}, GNNExplainer \cite{ying2019} and PGExplainer
+\cite{luo2020} all return such a map, and all of them return one whether or not
+the map means anything.
+
+The prevailing way to check that a map means something is \emph{faithfulness}:
+does the explanation track the model's own computation? Fidelity$\pm$ and related
+perturbation scores \cite{yuan2023survey}, and evaluation frameworks built on
+them \cite{amara2022,agarwal2023,liu2021dig}, all operationalise this idea.
+Faithfulness is necessary --- an explanation unmoored from the model is useless
+--- but it is not sufficient. A model can key on a spurious correlate, and an
+attribution can report that correlate perfectly. The explanation is then
+maximally faithful and completely wrong about the chemistry. Sanity checks in
+vision found exactly this class of failure \cite{adebayo2018}, and in molecules
+the stakes are concrete: the attribution is read as a structure--activity claim.
+
+Distribution shift sharpens the problem. MPP models are deployed on chemistry
+unlike their training set, which is why Bemis--Murcko scaffold splits
+\cite{bemis1996} are the accepted evaluation protocol
+\cite{wu2018moleculenet,yang2019analyzing}. Attribution reliability under that
+shift is, however, rarely measured at all.
+
+\paragraph{A concrete failure.} Take MUTAG with a GINE backbone under a scaffold
+split (Table~\ref{tab:headline}). Saliency attains occlusion faithfulness
+$\rho=0.376$ and Fidelity$+$ $=0.267$ --- respectable by any faithfulness-first
+standard, and the \emph{best} characterisation score of the six attributors we
+test. Its ground-truth AUROC against the nitro-motif mask is $0.026$, where
+$0.5$ is chance: it is strongly anti-aligned with the substructure the label is
+built on. Integrated Gradients, at a very similar faithfulness ($\rho=0.414$,
+Fidelity$+$ $=0.252$), reaches $0.540$. A practitioner ranking by the
+field-standard scores would adopt the attributor that is confidently pointing at
+the wrong atoms.
+
+\paragraph{Contributions.}
+\begin{enumerate}\itemsep2pt
+\item \textbf{A reliability audit, not another attributor.} \textsc{MolSanity}
+  composes occlusion faithfulness, ground-truth localisation, an atom- and
+  motif-level coherence battery, cross-checkpoint stability and calibration
+  linkage, and stratifies all of them by confidence/correctness regime under
+  scaffold shift (\S\ref{sec:framework}). It wraps canonical implementations
+  \cite{kokhlikyan2020,fey2019,landrum_rdkit} rather than reimplementing them.
+\item \textbf{Evidence that faithfulness does not imply correctness.} Over
+  \numNGtCells\ ground-truth-bearing cells the two are uncorrelated
+  ($\rho=\numGlobalRho$, $p=\numGlobalP$); on MUTAG a \numGradOccSpread\ spread in
+  faithfulness hides a \numGradGtSpread\ spread in correctness
+  (\S\ref{sec:res-headline}).
+\item \textbf{A regime-dependent selection failure, tested for significance.}
+  With exact ground truth in-distribution, faithfulness-based ranking picks the
+  correct attributor ($\rho=+0.94$, $p=0.005$); under scaffold shift Fidelity$+$
+  and characterisation mis-select, with per-molecule paired Wilcoxon $p<0.001$
+  (\S\ref{sec:res-regime}).
+\item \textbf{Backbone- and task-dependence, with negatives kept in.}
+  Localisation on exact ground truth orders GCN $>$ AttentiveFP $>$ MPNN $>$ GINE
+  $>$ GAT, and the most accurate model is not the best explained
+  (\S\ref{sec:res-backbone}); we report degenerate cells and a directionality
+  caveat on the regression numbers rather than suppressing them
+  (\S\ref{sec:res-negative}, \S\ref{sec:limits}).
+\end{enumerate}
+
+\section{Related work}
+
+\paragraph{Attribution methods.} Gradient-family attributions --- Saliency
+\cite{simonyan2014}, Input$\times$Gradient \cite{shrikumar2016}, Guided
+Backpropagation \cite{springenberg2015} and Integrated Gradients
+\cite{sundararajan2017} --- transfer directly to graphs through Captum
+\cite{kokhlikyan2020}. Graph-specific methods learn an explanatory mask:
+GNNExplainer optimises one per instance \cite{ying2019}, PGExplainer amortises a
+parametric mask generator across instances \cite{luo2020}, and SubgraphX searches
+connected subgraphs with Shapley scoring \cite{yuan2021subgraphx}. We audit these
+methods; we do not propose a new one.
+
+\paragraph{Evaluating explanations.} Fidelity$\pm$ and sparsity are the
+field-standard perturbation metrics \cite{yuan2023survey}. GraphFramEx
+\cite{amara2022} systematises them and adds a characterisation score combining
+Fidelity$+$ and Fidelity$-$; GraphXAI \cite{agarwal2023} supplies synthetic
+graphs with ground-truth explanations and a metric suite; DIG \cite{liu2021dig}
+packages methods and metrics as a library. In vision, \emph{Sanity Checks}
+\cite{adebayo2018} showed some saliency maps are invariant to randomising the
+model, and ROAR \cite{hooker2019} showed retraining-based evaluation can reverse
+method rankings; faithfulness has also been argued to need careful definition
+\cite{jacovi2020}. Our contribution is orthogonal to all of these: we measure
+faithfulness \emph{and} ground-truth correctness on the same molecules and show
+the two dissociate as a function of distribution shift.
+
+\paragraph{Molecular attribution.} Sanchez-Lengeling et al.\ \cite{sanchez2020}
+benchmark GNN attributions on synthetic molecular tasks with known ground truth,
+and remains the closest prior work; McCloskey et al.\ \cite{mccloskey2019} use
+attribution to recover binding mechanism, and Jim\'enez-Luna et al.\
+\cite{jimenezluna2020} survey explainable AI for drug discovery. Relative to
+these, \textsc{MolSanity} adds the shift axis (scaffold splits with regime
+stratification), a motif-native audit built on RDKit ring/Murcko/BRICS
+decompositions, stability across training checkpoints, calibration linkage, and
+a head-to-head test of whether faithfulness-based model selection agrees with
+ground truth.
+
+\paragraph{Positioning.} GraphFramEx, GraphXAI and DIG answer ``is this
+explanation faithful, and how does it score against a synthetic ground truth in
+distribution?'' \textsc{MolSanity} answers ``\emph{when does faithfulness stop
+predicting correctness}, and for which backbone, attributor and chemistry?''
+Table~\ref{tab:selection} shows this is not a hypothetical distinction: the
+GraphFramEx characterisation score selects the correct attributor
+in-distribution and the wrong one under shift, on the same benchmark, with the
+same code.
+
+\section{The MolSanity audit}
+\label{sec:framework}
+
+\paragraph{Notation.} A molecule is a graph $G=(V,E)$ with $n=|V|$ atoms, node
+features $X\in\mathbb{R}^{n\times d}$ and edge features. A trained model $f$ maps
+$G$ to logits $f(G)\in\mathbb{R}^{C}$ (classification) or a scalar (regression).
+An attributor $\mathcal{A}$ returns node scores
+$a=\mathcal{A}(f,G)\in\mathbb{R}^{n}_{\ge0}$; we use unsigned magnitudes
+throughout and min--max normalise to $[0,1]$ where a common scale is needed.
+RDKit gives a motif decomposition $\mathcal{M}=\{M_1,\dots,M_K\}$, $M_k\subseteq
+V$, from smallest-set-of-smallest-rings, Bemis--Murcko scaffolds and BRICS
+fragments. The motif-level score is $s_k=\sum_{i\in M_k} a_i$.
+
+\paragraph{Occlusion faithfulness.} For each motif we mask its atoms and record
+the drop in the explained-class logit,
+\[
+\Delta_k \;=\; f_c(G) - f_c\!\left(G \setminus M_k\right),
+\]
+and report $\rho_{\mathrm{occ}} = \mathrm{Spearman}(s_{1:K},\Delta_{1:K})$.
+\textbf{Higher is more faithful}: the attribution ranks motifs the same way
+occlusion does. $\rho_{\mathrm{occ}}<0$ means the attribution ranks motifs in the
+\emph{opposite} order to their causal effect on the model. We also report
+top-1 agreement, and the field-standard Fidelity$+$ (probability drop when the
+salient atoms, top quintile, are removed; higher is better), Fidelity$-$
+(the drop when non-salient atoms are removed; lower is better), sparsity, and the
+GraphFramEx characterisation score, the weighted harmonic mean of Fidelity$+$
+and $1-$Fidelity$-$ \cite{amara2022}.
+
+\paragraph{Ground-truth correctness.} Where a per-atom ground-truth mask
+$g\in\{0,1\}^n$ exists, correctness is the AUROC of the normalised attribution
+against $g$, with AUPRC alongside. Chance is $0.5$; \emph{below} $0.5$ means
+anti-alignment. AUROC is undefined for a degenerate mask and we emit \texttt{--}
+rather than a number. Two sources of $g$ are used, and we keep them
+distinct throughout: \textsc{SynthMotifs}/\textsc{SynthMotifsXL}, synthetic
+Barab\'asi--Albert graphs with an injected house or 5-cycle motif, give
+\emph{exact} node labels; MUTAG gives a chemically motivated nitro-group
+\emph{proxy}, since it ships no annotator labels \cite{debnath1991}.
+
+\paragraph{Coherence.} Independent of ground truth, an attribution should be
+concentrated and chemically contiguous. We report the Gini coefficient of $a$,
+the mass in the top $20\%$ of atoms, the fraction of salient atoms lying in a
+single connected component, and the share of attribution mass in the top motif.
+
+\paragraph{Cross-checkpoint stability.} Training saves an intermediate checkpoint
+at one fifth of the epoch budget. Stability is
+$\mathrm{Spearman}(s^{\text{early}},s^{\text{final}})$ over motifs for the same
+molecule: an explanation that reorders the chemistry as training proceeds is
+reporting optimisation noise as much as structure.
+
+\paragraph{Calibration linkage and regimes.} Logits are temperature-scaled on
+validation \cite{guo2017}. Per molecule we take the confidence
+$\hat p=\max_c \mathrm{softmax}(f(G)/T)_c$ and assign a regime: \emph{confident
+correct} ($\hat p\ge\tau$, correct), \emph{confident error} ($\hat p\ge\tau$,
+wrong) --- the dangerous quadrant --- and \emph{borderline} ($\hat p<\tau$), with
+$\tau=0.8$. Calibration linkage is the Spearman correlation between
+$1-|\hat p - \mathbf{1}[\text{correct}]|$ and a reliability metric, testing
+whether better-calibrated predictions carry more trustworthy attributions.
+Every metric above is computed per molecule and aggregated with bootstrap
+confidence intervals and paired Wilcoxon tests on shared molecules.
+
+\section{Experimental setup}
+\label{sec:setup}
+
+\paragraph{Grid.} The audit unit is a \emph{cell}: one (dataset $\times$ backbone
+$\times$ attributor $\times$ split). We report \numNCells\ cells ---
+\numNCls\ classification and \numNReg\ regression --- over \numNData\ datasets,
+\numNBack\ backbones and \numNAttr\ attributors (Table~\ref{tab:grid}). The grid
+is deliberately incomplete: it is not a full Cartesian product, because
+attributors were added on top of already-trained backbones and a few
+combinations are unsupported (PGExplainer's parametric mask is trained against
+class logits and does not apply to regression).
+
+\paragraph{Datasets.} Tier 1 provides ground truth: \textsc{SynthMotifs} (200
+graphs) and \textsc{SynthMotifsXL} (600 graphs), generated offline with exact
+node labels, and MUTAG (188 molecules) with the nitro proxy. Tier 2 and 3 are
+real MPP tasks with no per-atom ground truth: BBBP, BACE, ClinTox, SIDER and
+Tox21 from MoleculeNet \cite{wu2018moleculenet}; DILI and hERG from the
+Therapeutics Data Commons \cite{huang2021tdc}; and ESOL, FreeSolv and
+Lipophilicity as regression \cite{wu2018moleculenet}. Multi-task panels are
+audited as single-task binary views (Tox21 NR-AR, SIDER task 0, ClinTox CT\_TOX).
+TDC molecules are featurised with the same SMILES encoder as MoleculeNet so the
+backbones are drop-in.
+
+\paragraph{Backbones and attributors.} GINE \cite{xu2019gin,hu2020pretrain}, GCN
+\cite{kipf2017}, GAT \cite{velickovic2018}, MPNN \cite{gilmer2017} and
+AttentiveFP \cite{xiong2020}, all via PyTorch Geometric \cite{fey2019}.
+Attributors: Integrated Gradients, Saliency, Input$\times$Gradient and Guided
+Backpropagation through Captum \cite{kokhlikyan2020}, plus GNNExplainer and
+PGExplainer.
+
+\paragraph{Splits and budget.} The primary protocol is a Bemis--Murcko scaffold
+split \cite{bemis1996} (80/10/10), made class-aware for imbalanced sets by moving
+whole scaffold groups so that no fold is single-class --- no scaffold is split
+across folds. Random splits are included as an in-distribution reference.
+Results come from three CPU-tractable configurations: a broad matrix (30 epochs,
+15 IG steps, 20 audited molecules per cell), a Tier-2/3 configuration (60 epochs,
+25 IG steps, 30 molecules, inverse-frequency class weighting and AUC-based model
+selection), and a ground-truth benchmark configuration (40 epochs, 25 IG steps,
+the whole 120-molecule test fold of \textsc{SynthMotifsXL}). \textbf{This is a
+reduced budget}, chosen so the audit runs on CPU; it bounds the precision of
+every per-cell number and we treat it as a first-class limitation
+(\S\ref{sec:limits}). Seeds, library versions and hardware are logged per run;
+stochastic explainers are seeded per molecule so an explanation depends only on
+(molecule, method). \numNCkpt\ trained checkpoints are committed, so the tables
+regenerate without retraining.
+
+\begin{table}[t]
+\centering
+\small
+\caption{The audited grid. $n_{\mathrm{mol}}$ is the number of evaluation
+molecules per cell (capped by the configuration budget). Only the three Tier-1
+datasets carry per-atom ground truth; for the rest, correctness is undefined and
+reported as \texttt{--} rather than imputed.}
+\label{tab:grid}
+\input{figs/tab_grid}
+\end{table}
+
+\section{Results}
+
+\subsection{Faithfulness does not imply correctness}
+\label{sec:res-headline}
+
+Figure~\ref{fig:scatter} plots every ground-truth-bearing cell in the
+faithfulness--correctness plane. Across all \numNGtCells\ such cells the two axes
+are statistically unrelated: Spearman $\rho=\numGlobalRho$
+($p=\numGlobalP$). Knowing how faithful an attribution is tells you essentially
+nothing about whether it recovers the right substructure.
+
+The mechanism is visible in Table~\ref{tab:headline}. On MUTAG $\times$ GINE
+under scaffold shift, the four gradient-family attributors occupy a narrow
+faithfulness band --- $\rho_{\mathrm{occ}}$ from \numGradOccLo\ to
+\numGradOccHi, a spread of \numGradOccSpread\ --- while their ground-truth AUROC
+runs from \numGradGtLo\ to \numGradGtHi, a spread of \numGradGtSpread. Saliency
+and Input$\times$Gradient sit near $0.03$--$0.04$, far \emph{below} chance, i.e.\
+systematically anti-aligned with the nitro motif, yet they are among the most
+faithful and score the highest Fidelity$+$ and characterisation values in the
+table. Integrated Gradients and GNNExplainer recover the motif far better at
+comparable faithfulness.
+
+We are precise about what this does and does not show. Ranking these six
+attributors by \emph{our} occlusion $\rho$ happens to put Integrated Gradients
+on top, which is also the ground-truth-best method --- the argmax agrees. What
+fails is the \emph{relationship}: faithfulness is nearly constant across methods
+whose correctness differs by more than half an AUROC, so it cannot discriminate
+between them, and the rank correlation over the six is $-0.03$
+(Table~\ref{tab:selection}). The field-standard metrics are worse than
+uninformative here: Fidelity$+$ ranks Guided Backpropagation first and
+characterisation ranks Saliency first, with ground-truth AUROC of $0.112$ and
+$0.026$ respectively.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig1_faithfulness_vs_correctness.pdf}
+\caption{\textbf{Faithfulness carries almost no information about correctness.}
+Each point is one audited cell with per-atom ground truth ($n=\numNGtCells$);
+$x$ is occlusion Spearman (higher $=$ more faithful), $y$ is ground-truth AUROC
+(higher $=$ more correct, $0.5$ $=$ chance). Marker encodes attributor, colour
+encodes ground-truth source. Points in the lower right are faithful and wrong.}
+\label{fig:scatter}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{\textbf{The faithful-but-wrong case.} MUTAG $\times$ GINE, scaffold
+split, 20 evaluation molecules, sorted by correctness. Occlusion $\rho$ and
+Fidelity$+$ (higher $=$ more faithful) barely separate the four gradient methods,
+whose ground-truth AUROC spans \numGradGtSpread. Ground truth here is the nitro
+\emph{proxy}, not annotator labels.}
+\label{tab:headline}
+\input{figs/tab_headline}
+\end{table}
+
+\subsection{The dissociation is regime-dependent}
+\label{sec:res-regime}
+
+Faithfulness is not always uninformative --- and saying so is part of the
+result. Table~\ref{tab:selection} and Figure~\ref{fig:regimes} contrast two
+regimes. In distribution, on \textsc{SynthMotifsXL} with exact ground truth and
+the full 120-molecule test fold, faithfulness tracks correctness well: rank
+correlations are $+0.94$ ($p=0.005$) for occlusion $\rho$, $+0.83$ ($p=0.042$)
+for Fidelity$+$ and $+0.77$ ($p=0.072$) for characterisation, and all three
+selectors pick the ground-truth-best attributor. A faithfulness-only benchmark is
+adequate in this regime.
+
+Under scaffold shift on MUTAG the same three correlations invert in sign
+($-0.03$, $-0.37$, $-0.49$), and Fidelity$+$ and characterisation actively
+mis-select: they top-rank attributors whose ground-truth AUROC is $0.112$ and
+$0.026$ against a best of $0.540$. Comparing the mis-selected attributor with the
+ground-truth-best on the \emph{same} molecules, the per-molecule paired Wilcoxon
+test rejects at $p<0.001$ for both.
+
+The honest reading of the significance is mixed and we state it plainly. The
+\emph{selection error} is well supported: it is a paired test over 20 molecules
+with $p<10^{-4}$. The \emph{rank correlations} on the shift arm are not
+individually significant --- they are computed over only six attributors, so
+$p=0.957$, $0.468$ and $0.329$ --- and we therefore report the sign reversal as a
+consistent pattern across three independent selectors rather than as an
+individually significant statistic. The in-distribution correlations, over the
+same six attributors, do reach significance for two of the three selectors.
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Would a faithfulness-only evaluation pick the right attributor?}
+$\rho_{\mathrm{rank}}$ is the Spearman correlation between the selector and
+ground-truth AUROC across the six attributors (so $n=6$; these correlations are
+underpowered and only two reach $p<0.05$). ``Mis-selection'' compares the
+selector's top pick against the ground-truth-best attributor on the same
+molecules with a paired Wilcoxon test. In distribution every selector is
+correct; under scaffold shift the two field-standard selectors are not.}
+\label{tab:selection}
+\input{figs/tab_selection}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig5_two_regimes.pdf}
+\caption{\textbf{The same selector, two regimes.} GraphFramEx characterisation
+($x$) against ground-truth AUROC ($y$), one point per attributor. Left:
+in-distribution with exact ground truth, the relationship is positive and the
+top-ranked attributor is the correct one. Right: under scaffold shift the
+relationship inverts and the selector top-ranks Saliency, whose ground-truth
+AUROC is $0.026$ against Integrated Gradients' $0.540$. $\rho$ values are rank
+correlations over the six attributors; the mis-selection $p$-value is a
+per-molecule paired Wilcoxon test.}
+\label{fig:regimes}
+\end{figure*}
+
+\subsection{Reliability depends on the backbone}
+\label{sec:res-backbone}
+
+Holding the attributor fixed at Integrated Gradients and varying the backbone on
+\textsc{SynthMotifs}, where ground truth is exact, localisation orders
+GCN ($0.920$) $>$ AttentiveFP ($0.821$) $>$ MPNN ($0.807$) $>$ GINE ($0.742$)
+$>$ GAT ($0.718$) (Figure~\ref{fig:backbone}, Table~\ref{tab:backbones}). The
+spread is $0.202$ AUROC from the same attributor on the same task --- comparable
+to the spread between attributors --- so ``which explainer'' and ``which
+architecture'' are of similar importance to reliability.
+
+Predictive accuracy does not buy explanation quality. GINE reaches test accuracy
+$1.00$ and AUC $1.00$ on this task, and is fourth of five on localisation; GCN,
+at accuracy $0.90$, localises best. AttentiveFP is the weakest classifier here
+(accuracy $0.60$) yet is second on localisation. Model selection by predictive
+performance therefore does not select for attribution reliability, which is an
+argument for auditing the two separately.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig3_backbone_ordering.pdf}
+\caption{\textbf{Localisation is backbone-dependent.} Ground-truth AUROC on
+\textsc{SynthMotifs} (exact node labels) with Integrated Gradients held fixed.
+Test accuracy is annotated: the perfectly accurate backbone (GINE) is not the
+best explained.}
+\label{fig:backbone}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Backbone comparison on exact ground truth (\textsc{SynthMotifs},
+Integrated Gradients, scaffold split, 20 evaluation molecules). Predictive
+performance and attribution correctness are not aligned.}
+\label{tab:backbones}
+\input{figs/tab_backbones}
+\end{table}
+
+\subsection{Cross-task patterns}
+\label{sec:res-crosstask}
+
+Figure~\ref{fig:heat} maps both metrics over the full grid and
+Figure~\ref{fig:taskstrip} summarises faithfulness by task family. Faithfulness
+is strongly dataset-dependent rather than a property of the attributor: on the
+molecular classification sets, mean occlusion $\rho$ is
+$\numClfMean$ over $\numClfN$ cells with $\numClfNeg$ of them negative, and the
+per-dataset means range from clearly negative on BBBP to clearly positive on
+hERG and SIDER. The same attributor can be faithful on one endpoint and
+anti-faithful on another.
+
+On exact ground truth the correctness picture is cleaner and instructive
+(Table~\ref{tab:exactgt}): with $n=120$ molecules, the four gradient methods all
+exceed $0.98$ AUROC, GNNExplainer sits at chance ($0.501$) and PGExplainer falls
+below it ($0.269$). The perturbation-based explainers, which are the ones that
+optimise an explicit mask, are the ones that fail to recover a motif the model
+provably uses --- the model reaches $100\%$ test accuracy on this task.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig2_heatmaps.pdf}
+\caption{\textbf{The audit matrix.} (a) Occlusion faithfulness across all
+\numNData\ datasets, averaged over backbones and splits within a cell; blue is
+anti-faithful, red faithful. (b) Ground-truth correctness, defined only for the
+three Tier-1 datasets. ``--'' marks combinations that were not run or where the
+metric is undefined; nothing is imputed.}
+\label{fig:heat}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Exact-ground-truth control (\textsc{SynthMotifsXL} $\times$ GINE, random
+split, 120 evaluation molecules). The gradient family recovers the injected motif
+almost perfectly; the two mask-optimising explainers do not, despite the model
+classifying this task at $100\%$ accuracy.}
+\label{tab:exactgt}
+\input{figs/tab_exact_gt}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig4_task_faithfulness.pdf}
+\caption{\textbf{Faithfulness by task family.} Each point is one cell. The
+regression cells sit almost entirely below zero, but see
+\S\ref{sec:res-negative}: for regression this comparison is confounded by
+attribution sign and should not be read as evidence that regression attributions
+are anti-faithful.}
+\label{fig:taskstrip}
+\end{figure}
+
+\subsection{Negative and degenerate results}
+\label{sec:res-negative}
+
+We keep failures in the record.
+
+\paragraph{A metric confound on regression.} $\numRegNeg$ of $\numRegN$
+regression cells have negative occlusion $\rho$ (mean $\numRegMean$). The
+tempting headline --- ``attributions are anti-faithful on regression'' --- is not
+one we can support, and we flag the reason. Attributions are unsigned magnitudes,
+whereas $\Delta_k$ for a regression head is a \emph{signed} change in the
+predicted value: removing an important substructure can move a solubility
+prediction in either direction. Correlating an unsigned quantity with a signed
+one is not a well-posed faithfulness test, so these numbers are best read as
+evidence that the occlusion protocol needs a signed or absolute-value variant for
+regression, not as a property of the attributors. We report the cells because
+they are part of the run, and mark the interpretation as unresolved.
+
+\paragraph{Degenerate cells.} Imbalanced scaffold folds can collapse to a
+majority-class predictor. BACE $\times$ GCN reaches test accuracy $0.133$ with
+AUC $0.224$ --- worse than chance --- and BACE $\times$ GINE $0.433$ accuracy at
+AUC $0.434$; attributions of a model that has not learned the task are not
+meaningful, and we exclude such cells from the interpretive claims above while
+leaving them in the released tables. Conversely, high accuracy can be an artefact
+of imbalance: Tox21 $\times$ GINE shows accuracy $1.000$ at AUC $0.827$ on a
+$\sim\!4\%$-positive endpoint, which is why we report AUC alongside accuracy
+everywhere.
+
+\paragraph{Missing entries.} Correctness is undefined for the ten datasets with
+no per-atom ground truth, and several attributor--dataset combinations were not
+run. Both appear as \texttt{--}. We do not impute, and we do not report a
+grid-wide mean over a metric that exists for only \numNGtCells\ of \numNCells\
+cells.
+
+\section{Discussion}
+
+\paragraph{What the audit buys.} The practical consequence of
+\S\ref{sec:res-headline}--\S\ref{sec:res-regime} is that a faithfulness score
+should not be reported as if it certified an explanation. In distribution it
+behaves like a reasonable proxy for correctness; under the scaffold shift that
+defines realistic MPP evaluation, it stops predicting correctness and can invert.
+Since ground truth is exactly what is unavailable in the deployment regime, the
+usable recommendation is not ``measure correctness instead'' but
+``calibrate your faithfulness metric on a task where ground truth \emph{is}
+available, in the same shift regime, before trusting it'' --- which is what the
+\textsc{SynthMotifs} control is for.
+
+\paragraph{How attributions should be reported.} Our results argue for three
+changes in practice. First, report attributor \emph{and} backbone: the spread
+across backbones ($0.202$ AUROC) is comparable to the spread across attributors,
+so an explanation is a property of the pair. Second, report the split regime, and
+report an in-distribution reference alongside the shifted one, since the same
+metric can behave oppositely in the two. Third, report negative controls: an
+attributor scoring $0.026$ against a chemically motivated mask is making a
+falsifiable claim, and that is far more informative than a fidelity number with
+no reference point.
+
+\paragraph{Why reliability is regime-dependent.} A faithfulness metric asks what
+the model uses; a ground-truth metric asks what the chemistry says. The two
+coincide only when the model has actually learned the causal substructure. In
+distribution on a synthetic task with an injected motif, that condition holds ---
+the model reaches $100\%$ accuracy using the motif --- and faithfulness and
+correctness agree. Under scaffold shift on real chemistry the condition need not
+hold: a model can rely on scaffold-correlated shortcuts that generalise poorly,
+and a faithful attribution will then faithfully report the shortcut. This also
+explains why the perturbation-based explainers, which optimise a mask against the
+model's own output, can be at or below chance on a task the model solves: they
+are optimising fidelity to the model, which is not the same objective as
+recovering the motif.
+
+\section{Limitations and threats to validity}
+\label{sec:limits}
+
+\paragraph{Reduced budget.} Every number here comes from CPU-tractable
+configurations: 30--60 training epochs, 15--25 integration steps, and 20--30
+audited molecules for most cells (120 for the exact-ground-truth control). Per-cell
+estimates are correspondingly noisy, and the bootstrap intervals we compute are
+wide. The pipeline supports a larger configuration; we do not report it, and no
+claim here should be read as a converged measurement.
+
+\paragraph{Single split, single seed.} Each cell is one scaffold split at one
+seed. We therefore make claims about \emph{patterns across many cells} rather than
+about individual cell values, and the ordering of two adjacent backbones (GINE
+$0.742$ vs.\ GAT $0.718$) should not be over-read.
+
+\paragraph{Ground truth is scarce and partly a proxy.} Correctness is measurable
+on three of \numNData\ datasets. MUTAG's mask is a chemically motivated nitro
+proxy, not annotator labels: it encodes a hypothesis about mutagenicity, and an
+attributor could in principle be right about a model that is right for a
+different reason. The exact-ground-truth results come from synthetic graphs,
+which are not chemistry. The shift arm of our headline analysis rests on MUTAG at
+$n=20$ molecules; it is significant as a paired test, but it is one dataset.
+
+\paragraph{Underpowered rank correlations.} The selector correlations in
+Table~\ref{tab:selection} are computed over six attributors. Four of six do not
+reach $p<0.05$, and we lean on the paired per-molecule tests and on the
+consistency of the sign pattern instead.
+
+\paragraph{Regression faithfulness is confounded.} As set out in
+\S\ref{sec:res-negative}, the unsigned-attribution/signed-$\Delta$ mismatch makes
+the regression $\rho_{\mathrm{occ}}$ values uninterpretable as faithfulness. This
+is a defect in the protocol, not a finding.
+
+\paragraph{Scope.} SubgraphX \cite{yuan2021subgraphx} and the GraphXAI
+\cite{agarwal2023} synthetic generator could not be installed in our environment
+(they depend on a pre-2.5 PyTorch Geometric extension stack with no wheel for the
+installed PyTorch), so both are absent rather than negative results. Our
+comparison to GraphFramEx is a faithful reimplementation of its characterisation
+score within our pipeline, not a run of the authors' code.
+
+\section{Conclusion}
+
+\textsc{MolSanity} audits attribution reliability for molecular GNNs rather than
+proposing another attributor. Over \numNCells\ cells we find that faithfulness
+and ground-truth correctness are uncorrelated in aggregate
+($\rho=\numGlobalRho$), that the relationship between them is positive
+in-distribution and inverts under scaffold shift, that field-standard fidelity
+metrics consequently mis-select attributors in the shifted regime with
+per-molecule $p<0.001$, and that reliability depends on the backbone about as
+much as on the attributor while being unrelated to predictive accuracy. The
+practical implication is narrow and, we think, well supported: a faithfulness
+score is not a certificate of correctness, and should be reported with the
+backbone, the split regime and a ground-truth reference point attached.
+
+\section*{Data and code availability}
+
+All code, configurations, per-molecule audit records, figures and the
+\numNCkpt\ pretrained checkpoints behind every table are in the project
+repository, \url{https://github.com/Kar488/molsanity}. Every number in this paper
+is generated from the committed \texttt{RESULTS.md} and
+\texttt{BENCHMARK\_GT.json} by \texttt{paper/figs/make\_figs.py} and
+\texttt{paper/figs/make\_tables.py}; none is transcribed by hand. Because the
+checkpoints are committed, re-running the pipeline reproduces the tables without
+retraining.
+
+\begin{thebibliography}{99}\small
+\itemsep1.5pt
+
+\bibitem{adebayo2018} J.~Adebayo, J.~Gilmer, M.~Muelly, I.~Goodfellow, M.~Hardt,
+and B.~Kim. Sanity checks for saliency maps. \emph{Advances in Neural
+Information Processing Systems (NeurIPS)}, 2018.
+
+\bibitem{agarwal2023} C.~Agarwal, O.~Queen, H.~Lakkaraju, and M.~Zitnik.
+Evaluating explainability for graph neural networks. \emph{Scientific Data},
+10:144, 2023.
+
+\bibitem{amara2022} K.~Amara, R.~Ying, Z.~Zhang, Z.~Han, Y.~Shan, U.~Brandes,
+S.~Schemm, and C.~Zhang. GraphFramEx: Towards systematic evaluation of
+explainability methods for graph neural networks. \emph{Learning on Graphs
+Conference (LoG)}, 2022.
+
+\bibitem{bemis1996} G.~W. Bemis and M.~A. Murcko. The properties of known drugs.
+1.~Molecular frameworks. \emph{Journal of Medicinal Chemistry}, 39(15):2887--2893,
+1996.
+
+\bibitem{debnath1991} A.~K. Debnath, R.~L. Lopez de Compadre, G.~Debnath, A.~J.
+Shusterman, and C.~Hansch. Structure--activity relationship of mutagenic aromatic
+and heteroaromatic nitro compounds. \emph{Journal of Medicinal Chemistry},
+34(2):786--797, 1991.
+
+\bibitem{fey2019} M.~Fey and J.~E. Lenssen. Fast graph representation learning
+with PyTorch Geometric. \emph{ICLR Workshop on Representation Learning on Graphs
+and Manifolds}, 2019.
+
+\bibitem{gilmer2017} J.~Gilmer, S.~S. Schoenholz, P.~F. Riley, O.~Vinyals, and
+G.~E. Dahl. Neural message passing for quantum chemistry. \emph{International
+Conference on Machine Learning (ICML)}, 2017.
+
+\bibitem{guo2017} C.~Guo, G.~Pleiss, Y.~Sun, and K.~Q. Weinberger. On calibration
+of modern neural networks. \emph{International Conference on Machine Learning
+(ICML)}, 2017.
+
+\bibitem{hooker2019} S.~Hooker, D.~Erhan, P.-J. Kindermans, and B.~Kim. A
+benchmark for interpretability methods in deep neural networks. \emph{Advances in
+Neural Information Processing Systems (NeurIPS)}, 2019.
+
+\bibitem{hu2020pretrain} W.~Hu, B.~Liu, J.~Gomes, M.~Zitnik, P.~Liang, V.~Pande,
+and J.~Leskovec. Strategies for pre-training graph neural networks.
+\emph{International Conference on Learning Representations (ICLR)}, 2020.
+
+\bibitem{huang2021tdc} K.~Huang, T.~Fu, W.~Gao, Y.~Zhao, Y.~Roohani,
+J.~Leskovec, C.~W. Coley, C.~Xiao, J.~Sun, and M.~Zitnik. Therapeutics Data
+Commons: Machine learning datasets and tasks for drug discovery and development.
+\emph{NeurIPS Datasets and Benchmarks Track}, 2021.
+
+\bibitem{jacovi2020} A.~Jacovi and Y.~Goldberg. Towards faithfully interpretable
+NLP systems: How should we define and evaluate faithfulness? \emph{Annual Meeting
+of the Association for Computational Linguistics (ACL)}, 2020.
+
+\bibitem{jimenezluna2020} J.~Jim\'enez-Luna, F.~Grisoni, and G.~Schneider. Drug
+discovery with explainable artificial intelligence. \emph{Nature Machine
+Intelligence}, 2:573--584, 2020.
+
+\bibitem{kipf2017} T.~N. Kipf and M.~Welling. Semi-supervised classification with
+graph convolutional networks. \emph{International Conference on Learning
+Representations (ICLR)}, 2017.
+
+\bibitem{kokhlikyan2020} N.~Kokhlikyan, V.~Miglani, M.~Martin, E.~Wang,
+B.~Alsallakh, J.~Reynolds, A.~Melnikov, N.~Kliushkina, C.~Araya, S.~Yan, and
+O.~Reblitz-Richardson. Captum: A unified and generic model interpretability
+library for PyTorch. \emph{arXiv:2009.07896}, 2020.
+
+\bibitem{landrum_rdkit} G.~Landrum et al. RDKit: Open-source cheminformatics.
+\url{https://www.rdkit.org}.
+
+\bibitem{liu2021dig} M.~Liu, Y.~Luo, L.~Wang, Y.~Xie, H.~Yuan, S.~Gui, H.~Yu,
+Z.~Xu, J.~Zhang, Y.~Liu, K.~Yan, H.~Liu, C.~Fu, B.~Oztekin, X.~Zhang, and
+S.~Ji. DIG: A turnkey library for diving into graph deep learning research.
+\emph{Journal of Machine Learning Research}, 22(240):1--9, 2021.
+
+\bibitem{luo2020} D.~Luo, W.~Cheng, D.~Xu, W.~Yu, B.~Zong, H.~Chen, and X.~Zhang.
+Parameterized explainer for graph neural network. \emph{Advances in Neural
+Information Processing Systems (NeurIPS)}, 2020.
+
+\bibitem{mccloskey2019} K.~McCloskey, A.~Taly, F.~Monti, M.~P. Brenner, and
+L.~J. Colwell. Using attribution to decode binding mechanism in neural network
+models for chemistry. \emph{Proceedings of the National Academy of Sciences},
+116(24):11624--11629, 2019.
+
+\bibitem{sanchez2020} B.~Sanchez-Lengeling, J.~Wei, B.~Lee, E.~Reif, P.~Wang,
+W.~W. Qian, K.~McCloskey, L.~Colwell, and A.~Wiltschko. Evaluating attribution
+for graph neural networks. \emph{Advances in Neural Information Processing
+Systems (NeurIPS)}, 2020.
+
+\bibitem{shrikumar2016} A.~Shrikumar, P.~Greenside, A.~Shcherbina, and
+A.~Kundaje. Not just a black box: Learning important features through propagating
+activation differences. \emph{arXiv:1605.01713}, 2016.
+
+\bibitem{simonyan2014} K.~Simonyan, A.~Vedaldi, and A.~Zisserman. Deep inside
+convolutional networks: Visualising image classification models and saliency
+maps. \emph{ICLR Workshop}, 2014.
+
+\bibitem{springenberg2015} J.~T. Springenberg, A.~Dosovitskiy, T.~Brox, and
+M.~Riedmiller. Striving for simplicity: The all convolutional net. \emph{ICLR
+Workshop}, 2015.
+
+\bibitem{sundararajan2017} M.~Sundararajan, A.~Taly, and Q.~Yan. Axiomatic
+attribution for deep networks. \emph{International Conference on Machine Learning
+(ICML)}, 2017.
+
+\bibitem{velickovic2018} P.~Veli\v{c}kovi\'c, G.~Cucurull, A.~Casanova,
+A.~Romero, P.~Li\`o, and Y.~Bengio. Graph attention networks. \emph{International
+Conference on Learning Representations (ICLR)}, 2018.
+
+\bibitem{wu2018moleculenet} Z.~Wu, B.~Ramsundar, E.~N. Feinberg, J.~Gomes,
+C.~Geniesse, A.~S. Pappu, K.~Leswing, and V.~Pande. MoleculeNet: A benchmark for
+molecular machine learning. \emph{Chemical Science}, 9(2):513--530, 2018.
+
+\bibitem{xiong2020} Z.~Xiong, D.~Wang, X.~Liu, F.~Zhong, X.~Wan, X.~Li, Z.~Li,
+X.~Luo, K.~Chen, H.~Jiang, and M.~Zheng. Pushing the boundaries of molecular
+representation for drug discovery with the graph attention mechanism.
+\emph{Journal of Medicinal Chemistry}, 63(16):8749--8760, 2020.
+
+\bibitem{xu2019gin} K.~Xu, W.~Hu, J.~Leskovec, and S.~Jegelka. How powerful are
+graph neural networks? \emph{International Conference on Learning
+Representations (ICLR)}, 2019.
+
+\bibitem{yang2019analyzing} K.~Yang, K.~Swanson, W.~Jin, C.~Coley, P.~Eiden,
+H.~Gao, A.~Guzman-Perez, T.~Hopper, B.~Kelley, M.~Mathea, A.~Palmer,
+V.~Settels, T.~Jaakkola, K.~Jensen, and R.~Barzilay. Analyzing learned molecular
+representations for property prediction. \emph{Journal of Chemical Information
+and Modeling}, 59(8):3370--3388, 2019.
+
+\bibitem{ying2019} Z.~Ying, D.~Bourgeois, J.~You, M.~Zitnik, and J.~Leskovec.
+GNNExplainer: Generating explanations for graph neural networks. \emph{Advances
+in Neural Information Processing Systems (NeurIPS)}, 2019.
+
+\bibitem{yuan2021subgraphx} H.~Yuan, H.~Yu, J.~Wang, K.~Li, and S.~Ji. On
+explainability of graph neural networks via subgraph explorations.
+\emph{International Conference on Machine Learning (ICML)}, 2021.
+
+\bibitem{yuan2023survey} H.~Yuan, H.~Yu, S.~Gui, and S.~Ji. Explainability in
+graph neural networks: A taxonomic survey. \emph{IEEE Transactions on Pattern
+Analysis and Machine Intelligence}, 45(5):5782--5799, 2023.
+
+\end{thebibliography}

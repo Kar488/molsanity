@@ -1,0 +1,31 @@
+\noindent\textbf{Abstract.}\enspace
+Feature attributions are routinely used to explain which atoms drive a molecular
+graph neural network's prediction, yet they are seldom validated against what the
+molecule actually contains. The dominant way to check an attribution is
+\emph{faithfulness} --- does the explanation track the model? --- but faithfulness
+says nothing about \emph{correctness} --- does the explanation recover the true
+causal substructure? We present \textsc{MolSanity}, a reliability audit that
+measures both on the same molecules, together with coherence, cross-checkpoint
+stability and calibration linkage, and stratifies every metric by
+confidence/correctness regime under Bemis--Murcko scaffold shift. Across
+\numNCells\ audited cells spanning \numNData\ datasets, \numNBack\ backbones and
+\numNAttr\ attributors, we find that faithfulness and correctness are essentially
+\emph{uncorrelated} (Spearman $\rho=\numGlobalRho$, $p=\numGlobalP$, $n=\numNGtCells$
+ground-truth-bearing cells). On MUTAG the four gradient-family attributors span
+only \numGradOccSpread\ in occlusion faithfulness while their ground-truth AUROC
+spans \numGradGtSpread\ (\numGradGtLo--\numGradGtHi, chance $=0.5$): faithfulness
+barely discriminates between methods whose correctness differs by more than half
+an AUROC. This dissociation is regime-dependent. On a synthetic task with
+\emph{exact} node ground truth and $n=120$ evaluation molecules, ranking
+attributors by faithfulness recovers the ground-truth-best method
+($\rho=+0.94$, $p=0.005$); under scaffold shift the same ranking inverts in sign,
+and the field-standard Fidelity$+$ and GraphFramEx characterisation scores select
+attributors whose ground-truth AUROC is $0.112$ and $0.026$ against a best of
+$0.540$ (paired Wilcoxon $p<0.001$). Reliability also varies by backbone: on exact
+ground truth, localisation orders GCN $>$ AttentiveFP $>$ MPNN $>$ GINE $>$ GAT,
+and the \emph{most accurate} model (GINE, test accuracy $1.00$) is not the
+best-explained. We report negatives plainly, including degenerate cells and a
+directionality caveat that makes the regression faithfulness numbers weaker
+evidence than they appear. \textsc{MolSanity} is open source, with
+\numNCkpt\ pretrained checkpoints committed so every table reproduces without
+retraining.

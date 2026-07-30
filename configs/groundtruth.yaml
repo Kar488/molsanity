@@ -1,8 +1,8 @@
 # Ground-truth arms only, three seeds. The cells that carry the paper's central
 # claim, at a fraction of full.yaml's cost.
 #
-# full.yaml is now 58 cells x 2 splits x 3 seeds = 348 cell-runs, and SubgraphX
-# runs a Monte-Carlo tree search per molecule. If the budget for that is not
+# full.yaml is 57 cells x 2 splits x 3 seeds = 342 cell-runs, and SubgraphX runs
+# a Monte-Carlo tree search per molecule. If the budget for that is not
 # available, run this instead: it covers every dataset on which attribution
 # *correctness* can be measured at all, which is where the selection experiment,
 # the multi-seed variance and the shift contrast all live. The no-ground-truth
@@ -50,4 +50,3 @@ cells:
 - {dataset: BA-2Motifs, backbone: GINE, attributor: GuidedBackprop}
 - {dataset: BA-2Motifs, backbone: GINE, attributor: GNNExplainer}
 - {dataset: BA-2Motifs, backbone: GINE, attributor: PGExplainer}
-- {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}

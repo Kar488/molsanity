@@ -1,10 +1,10 @@
 # Full config — overnight matrix (definition of done). Broadest reproducible
 # sweep: exact + quasi ground truth, real classification & regression, and the
 # chemistry-meets-medicine tier, across backbones and attributors, on scaffold
-# (shift) + random (in-distribution) splits. Cells whose data is unreachable in
-# this environment (ShapeGGen, which is a node-classification benchmark this
-# graph-level audit does not yet cover, and the TDC-native sources) are
-# attempted and gracefully skipped+logged. Assumes a GPU or a long CPU budget.
+# (shift) + random (in-distribution) splits. Cells whose dependencies are
+# unavailable (SubgraphX needs DIG, ShapeGGen needs a GraphXAI source checkout,
+# DILI/hERG need PyTDC) are attempted and gracefully skipped+logged rather than
+# aborting the run. Assumes a GPU or a long CPU budget.
 seed: 0
 # Repeat the whole matrix under several seeds so split and initialisation
 # variance is measured, not assumed away. Each seed multiplies the run time, so
@@ -103,16 +103,16 @@ cells:
   - {dataset: SIDER,   backbone: GINE, attributor: IntegratedGradients}
   - {dataset: SIDER,   backbone: GCN,  attributor: IntegratedGradients}
   - {dataset: Tox21,   backbone: GINE, attributor: IntegratedGradients}
-  # --- Attempted; skipped+logged where unreachable in this environment ---
-  # BA-2Motifs now carries exact node ground truth (recovered from its node
-  # ordering and structurally verified), so it earns the full attributor sweep
-  # that the other exact-GT arm gets.
+  # --- Tier-1 exact GT (BA-2Motifs) ---
+  # Now carries exact node ground truth (recovered from its node ordering and
+  # structurally verified), so it earns the full attributor sweep the other
+  # exact-GT arms get.
   - {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
   - {dataset: BA-2Motifs, backbone: GINE, attributor: Saliency}
   - {dataset: BA-2Motifs, backbone: GINE, attributor: InputXGradient}
   - {dataset: BA-2Motifs, backbone: GINE, attributor: GuidedBackprop}
   - {dataset: BA-2Motifs, backbone: GINE, attributor: GNNExplainer}
   - {dataset: BA-2Motifs, backbone: GINE, attributor: PGExplainer}
-  - {dataset: ShapeGGen,  backbone: GINE, attributor: IntegratedGradients}
+  # --- Tier-3 ADMET via PyTDC; skipped+logged if PyTDC is unavailable ---
   - {dataset: DILI,       backbone: GINE, attributor: IntegratedGradients}
   - {dataset: hERG,       backbone: GINE, attributor: IntegratedGradients}

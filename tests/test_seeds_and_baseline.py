@@ -71,6 +71,97 @@ def test_report_names_the_worst_cell(tmp_path):
     assert "GT AUROC" in text and "Median across-seed sd" in text
 
 
+def test_results_rows_are_keyed_by_seed(tmp_path):
+    """Three seeds must produce three rows, not overwrite one another.
+
+    Without the seed in the key a multi-seed run writes each cell's three
+    results to the same slot and keeps the last, discarding two thirds of the
+    matrix while the file still looks complete.
+    """
+    from molsanity.reporting import update_results_md
+
+    out = tmp_path / "RESULTS.md"
+    rows = [{"task": "graph-classification", "dataset": "MUTAG",
+             "backbone": "GINE", "attributor": "IG", "split": "scaffold",
+             "seed": s, "n_mol": 56, "acc": 0.7, "auc": 0.9,
+             "gt_auroc": g, "gt_auprc": 0.3, "motif_top1": 0.8,
+             "occ_spearman": 0.4, "occ_top1": 0.5, "fid+": 0.1, "fid-": 0.0,
+             "sparsity": 0.8, "ece": 0.1}
+            for s, g in ((0, 0.53), (1, 0.61), (2, 0.48))]
+    update_results_md(rows, out)
+
+    body = out.read_text()
+    for val in ("0.530", "0.610", "0.480"):
+        assert val in body, f"seed row {val} was overwritten"
+    data = [ln for ln in body.splitlines()
+            if ln.startswith("| MUTAG ")]
+    assert len(data) == 3, f"expected 3 rows, got {len(data)}"
+
+
+def test_rows_still_overwrite_within_a_seed(tmp_path):
+    """Re-running the same cell at the same seed must replace, not duplicate."""
+    from molsanity.reporting import update_results_md
+
+    out = tmp_path / "RESULTS.md"
+    base = {"task": "graph-classification", "dataset": "MUTAG",
+            "backbone": "GINE", "attributor": "IG", "split": "scaffold",
+            "seed": 0, "n_mol": 56, "acc": 0.7, "auc": 0.9, "gt_auroc": 0.10,
+            "gt_auprc": 0.3, "motif_top1": 0.8, "occ_spearman": 0.4,
+            "occ_top1": 0.5, "fid+": 0.1, "fid-": 0.0, "sparsity": 0.8,
+            "ece": 0.1}
+    update_results_md([base], out)
+    update_results_md([{**base, "gt_auroc": 0.99}], out)
+    from molsanity.reporting import RESULTS_HEADER
+
+    rows_out = [ln for ln in out.read_text().splitlines()
+                if ln.startswith("| MUTAG ")]
+    assert len(rows_out) == 1, "same cell at the same seed must not duplicate"
+    cells = [c.strip() for c in rows_out[0].strip("|").split("|")]
+    gt = cells[RESULTS_HEADER.index("gt_auroc")]
+    assert gt == "0.990", f"gt_auroc column is {gt}, expected the newer value"
+
+
+def test_paper_build_collapses_seed_rows_to_one_per_cell():
+    """Otherwise a three-seed run triplicates every row of every table."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "paper" / "figs"))
+    import msdata as D
+
+    recs = [{"dataset": "MUTAG", "backbone": "GINE", "attributor": "IG",
+             "split": "scaffold", "seed": s, "gt_auroc": g, "occ_spearman": 0.4}
+            for s, g in ((0, 0.50), (1, 0.60), (2, 0.40))]
+    out = D._collapse_seeds([dict(r) for r in recs])
+
+    assert len(out) == 1, "three seeds must collapse to one row per cell"
+    row = out[0]
+    assert row["n_seeds"] == 3 and row["seeds"] == [0, 1, 2]
+    assert "seed" not in row
+    assert row["gt_auroc"] == pytest.approx(0.50)
+    import statistics as st
+    assert row["gt_auroc_sd"] == pytest.approx(st.stdev([0.50, 0.60, 0.40]))
+    # A field identical across seeds still gets an sd, of zero.
+    assert row["occ_spearman_sd"] == pytest.approx(0.0)
+
+
+def test_single_seed_results_pass_through_unchanged():
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "paper" / "figs"))
+    import msdata as D
+
+    recs = [{"dataset": "MUTAG", "backbone": "GINE", "attributor": "IG",
+             "split": "scaffold", "gt_auroc": 0.5},
+            {"dataset": "MUTAG", "backbone": "GINE", "attributor": "Saliency",
+             "split": "scaffold", "gt_auroc": 0.1}]
+    out = D._collapse_seeds([dict(r) for r in recs])
+    assert len(out) == 2
+    assert all(r["n_seeds"] == 1 for r in out)
+    assert all("gt_auroc_sd" not in r for r in out)
+
+
 # -------------------------------------------------------------- baseline ---
 class _FeatureSumModel(torch.nn.Module):
     """Graph score = sum over nodes of (feature dot w). Removing a node by

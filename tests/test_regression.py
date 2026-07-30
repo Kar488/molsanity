@@ -76,8 +76,10 @@ def test_reporting_splits_tasks(tmp_path):
     assert "Classification audit matrix" in text and "Regression audit matrix" in text
     assert "1.200" in text  # regression RMSE rendered
 
+    from molsanity.reporting import _row_key
+
     parsed = _parse_existing_rows(path)
     tasks = {k: r["task"] for k, r in parsed.items()}
-    assert ("ESOL", "GINE", "IntegratedGradients", "scaffold") in parsed
-    assert tasks[("ESOL", "GINE", "IntegratedGradients", "scaffold")] == "graph-regression"
-    assert tasks[("BBBP", "GINE", "IntegratedGradients", "scaffold")] == "graph-classification"
+    assert _row_key(reg) in parsed
+    assert tasks[_row_key(reg)] == "graph-regression"
+    assert tasks[_row_key(cls)] == "graph-classification"

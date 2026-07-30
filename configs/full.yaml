@@ -6,11 +6,16 @@
 # graph-level audit does not yet cover, and the TDC-native sources) are
 # attempted and gracefully skipped+logged. Assumes a GPU or a long CPU budget.
 seed: 0
+# Repeat the whole matrix under several seeds so split and initialisation
+# variance is measured, not assumed away. Each seed multiplies the run time, so
+# drop to [0] for a quick pass. SEED_VARIANCE.md reports the across-seed spread
+# per cell; read it against the effect sizes in RESULTS.md.
+seeds: [0, 1, 2]
 budget:
   epochs: 150
   ig_steps: 50
   pg_epochs: 30
-  max_eval_molecules: 100
+  max_eval_molecules: 200
   # SubgraphX runs a Monte-Carlo tree search per molecule and is the most
   # expensive attributor here by a wide margin; these keep it tractable.
   sgx_max_nodes: 8
@@ -18,7 +23,11 @@ budget:
 
 split:
   kind: scaffold
-  frac_train: 0.8
+  # 0.8/0.1/0.1 left only ~20 test molecules on MUTAG and SynthMotifs, which is
+  # what made the ground-truth arms underpowered. The audit needs a large
+  # EVALUATION set far more than it needs the last 20% of training data, so the
+  # test fold is widened. This changes the trained models, hence every number.
+  frac_train: 0.6
   frac_val: 0.1
 
 model:
@@ -63,6 +72,14 @@ cells:
   - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # --- Tier-1 exact GT (ShapeGGen, via k-hop enclosing subgraphs) ---
+  - {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: InputXGradient}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: PGExplainer}
+  - {dataset: ShapeGGen, backbone: GINE, attributor: SubgraphX}
   # --- Tier-2 classification (BBBP, BACE) ---
   - {dataset: BBBP, backbone: GINE,        attributor: IntegratedGradients}
   - {dataset: BBBP, backbone: GCN,         attributor: IntegratedGradients}

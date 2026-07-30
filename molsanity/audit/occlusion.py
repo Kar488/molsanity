@@ -24,8 +24,17 @@ import torch
 from .motifs import MotifDecomposition, motif_scores
 
 
-def _batched_masked_logits(model, data, masks: np.ndarray) -> np.ndarray:
+def _batched_masked_logits(model, data, masks: np.ndarray,
+                           baseline=None) -> np.ndarray:
     """Run the model once per mask, batched. masks: [M, num_nodes] in {0,1} kept.
+
+    ``baseline`` selects the counterfactual used for a removed node. ``None``
+    zeroes its features, which is the field convention and what the multiplier
+    ``node_mask`` implements. A tensor of shape [F] instead *replaces* a removed
+    node's features with that vector, which keeps the graph closer to the data
+    manifold: the node still looks like a plausible atom, just an uninformative
+    one. Comparing the two answers how much of a faithfulness score is an
+    artefact of evaluating the model off-distribution.
 
     Returns the full logit matrix [M, num_classes] for the M masked variants.
     """
@@ -53,7 +62,13 @@ def _batched_masked_logits(model, data, masks: np.ndarray) -> np.ndarray:
 
     model.eval()
     with torch.no_grad():
-        out = model(X, EI, EA, B, node_mask=node_mask)
+        if baseline is None:
+            out = model(X, EI, EA, B, node_mask=node_mask)
+        else:
+            # Impute rather than zero: x <- keep * x + (1 - keep) * baseline.
+            bl = baseline.to(device=X.device, dtype=X.dtype).view(1, -1)
+            X_imp = node_mask * X + (1.0 - node_mask) * bl
+            out = model(X_imp, EI, EA, B)
     return out.detach().cpu().numpy()
 
 
@@ -65,7 +80,13 @@ def occlusion_faithfulness(
     target: int,
     salient_quantile: float = 0.8,
     task: str = "graph-classification",
+    baseline=None,
 ) -> dict:
+    """``baseline``: optional [F] feature vector used in place of zeroing when a
+    node is removed. Supplying the training-set feature mean gives a
+    counterfactual that stays nearer the data manifold; the caller can then
+    compare the two and see how much of the score is an off-manifold artefact.
+    """
     from scipy.stats import spearmanr
 
     n = data.num_nodes
@@ -102,7 +123,7 @@ def occlusion_faithfulness(
     rm_nonsalient = np.ones((1, n), dtype=np.float32); rm_nonsalient[0, ~salient] = 0.0
 
     all_masks = np.concatenate([base_mask, motif_masks, rm_salient, rm_nonsalient], axis=0)
-    logits = _batched_masked_logits(model, data, all_masks)  # [M, C]
+    logits = _batched_masked_logits(model, data, all_masks, baseline=baseline)
 
     from ..models.calibration import softmax_1d
 
@@ -175,6 +196,28 @@ def occlusion_faithfulness(
         "characterization": char,
         "n_motifs": len(motifs),
     }
+
+
+def dataset_feature_mean(dataset, indices=None, max_graphs: int = 500):
+    """Mean node-feature vector over the training graphs, as an occlusion
+    baseline that keeps a removed node looking like a plausible node.
+
+    Computed on the training split only, so the counterfactual carries no
+    information from the molecules being audited.
+    """
+    idx = list(indices) if indices is not None else list(range(len(dataset)))
+    idx = idx[:max_graphs]
+    total, count = None, 0
+    for i in idx:
+        x = dataset[i].x
+        if x is None:
+            continue
+        x = x.float()
+        total = x.sum(0) if total is None else total + x.sum(0)
+        count += int(x.size(0))
+    if total is None or count == 0:
+        return None
+    return total / count
 
 
 def characterization_score(fid_plus: float, fid_minus: float,

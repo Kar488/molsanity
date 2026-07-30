@@ -79,6 +79,16 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
 
     # PGExplainer is parametric and needs the training graphs to fit its mask MLP.
     train_graphs = [dataset[i] for i in split.train] if attributor_name == "PGExplainer" else None
+    # Manifold-respecting occlusion baseline, computed on the TRAINING split
+    # only so the counterfactual carries no information from the audited
+    # molecules. Zeroing a node's features takes the graph off the data
+    # manifold; replacing them with the training mean keeps a removed node
+    # looking like a plausible but uninformative one. Both are recorded, so the
+    # off-manifold caveat is measurable rather than only stated.
+    from .audit.occlusion import dataset_feature_mean
+
+    occ_baseline = dataset_feature_mean(dataset, split.train)
+
     attributor = build_attributor(
         attributor_name, model, task=task, ig_steps=budget.get("ig_steps", 25),
         train_graphs=train_graphs, pg_epochs=budget.get("pg_epochs", 30),
@@ -125,7 +135,8 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         # share it between the coherence/occlusion audit and the stability check.
         decomp = decompose(g)
         rec = audit_molecule(model, g, attribution, dataset_name,
-                             temperature=temperature, decomp=decomp, task=task)
+                             temperature=temperature, decomp=decomp, task=task,
+                             occ_baseline=occ_baseline)
         if early_attr is not None:
             try:
                 rec.stability = cross_checkpoint_stability(
@@ -191,49 +202,76 @@ def main(argv=None):
 
     from .data import DatasetBlocked
 
+    # A run may repeat the whole matrix under several seeds so that split and
+    # initialisation variance is measured rather than assumed away.
+    seeds = [int(v) for v in (cfg.get("seeds") or [cfg.get("seed", 0)])]
+    multi_seed = len(seeds) > 1
+    log.info("Seeds: %s", seeds)
+
     for cell in cfg["cells"]:
         # A cell may pin its own split(s) (e.g. a random-split reference row);
         # otherwise it runs on the config's split list.
         cell_splits = cell.get("splits") or ([cell["split"]] if cell.get("split") else split_kinds)
         for split_kind in cell_splits:
-            cell_id = f"{cell['dataset']}__{cell['backbone']}__{cell['attributor']}__{split_kind}"
-            stage_cfg = {"cell": cell, "split": split_kind, "budget": cfg.get("budget"),
-                         "model": cfg["model"], "train": cfg["train"], "seed": cfg["seed"]}
-            try:
-                res = stage(
-                    f"cell_{cell_id}", stage_cfg,
-                    lambda _out, c=cell, s=split_kind: run_cell(c, cfg, s, log, ts),
-                )
-                # Rebuild the row from the stored agg + train payload so newly
-                # added columns (e.g. test AUC) populate for cached cells too.
-                row = results_row(cell, res.payload["agg"], res.payload["train"], split_kind)
-                rows.append(row)
-                if row.get("task") == "graph-regression":
-                    headline = f"rmse={row.get('rmse'):.3f} r2={res.payload['train'].get('test_r2'):.3f}"
-                else:
-                    headline = f"acc={row['acc']:.2f} gt_auroc={row.get('gt_auroc')}"
-                detail = (f"{headline} n={res.payload['n_eval']}"
-                          + (" (capped)" if res.payload.get("capped") else "")
-                          + (" [cached]" if res.cached else ""))
-                ledger.record({**cell, "split": split_kind}, "done", detail)
-                log.info("[cell %s] DONE — %s", cell_id, detail)
-            except (DatasetBlocked, NotImplementedError) as exc:
-                ledger.record({**cell, "split": split_kind}, "skipped", str(exc))
-                blockers.append(f"{cell_id}: {exc}")
-                log.warning("[cell %s] SKIPPED — %s", cell_id, exc)
-            except Exception as exc:  # noqa: BLE001 — graceful per-cell failure
-                tb = traceback.format_exc()
-                err_path = Path("logs") / f"error_{cell_id}_{ts}.log"
-                err_path.parent.mkdir(parents=True, exist_ok=True)
-                err_path.write_text(tb)
-                ledger.record({**cell, "split": split_kind}, "failed", f"{exc} (see {err_path})")
-                blockers.append(f"{cell_id}: FAILED {exc}")
-                log.error("[cell %s] FAILED — %s (traceback -> %s)", cell_id, exc, err_path)
+            for seed in seeds:
+                cfg_seed = {**cfg, "seed": seed}
+                set_global_seed(seed)
+                base_id = (f"{cell['dataset']}__{cell['backbone']}"
+                           f"__{cell['attributor']}__{split_kind}")
+                # Single-seed configs keep the old stage identifier, so cells
+                # cached by an earlier run stay cached instead of silently
+                # re-running.
+                cell_id = f"{base_id}__seed{seed}" if multi_seed else base_id
+                stage_cfg = {"cell": cell, "split": split_kind, "budget": cfg.get("budget"),
+                             "model": cfg["model"], "train": cfg["train"], "seed": seed}
+                try:
+                    res = stage(
+                        f"cell_{cell_id}", stage_cfg,
+                        lambda _out, c=cell, s=split_kind, cs=cfg_seed:
+                            run_cell(c, cs, s, log, ts),
+                    )
+                    # Rebuild the row from the stored agg + train payload so newly
+                    # added columns (e.g. test AUC) populate for cached cells too.
+                    row = results_row(cell, res.payload["agg"],
+                                      res.payload["train"], split_kind)
+                    row["seed"] = seed
+                    rows.append(row)
+                    if row.get("task") == "graph-regression":
+                        headline = f"rmse={row.get('rmse'):.3f} r2={res.payload['train'].get('test_r2'):.3f}"
+                    else:
+                        headline = f"acc={row['acc']:.2f} gt_auroc={row.get('gt_auroc')}"
+                    detail = (f"{headline} n={res.payload['n_eval']}"
+                              + (" (capped)" if res.payload.get("capped") else "")
+                              + (" [cached]" if res.cached else ""))
+                    ledger.record({**cell, "split": split_kind, "seed": seed}, "done", detail)
+                    log.info("[cell %s] DONE — %s", cell_id, detail)
+                except (DatasetBlocked, NotImplementedError) as exc:
+                    ledger.record({**cell, "split": split_kind, "seed": seed}, "skipped", str(exc))
+                    blockers.append(f"{cell_id}: {exc}")
+                    log.warning("[cell %s] SKIPPED — %s", cell_id, exc)
+                except Exception as exc:  # noqa: BLE001 — graceful per-cell failure
+                    tb = traceback.format_exc()
+                    err_path = Path("logs") / f"error_{cell_id}_{ts}.log"
+                    err_path.parent.mkdir(parents=True, exist_ok=True)
+                    err_path.write_text(tb)
+                    ledger.record({**cell, "split": split_kind, "seed": seed}, "failed", f"{exc} (see {err_path})")
+                    blockers.append(f"{cell_id}: FAILED {exc}")
+                    log.error("[cell %s] FAILED — %s (traceback -> %s)", cell_id, exc, err_path)
 
-            # Update reports after EVERY cell (rolling, resumable).
-            if rows:
-                update_results_md(rows)
-            update_progress_md(ledger, config_name, ts, blockers)
+                # Update reports after EVERY cell (rolling, resumable).
+                if rows:
+                    update_results_md(rows)
+                update_progress_md(ledger, config_name, ts, blockers)
+
+    # Across-seed spread, so a reported effect can be compared against the
+    # variance of re-running the same cell.
+    try:
+        from .benchmark.seed_variance import write_seed_variance_md
+
+        sv = write_seed_variance_md(rows)
+        log.info("Wrote SEED_VARIANCE.md (%d multi-seed cells)", sv["n_cells"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Seed-variance report failed: %s", exc)
 
     # Head-to-head benchmark table over everything audited so far.
     try:

@@ -99,10 +99,15 @@ current alongside RESULTS.md.
   carried by the salient atoms. The classification path is untouched (pinned by
   a test). **The committed regression faithfulness numbers predate the fix and
   are excluded from every faithfulness claim** until the next sweep.
-- **Occlusion is an off-manifold counterfactual.** Zeroing node features takes
-  the graph off the data manifold, so a motif whose removal barely moves the
-  output may be redundant rather than unimportant. This is a property of the
-  metric, not a bug, and it bears hardest on regression.
+- **Occlusion is an off-manifold counterfactual — now measured, not just
+  stated.** Zeroing node features takes the graph off the data manifold, so a
+  motif whose removal barely moves the output may be redundant rather than
+  unimportant. Each record now also carries `occ_spearman_imputed`, the same
+  statistic with removed nodes set to the training-split mean feature vector
+  instead of zero, which keeps a removed node looking like a plausible but
+  uninformative one. The two agreeing bounds the artefact; the two disagreeing
+  localises it. The baseline is computed on the training split only, so it
+  carries no information from the audited molecules.
 - The first slice audits a single attributor (Integrated Gradients). Additional
   attributors and backbones broaden the matrix in later milestones; absence of a
   cell in RESULTS.md means it has not been validated, not that it failed.

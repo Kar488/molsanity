@@ -170,14 +170,112 @@ def _load_synthmotifs(spec: DatasetSpec) -> LoadedDataset:
 
 
 def _load_shapeggen(spec: DatasetSpec) -> LoadedDataset:
+    """ShapeGGen as a graph-classification task, via k-hop enclosing subgraphs.
+
+    ShapeGGen is a *node* classification benchmark on one large graph, while
+    every MolSanity axis is defined per instance at the graph level. The two are
+    reconciled the way the node-explainability literature already does it: a
+    node's explanation lives in its computation graph, i.e. its k-hop
+    neighbourhood, where k is the number of message-passing layers. So each
+    labelled node becomes one instance, its enclosing k-hop subgraph is the
+    "molecule", its class is the graph label, and GraphXAI's per-node
+    explanation restricted to that subgraph is the exact node ground truth.
+
+    This adds no new attribution or evaluation logic; it is a data adapter, and
+    the audit downstream is unchanged. GraphXAI's setup.py packages only the
+    top-level module, so a wheel install is importable but unusable; install
+    from a source checkout (and note it needs ``ipdb``).
+    """
+    import torch
+    from torch_geometric.data import Data
+    from torch_geometric.utils import k_hop_subgraph
+
     try:
-        import graphxai  # noqa: F401
+        from graphxai.datasets import ShapeGGen
     except Exception as exc:  # blocked-tolerant
         raise DatasetBlocked(
-            f"ShapeGGen requires GraphXAI which is not installed ({exc}). "
-            "Skipping and logging per Hard Rule 4."
+            f"ShapeGGen requires GraphXAI, which is not importable ({exc}). "
+            "Install it from a source checkout (its published wheel omits the "
+            "subpackages). Skipping and logging per Hard Rule 4."
         ) from exc
-    raise DatasetBlocked("ShapeGGen loader not yet wired (Milestone 4).")
+
+    extras = spec.extras or {}
+    hops = int(extras.get("hops", 2))
+    seed = int(extras.get("seed", 0))
+    max_graphs = int(extras.get("max_graphs", 400))
+
+    from ..utils import set_global_seed
+
+    set_global_seed(seed)
+    src = ShapeGGen(
+        model_layers=hops,
+        num_subgraphs=int(extras.get("num_subgraphs", 100)),
+        prob_connection=float(extras.get("prob_connection", 0.4)),
+        subgraph_size=int(extras.get("subgraph_size", 8)),
+        seed=seed,
+        max_tries_verification=int(extras.get("max_tries_verification", 15)),
+    )
+    big = src.graph
+    n_total = int(big.num_nodes)
+
+    def _explained_nodes(expl) -> set[int]:
+        """Node indices GraphXAI marks as the rationale for one node."""
+        out: set[int] = set()
+        for e in (expl if isinstance(expl, (list, tuple)) else [expl]):
+            nm = getattr(e, "node_imp", None)
+            idx = getattr(e, "node_reference", None)
+            if nm is None:
+                continue
+            imp = nm.detach().cpu().numpy().reshape(-1)
+            if idx is not None:                       # local -> global mapping
+                keys = list(idx.keys()) if isinstance(idx, dict) else list(idx)
+                for local, g in enumerate(keys):
+                    if local < imp.shape[0] and imp[local] > 0:
+                        out.add(int(g))
+            elif imp.shape[0] == n_total:
+                out.update(int(v) for v in imp.nonzero()[0])
+        return out
+
+    graphs, skipped = [], 0
+    for node in range(n_total):
+        if len(graphs) >= max_graphs:
+            break
+        subset, edge_index, mapping, _ = k_hop_subgraph(
+            node, hops, big.edge_index, relabel_nodes=True, num_nodes=n_total)
+        if int(subset.numel()) < 3 or int(edge_index.numel()) == 0:
+            skipped += 1
+            continue
+        rationale = _explained_nodes(src.explanations[node])
+        gt = torch.tensor([1.0 if int(g) in rationale else 0.0 for g in subset],
+                          dtype=torch.float32)
+        if gt.sum() == 0 or gt.sum() == gt.numel():
+            # A degenerate mask cannot be scored; drop rather than score it.
+            skipped += 1
+            continue
+        g = Data(
+            x=big.x[subset].float(),
+            edge_index=edge_index,
+            edge_attr=torch.ones(edge_index.size(1), 1),
+            y=torch.tensor([int(big.y[node])], dtype=torch.long),
+            num_nodes=int(subset.numel()),
+        )
+        g.node_gt = gt
+        g.seed_node = int(mapping[0])
+        graphs.append(g)
+
+    if len(graphs) < 20:
+        raise DatasetBlocked(
+            f"ShapeGGen produced only {len(graphs)} scoreable subgraphs "
+            f"({skipped} skipped as too small or degenerately masked); "
+            "not enough to audit."
+        )
+
+    cache_dir = DATA_ROOT / spec.name
+    checksum = _verify_or_record_checksum(spec, graphs, cache_dir)
+    prov = _write_provenance(spec, graphs, cache_dir, checksum)
+    log.info("Loaded ShapeGGen: %d %d-hop subgraphs from %d nodes (%d skipped)",
+             len(graphs), hops, n_total, skipped)
+    return LoadedDataset(spec, graphs, prov)
 
 
 _TDC_GROUPS = {

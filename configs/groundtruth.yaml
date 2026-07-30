@@ -1,0 +1,53 @@
+# Ground-truth arms only, three seeds. The cells that carry the paper's central
+# claim, at a fraction of full.yaml's cost.
+#
+# full.yaml is now 58 cells x 2 splits x 3 seeds = 348 cell-runs, and SubgraphX
+# runs a Monte-Carlo tree search per molecule. If the budget for that is not
+# available, run this instead: it covers every dataset on which attribution
+# *correctness* can be measured at all, which is where the selection experiment,
+# the multi-seed variance and the shift contrast all live. The no-ground-truth
+# molecular cells only ever contributed the faithfulness axis.
+seed: 0
+seeds: [0, 1, 2]
+budget: {epochs: 150, ig_steps: 50, pg_epochs: 30, max_eval_molecules: 200, sgx_max_nodes: 8, sgx_rollouts: 20}
+split: {kind: scaffold, frac_train: 0.6, frac_val: 0.1}
+model: {hidden_channels: 64, num_layers: 3, dropout: 0.5, pool: mean}
+train: {lr: 0.001, weight_decay: 0.0005, batch_size: 64, class_weight: true}
+extra_splits: [random]
+cells:
+- {dataset: SynthMotifs, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: SynthMotifs, backbone: GINE, attributor: Saliency}
+- {dataset: SynthMotifs, backbone: GINE, attributor: InputXGradient}
+- {dataset: SynthMotifs, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: SynthMotifs, backbone: GINE, attributor: GNNExplainer}
+- {dataset: SynthMotifs, backbone: GINE, attributor: PGExplainer}
+- {dataset: SynthMotifs, backbone: GINE, attributor: SubgraphX}
+- {dataset: SynthMotifs, backbone: GCN, attributor: IntegratedGradients}
+- {dataset: SynthMotifs, backbone: GAT, attributor: IntegratedGradients}
+- {dataset: SynthMotifs, backbone: MPNN, attributor: IntegratedGradients}
+- {dataset: SynthMotifs, backbone: AttentiveFP, attributor: IntegratedGradients}
+- {dataset: MUTAG, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: MUTAG, backbone: GINE, attributor: Saliency}
+- {dataset: MUTAG, backbone: GINE, attributor: InputXGradient}
+- {dataset: MUTAG, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: MUTAG, backbone: GINE, attributor: GNNExplainer}
+- {dataset: MUTAG, backbone: GINE, attributor: PGExplainer}
+- {dataset: MUTAG, backbone: GINE, attributor: SubgraphX}
+- {dataset: MUTAG, backbone: GCN, attributor: IntegratedGradients}
+- {dataset: MUTAG, backbone: GAT, attributor: IntegratedGradients}
+- {dataset: MUTAG, backbone: MPNN, attributor: IntegratedGradients}
+- {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+- {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}
+- {dataset: ShapeGGen, backbone: GINE, attributor: InputXGradient}
+- {dataset: ShapeGGen, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: ShapeGGen, backbone: GINE, attributor: GNNExplainer}
+- {dataset: ShapeGGen, backbone: GINE, attributor: PGExplainer}
+- {dataset: ShapeGGen, backbone: GINE, attributor: SubgraphX}
+- {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: BA-2Motifs, backbone: GINE, attributor: Saliency}
+- {dataset: BA-2Motifs, backbone: GINE, attributor: InputXGradient}
+- {dataset: BA-2Motifs, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: BA-2Motifs, backbone: GINE, attributor: GNNExplainer}
+- {dataset: BA-2Motifs, backbone: GINE, attributor: PGExplainer}
+- {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}

@@ -5,6 +5,42 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 > `RESULTS.md` holds only validated numbers. This file holds everything
 > unfinished. Update continuously.
 
+## Next sweep — what a re-run must pick up
+
+Four code changes landed after the committed `full.yaml` run
+(`20260730-184508`). None of them changed a published number; all of them
+change what the *next* run produces. Re-run `python -m molsanity.run_all
+--config configs/full.yaml` to collect them.
+
+- [ ] **BA-2Motifs becomes a third exact-ground-truth arm.** Node labels are now
+      recovered from the release's node ordering and structurally verified.
+      `configs/full.yaml` gives it the full attributor sweep. The selection
+      experiment can then be replicated on a second exact-GT dataset, which is
+      the single biggest strengthening available to the paper.
+- [ ] **SubgraphX populates the perturbation family.** Needs
+      `pip install -e ".[subgraphx]"`; `torch_sparse`/`torch_scatter` build from
+      source and take roughly 15 minutes. SubgraphX runs a Monte-Carlo tree
+      search per molecule and is by far the most expensive attributor in the
+      sweep — budget for it (`sgx_rollouts`, `sgx_max_nodes`).
+- [ ] **Regression faithfulness gets recomputed under the corrected operator.**
+      The current regression numbers are withdrawn from interpretation. After
+      the re-run, either restore the regression faithfulness claim or state the
+      corrected finding.
+- [ ] **The 38 carried rows become current.** They survive from an earlier
+      reduced-budget run because those cells failed in an older sweep; the GPU
+      defects behind that are fixed, so a clean re-run should retire the
+      `carried` provenance class entirely.
+
+After the sweep: `cd paper && make` regenerates every figure, table and inline
+number, then re-read the withdrawn regression paragraph and the two BA-2Motifs
+paragraphs in `body.tex`, which are written for the pre-fix state.
+
+## Known-good, do not regress
+
+- [x] Fonts: `make` runs `figs/check_fonts.py`, which fails the build on a Type 3
+      or non-embedded font. arXiv rejects both. matplotlib's PDF default is
+      Type 3, so any new figure code must set `pdf.fonttype: 42`.
+
 ## Milestone 0 — Scaffold & environment
 - [x] Create package layout (`molsanity/{data,models,attributors,audit,benchmark,viz}`)
 - [x] `pyproject.toml`, `CLAUDE.md`, `TASKS.md`, `PROGRESS.md`

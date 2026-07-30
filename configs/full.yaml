@@ -2,7 +2,8 @@
 # sweep: exact + quasi ground truth, real classification & regression, and the
 # chemistry-meets-medicine tier, across backbones and attributors, on scaffold
 # (shift) + random (in-distribution) splits. Cells whose data is unreachable in
-# this environment (ShapeGGen/GraphXAI, TDC-native, BA-2Motifs download) are
+# this environment (ShapeGGen, which is a node-classification benchmark this
+# graph-level audit does not yet cover, and the TDC-native sources) are
 # attempted and gracefully skipped+logged. Assumes a GPU or a long CPU budget.
 seed: 0
 budget:
@@ -10,6 +11,10 @@ budget:
   ig_steps: 50
   pg_epochs: 30
   max_eval_molecules: 100
+  # SubgraphX runs a Monte-Carlo tree search per molecule and is the most
+  # expensive attributor here by a wide margin; these keep it tractable.
+  sgx_max_nodes: 8
+  sgx_rollouts: 20
 
 split:
   kind: scaffold
@@ -41,6 +46,7 @@ cells:
   - {dataset: SynthMotifs, backbone: GINE,        attributor: GuidedBackprop}
   - {dataset: SynthMotifs, backbone: GINE,        attributor: GNNExplainer}
   - {dataset: SynthMotifs, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: SynthMotifs, backbone: GINE,        attributor: SubgraphX}
   - {dataset: SynthMotifs, backbone: GCN,         attributor: IntegratedGradients}
   - {dataset: SynthMotifs, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: SynthMotifs, backbone: MPNN,        attributor: IntegratedGradients}
@@ -52,6 +58,7 @@ cells:
   - {dataset: MUTAG, backbone: GINE,        attributor: GuidedBackprop}
   - {dataset: MUTAG, backbone: GINE,        attributor: GNNExplainer}
   - {dataset: MUTAG, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: MUTAG, backbone: GINE,        attributor: SubgraphX}
   - {dataset: MUTAG, backbone: GCN,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
@@ -80,7 +87,15 @@ cells:
   - {dataset: SIDER,   backbone: GCN,  attributor: IntegratedGradients}
   - {dataset: Tox21,   backbone: GINE, attributor: IntegratedGradients}
   # --- Attempted; skipped+logged where unreachable in this environment ---
+  # BA-2Motifs now carries exact node ground truth (recovered from its node
+  # ordering and structurally verified), so it earns the full attributor sweep
+  # that the other exact-GT arm gets.
   - {dataset: BA-2Motifs, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: Saliency}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: InputXGradient}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: BA-2Motifs, backbone: GINE, attributor: PGExplainer}
   - {dataset: ShapeGGen,  backbone: GINE, attributor: IntegratedGradients}
   - {dataset: DILI,       backbone: GINE, attributor: IntegratedGradients}
   - {dataset: hERG,       backbone: GINE, attributor: IntegratedGradients}

@@ -13,8 +13,8 @@ current alongside RESULTS.md.
   motivated proxy mask (nitro / aromatic-nitro groups, the canonical
   mutagenicity motifs from Debnath et al. 1991) via RDKit SMARTS. This is a
   motif-level proxy, not annotator ground truth; it is labelled as such wherever
-  used. Exact ground truth is provided by the synthetic Tier-1 sets
-  (BA-2Motifs, BA-Shapes, ShapeGGen).
+  used. Exact ground truth comes from the offline SynthMotifs generator, and
+  (from the next sweep onward) from BA-2Motifs.
 
 ## Data
 
@@ -27,12 +27,28 @@ current alongside RESULTS.md.
   ground truth** (gt_auroc is "—"), so they extend the coherence/faithfulness/
   calibration battery to real ADMET-toxicity endpoints but not the GT-localisation
   axis — that axis stays anchored on SynthMotifs (exact) and the MUTAG proxy.
-- **SubgraphX (DIG) and ShapeGGen (GraphXAI)** could not be installed in this
-  environment: both depend on the pre-2.5 PyG `torch_sparse`/`torch_scatter`
-  compiled extensions, for which no wheel exists at torch 2.13 (source builds
-  hang). DIG installs but fails to import; GraphXAI's wheel omits its subpackages.
-  Both are kept blocked-tolerant and logged, never faked — and ShapeGGen's
-  exact-GT role is already met by the offline SynthMotifs generator.
+- **SubgraphX (DIG): resolved, but postdates the committed run.** The earlier
+  entry here said no wheel exists for `torch_sparse`/`torch_scatter` at torch
+  2.13 and that source builds hang. That was wrong: they build from source
+  (slowly, ~15 min), DIG then installs and imports, and SubgraphX is now wrapped
+  in `attributors/subgraphx.py` with tests in which it recovers a planted
+  five-node motif exactly. It is enabled in `configs/full.yaml`. No SubgraphX
+  row exists in the committed results, so every perturbation-family statement in
+  the current RESULTS.md still rests on GNNExplainer alone.
+- **ShapeGGen (GraphXAI): installable, but a task-level mismatch.** It also was
+  not blocked by `torch_sparse`. GraphXAI's `setup.py` packages only the
+  top-level module, so a wheel install is broken; from a source checkout (plus
+  `ipdb`) `ShapeGGen` builds fine. It stays unintegrated for a real reason:
+  ShapeGGen is **node** classification on one large graph, while every MolSanity
+  axis is defined per molecule at the **graph** level. Integrating it means
+  extending the audit to node-level tasks, not fixing a dependency.
+- **BA-2Motifs node labels: recovered, but postdates the committed run.** PyG's
+  `BA2MotifDataset` exposes no per-node field, so the extractor read nothing and
+  both cells landed in the no-GT block. The labels are recoverable from the
+  release's node ordering (motif appended after the BA base); that is now
+  implemented, structurally verified (induced subgraph must be a house or a
+  five-cycle, else refused), and cross-checked against PyG's `ExplainerDataset`.
+  The committed numbers predate it.
 - **PGExplainer is classification-only.** Its parametric mask-MLP is trained
   against class logits, so the current wrapper does not support graph-regression;
   regression cells use the gradient family + GNNExplainer (the perturbation-based
@@ -54,6 +70,24 @@ current alongside RESULTS.md.
 
 ## Methods
 
+- **The regression occlusion metric was mis-specified in the committed run.**
+  It clipped the attribution at zero (keeping only atoms that push the
+  prediction *up*) while leaving the occlusion effect signed, so a motif that
+  drives the prediction strongly down scored as unimportant on one side and
+  dominant on the other. That alone is enough to produce the systematic
+  negative rho across the regression cells, and it is why the unbounded
+  output-space Fidelity+ values run far outside the [-1,1] a probability-space
+  fidelity occupies. Corrected in `audit/occlusion.py`: regression ranks by
+  magnitude on both sides, the GraphFramEx characterisation score is reported
+  as undefined rather than clipping a sigma-space shift into [0,1], and a
+  bounded `fidelity_ratio` gives the share of the total occlusion effect
+  carried by the salient atoms. The classification path is untouched (pinned by
+  a test). **The committed regression faithfulness numbers predate the fix and
+  are excluded from every faithfulness claim** until the next sweep.
+- **Occlusion is an off-manifold counterfactual.** Zeroing node features takes
+  the graph off the data manifold, so a motif whose removal barely moves the
+  output may be redundant rather than unimportant. This is a property of the
+  metric, not a bug, and it bears hardest on regression.
 - The first slice audits a single attributor (Integrated Gradients). Additional
   attributors and backbones broaden the matrix in later milestones; absence of a
   cell in RESULTS.md means it has not been validated, not that it failed.

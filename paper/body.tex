@@ -695,19 +695,31 @@ and we report it only to warn against it.
 \label{sec:crosstask}
 
 Tables~\ref{tab:regression}, \ref{tab:molecular} and~\ref{tab:molecularb} give
-every audited combination on a real molecular dataset. Three cross-task patterns hold.
+every audited combination on a real molecular dataset. Three cross-task
+patterns hold, and one apparent pattern turns out to be an artefact.
 
-\paragraph{Regression is mostly, but not uniformly, anti-faithful} Across the
-\nRegCells{} regression combinations, \nRegNeg{} have negative occlusion
-faithfulness (median $\medRegOcc{}$); the positive ones are \regPosCells{}. The
-same cells have well-behaved predictive performance ($R^2$ from
-$\esolRtwoMin{}$ to $\esolRtwoMax{}$ on ESOL). We do not interpret the sign,
-for a concrete reason visible in the table: the output-space Fidelity$\pm$
-values reach $\maxRegFidPlus{}$, far outside the $[-1,1]$ range a
-probability-space fidelity occupies, which shows the occlusion counterfactual
-is not calibrated for regression rather than showing that attributions there
-are inverted. Our regression faithfulness operator needs redefinition, and we
-flag that rather than build on it.
+\paragraph{The regression faithfulness operator was mis-specified, and we
+withdraw its numbers} Across the \nRegCells{} regression combinations,
+\nRegNeg{} have negative occlusion faithfulness (median $\medRegOcc{}$), on
+cells whose predictive performance is well behaved ($R^2$ from
+$\esolRtwoMin{}$ to $\esolRtwoMax{}$ on ESOL). We do not interpret that
+pattern, and on inspection it is an artefact of our own operator rather than a
+property of the attributions. The operator compared two different quantities:
+the attribution was clipped at zero, keeping only atoms that push the
+prediction \emph{up}, while the occlusion effect kept its sign. A motif that
+drives a solubility prediction strongly down therefore scored as unimportant on
+the attribution side and dominant on the occlusion side, which is sufficient on
+its own to produce a systematic negative correlation. The unbounded
+output-space Fidelity$\pm$ values, which reach $\maxRegFidPlus{}$ against the
+$[-1,1]$ a probability-space fidelity occupies, are the visible symptom of the
+same mismatch. The corrected operator ranks by magnitude on both sides, reports
+the GraphFramEx characterisation score as undefined rather than clipping a
+standard-deviation-space shift into $[0,1]$, and adds a bounded statistic
+giving the share of the total occlusion effect carried by the salient atoms. It
+is implemented and tested but postdates this sweep, so Table~\ref{tab:regression}
+is retained for completeness and the regression cells are excluded from every
+faithfulness claim in this paper. The classification path, on which every other
+result rests, is unchanged.
 
 \paragraph{Coherence is high nearly everywhere, and says little} Motif top-1
 share lies between $\motifTopMin{}$ and $\motifTopMax{}$ across the
@@ -732,13 +744,22 @@ Section~\nameref{sec:selection}, computed from the per-molecule records.
 
 We record what did not work alongside what did.
 
-\paragraph{Ground truth that cannot be scored} BA-2Motifs is a synthetic
-benchmark whose whole purpose is to carry exact node labels. It trains here and
-produces $2\times100$ audited molecules, but our loader recovered no node-level
-ground truth from it, so both its cells sit in the no-ground-truth block. It is
-counted as audited, not as a ground-truth cell, and it is the clearest
-outstanding gap in the matrix: recovering those labels would give a second
-exact-ground-truth arm on which to replicate the selection experiment.
+\paragraph{Ground truth that was not being read} BA-2Motifs is a synthetic
+benchmark whose whole purpose is to carry exact node labels. It trains in this
+run and produces $2\times100$ audited molecules, but both its cells sit in the
+no-ground-truth block, because the loader found no node labels to read. The
+cause was ours rather than the dataset's: PyG's \texttt{BA2MotifDataset}
+exposes only node features, an edge index and a graph-level label, and our
+extractor looked for a per-node field that is never populated. The labels are
+recoverable from the released node ordering, in which the injected motif is
+appended after the Barab\'asi--Albert base. That recovery is now implemented and
+verified structurally, by requiring the induced subgraph on those nodes to be a
+house or a five-cycle before the mask is used, and cross-checked against a
+generator that produces the same construction with independent labels. It is
+refused rather than guessed when the check fails, so a reordered loader
+degrades to the behaviour reported here. The numbers in this paper predate that
+fix: BA-2Motifs is counted as audited and not as a ground-truth cell throughout,
+and the third exact-ground-truth arm it will provide is not claimed here.
 
 \paragraph{Degenerate ground truth} $\nDegenerateGtCells{}$ ground-truth cells
 return the identical value $\degenVal{}$ on every audited molecule, including
@@ -773,14 +794,23 @@ throughout for this reason, and the lowest-AUC cell in the run
 (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$ at accuracy
 $\worstAucAcc{}$) is exactly the case where accuracy alone would mislead.
 
-\paragraph{Blocked, not silently dropped} SubgraphX (via DIG) and ShapeGGen (via
-GraphXAI) could not be installed: both need the pre-2.5 PyG
-\texttt{torch\_\-sparse}/\texttt{torch\_\-scatter} compiled extensions, for
-which no wheel exists at the pinned torch version. BA-2Motifs' download returns
-HTTP 403 here. All are logged as blocked, occupy no row in any table, and are
-excluded from every aggregate. ShapeGGen's exact-ground-truth role is covered by
-the offline SynthMotifs generator; SubgraphX's absence is a genuine gap in
-attributor coverage.
+\paragraph{Blocked, and re-examined} The results reported here come from a run
+in which SubgraphX (via DIG) and ShapeGGen (via GraphXAI) were both recorded as
+uninstallable, on the grounds that they need the compiled
+\texttt{torch\_\-sparse}/\texttt{torch\_\-scatter} extensions for which no wheel
+exists at the pinned torch version. Revisiting that diagnosis, it was wrong in
+both cases. Those extensions build from source, DIG then installs, and
+SubgraphX is now wrapped and covered by tests in which it recovers a planted
+five-node motif exactly; it is enabled in the configuration and will populate
+the matrix on the next sweep. GraphXAI installs from a source checkout rather
+than a release, and ShapeGGen builds. It remains unintegrated for a different
+and more substantial reason: ShapeGGen is a node-classification benchmark on a
+single large graph, whereas every axis of this audit is defined per molecule at
+the graph level, so adopting it means extending the audit to node-level tasks
+rather than resolving a dependency. Both are recorded in the ledger, occupy no
+row in any table, and enter no aggregate. We report the earlier diagnosis
+alongside the correction because a coverage gap attributed to the environment
+turned out to be a gap in how hard we looked.
 
 \section{Discussion}
 
@@ -836,12 +866,13 @@ bootstrap interval is uninformative and any ``best attributor'' verdict resting
 on such a cell is fragile; we flag them rather than drop them, and the shift
 arms that carry the argument do not involve them.
 
-\paragraph{A dataset that trains but cannot be scored} BA-2Motifs loads and
-trains in this run, but the loader recovered no node-level ground truth from
-it, so its cells contribute faithfulness only and appear in the no-ground-truth
-block despite being a synthetic benchmark designed to have exact labels.
-Recovering those labels would add a second exact-ground-truth arm and is the
-most valuable single fix outstanding.
+\paragraph{A dataset that trains but was not scored} BA-2Motifs loads and
+trains in this run, but its cells contribute faithfulness only and appear in
+the no-ground-truth block despite being a synthetic benchmark designed to have
+exact labels, because our extractor did not read the ordering its node labels
+are encoded in. The recovery is implemented and tested but postdates this
+sweep, so the third exact-ground-truth arm is available to the next run and is
+not part of any number reported here.
 
 \paragraph{Single split, single seed} Each cell is one deterministic split at
 one seed. Cross-checkpoint stability partially probes run-to-run variability,
@@ -860,9 +891,11 @@ proxy, not annotator labels. It encodes an assumption about which substructure
 ought to matter, and the trained model may use a different, equally valid
 rationale~\cite{faber}.
 
-\paragraph{Coverage of attributors} SubgraphX is absent for dependency reasons
-and PGExplainer failed in this run, so conclusions about the perturbation
-family rest on GNNExplainer alone in the current-run cells.
+\paragraph{Coverage of attributors} SubgraphX contributes no row to this run
+and PGExplainer failed in it, so every conclusion about the perturbation family
+rests on GNNExplainer alone in the current-run cells. SubgraphX is wrapped and
+tested but its cells postdate this sweep, so the gap stands for the numbers
+reported here.
 
 \paragraph{Multiplicity} $p$-values are unadjusted across a large number of
 paired comparisons; individual contrasts in Table~\ref{tab:paired} should be

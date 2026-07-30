@@ -37,7 +37,16 @@ graph = [
     "rdkit>=2023.9",
 ]
 tdc = ["PyTDC>=0.4"]
-dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+# SubgraphX. DIG needs the compiled torch_sparse/torch_scatter extensions;
+# where no wheel matches the installed torch they build from source (slow, but
+# it does work), and if the import still fails the audit skips and logs the
+# SubgraphX cells rather than aborting the run.
+subgraphx = [
+    "torch-scatter>=2.1",
+    "torch-sparse>=0.6",
+    "dive-into-graphs>=1.0",
+]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "pikepdf>=8.0"]
 
 [project.scripts]
 molsanity = "molsanity.run_all:main"

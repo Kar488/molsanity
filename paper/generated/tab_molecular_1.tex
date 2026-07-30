@@ -1,0 +1,38 @@
+\begin{sidewaystable*}[p]
+\centering
+\captionsetup{width=0.95\textheight}
+\caption{\textbf{Molecular classification cells (no node-level ground truth available), 1 of 2.} Every committed classification cell on a real molecular dataset. The ground-truth localisation column does not exist for these datasets --- no per-atom labels are published --- so only model-side reliability can be measured, which is precisely the gap the Tier-1 cells are needed to close. \emph{charact.} is the GraphFramEx characterisation score and \emph{unfaith.} the PyG/DIG unfaithfulness metric, computed on the same molecules. Bold marks the best occlusion $\rho$ per dataset (emphasis only).}
+\label{tab:molecular}
+\renewcommand{\arraystretch}{1.3}
+\resizebox{0.95\textheight}{!}{%
+\begin{tabular}{lllcrrrrrrrrrrrr}
+\toprule
+\textbf{dataset} & \textbf{backbone} & \textbf{attributor} & \textbf{split} & \textbf{$n$} & \textbf{acc} & \textbf{AUC} & \textbf{ECE} & \textbf{motif top-1} & \textbf{occ.\ $\rho$} & \textbf{occ.\ top-1} & \textbf{Fid+} & \textbf{Fid--} & \textbf{stab.} & \textbf{charact.} & \textbf{unfaith.} \\
+\midrule
+BACE & GCN & IG & scaffold & 30 & 0.133 & 0.224 & 0.398 & 0.776 & \textbf{0.766} & 0.900 & 0.597 & 0.597 & 0.873 & 0.370 & 0.619 \\
+BACE & GINE & GNNExpl. & scaffold & 30 & 0.433 & 0.434 & 0.189 & 0.835 & $-$0.128 & 0.167 & 0.064 & 0.214 & 0.932 & 0.223 & 0.036 \\
+BACE & GINE & Input$\times$Grad & scaffold & 30 & 0.433 & 0.434 & 0.189 & 0.841 & $-$0.159 & 0.167 & 0.079 & 0.171 & 0.640 & 0.165 & 0.049 \\
+BACE & GINE & IG & scaffold & 30 & 0.433 & 0.434 & 0.189 & 0.884 & $-$0.252 & 0.167 & 0.074 & 0.202 & 0.386 & 0.200 & 0.047 \\
+BACE & GINE & Saliency & scaffold & 30 & 0.433 & 0.434 & 0.189 & 0.873 & $-$0.174 & 0.167 & 0.097 & 0.173 & 0.579 & 0.196 & 0.045 \\
+\addlinespace[2pt]
+BBBP & GAT & IG & scaffold & 30 & 0.967 & 0.888 & 0.024 & 0.810 & $-$0.808 & 0.000 & $-$0.069 & $-$0.069 & 0.944 & 0.000 & 0.063 \\
+BBBP & GCN & IG & scaffold & 30 & 0.833 & 0.888 & 0.016 & 0.781 & $-$0.316 & 0.233 & 0.005 & $-$0.096 & 0.883 & 0.085 & 0.049 \\
+BBBP & GINE & GNNExpl. & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.823 & $-$0.367 & 0.067 & 0.021 & $-$0.077 & 0.929 & 0.102 & 0.053 \\
+BBBP & GINE & GuidedBP & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.876 & $-$0.530 & 0.000 & $-$0.016 & $-$0.037 & 0.890 & 0.061 & 0.084 \\
+BBBP & GINE & Input$\times$Grad & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.839 & $-$0.620 & 0.000 & $-$0.016 & $-$0.047 & 0.897 & 0.063 & 0.110 \\
+BBBP & GINE & IG & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.773 & $-$0.430 & 0.000 & 0.006 & $-$0.054 & 0.699 & 0.085 & 0.151 \\
+BBBP & GINE & PGExpl. & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.422 & \textbf{$-$0.185} & 0.367 & $-$0.055 & $-$0.059 & 0.387 & 0.000 & --- \\
+BBBP & GINE & Saliency & scaffold & 30 & 0.967 & 0.805 & 0.059 & 0.826 & $-$0.627 & 0.000 & $-$0.029 & $-$0.033 & 0.873 & 0.051 & 0.100 \\
+\addlinespace[2pt]
+ClinTox & GINE & GNNExpl. & scaffold & 30 & 0.567 & 0.820 & 0.207 & 0.483 & \textbf{0.927} & 0.700 & 0.375 & 0.356 & 0.963 & 0.246 & 0.394 \\
+ClinTox & GINE & Input$\times$Grad & scaffold & 30 & 0.567 & 0.820 & 0.207 & 0.793 & 0.139 & 0.567 & 0.356 & 0.356 & 0.583 & 0.246 & 0.388 \\
+ClinTox & GINE & IG & scaffold & 30 & 0.567 & 0.820 & 0.207 & 0.724 & 0.085 & 0.633 & 0.356 & 0.356 & 0.859 & 0.246 & 0.386 \\
+ClinTox & GINE & Saliency & scaffold & 30 & 0.567 & 0.820 & 0.207 & 0.790 & 0.145 & 0.567 & 0.356 & 0.356 & 0.570 & 0.246 & 0.382 \\
+\addlinespace[2pt]
+DILI & GINE & GNNExpl. & scaffold & 30 & 0.800 & 0.824 & 0.141 & 0.826 & \textbf{$-$0.044} & 0.433 & 0.080 & 0.154 & 0.949 & 0.109 & 0.110 \\
+DILI & GINE & Input$\times$Grad & scaffold & 30 & 0.800 & 0.824 & 0.141 & 0.858 & $-$0.126 & 0.433 & 0.075 & 0.122 & 0.923 & 0.147 & 0.388 \\
+DILI & GINE & IG & scaffold & 30 & 0.800 & 0.824 & 0.141 & 0.847 & $-$0.101 & 0.433 & 0.073 & 0.128 & 0.897 & 0.151 & 0.386 \\
+DILI & GINE & Saliency & scaffold & 30 & 0.800 & 0.824 & 0.141 & 0.851 & $-$0.128 & 0.433 & 0.056 & 0.134 & 0.910 & 0.136 & 0.385 \\
+\bottomrule
+\end{tabular}}
+\end{sidewaystable*}

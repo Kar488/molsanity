@@ -1,4 +1,4 @@
-.PHONY: install install-graph test smoke all clean lint
+.PHONY: install install-graph test smoke all clean lint paper
 
 PY ?= python
 
@@ -18,6 +18,9 @@ smoke:
 
 all:
 	$(PY) -m molsanity.run_all --config configs/full.yaml
+
+paper:
+	$(MAKE) -C paper
 
 lint:
 	ruff check molsanity tests || true

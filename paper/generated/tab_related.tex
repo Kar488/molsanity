@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{\textbf{Where the audit sits relative to existing evaluation frameworks.} \ding{51}~$=$ core capability, $\sim$~$=$ partial or possible but not central, \ding{55}~$=$ not a focus. The contribution is the combination, not any single row: ground-truth validation and faithfulness both exist elsewhere, but not jointly with cross-checkpoint stability, calibration linkage and scaffold-shift stratification over a motif-native decomposition.}
+\label{tab:related}
+\small
+\renewcommand{\arraystretch}{1.3}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Capability} & \textbf{GraphXAI} & \textbf{GraphFramEx} & \textbf{DIG} & \textbf{MolFaith} & \textbf{MolSanity} \\
+\midrule
+Ground-truth explanation benchmarks & \ding{51} (synthetic) & $\sim$ & \ding{51} & \ding{55} & \ding{51} (synthetic + motif-proxy) \\
+Faithfulness / fidelity metrics & $\sim$ & \ding{51} & \ding{51} & \ding{51} & \ding{51} (reproduced for comparability) \\
+Molecular-motif-native audit (RDKit) & \ding{55} & \ding{55} & $\sim$ & $\sim$ & \ding{51} (SSSR + Murcko + BRICS) \\
+Occlusion–attribution agreement & $\sim$ & \ding{51} & $\sim$ & \ding{51} & \ding{51} \\
+Cross-checkpoint stability & \ding{55} & \ding{55} & \ding{55} & \ding{55} & \ding{51} \\
+Calibration linkage & \ding{55} & \ding{55} & \ding{55} & \ding{55} & \ding{51} \\
+Scaffold-shift regime stratification & \ding{55} & $\sim$ & \ding{55} & \ding{55} & \ding{51} (the core differentiator) \\
+Multiple GNN backbones (agnostic) & $\sim$ & \ding{51} & \ding{51} & $\sim$ & \ding{51} (GINE/GCN/GAT/MPNN/AttentiveFP) \\
+Paired statistics (Wilcoxon, bootstrap CI) & $\sim$ & $\sim$ & $\sim$ & $\sim$ & \ding{51} \\
+Wraps canonical implementations (no re-impl) & \ding{51} & \ding{51} & \ding{51} & \ding{51} & \ding{51} (Captum/PyG/RDKit) \\
+\bottomrule
+\end{tabular}}
+\end{table*}

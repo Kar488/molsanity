@@ -40,6 +40,7 @@ class MoleculeAuditRecord:
     occ_top1_agreement: float = float("nan")
     fidelity_plus: float = float("nan")
     fidelity_minus: float = float("nan")
+    fidelity_ratio: float = float("nan")
     sparsity: float = float("nan")
     characterization: float = float("nan")
     unfaithfulness: float = float("nan")
@@ -108,6 +109,7 @@ def audit_molecule(model, data, attribution, dataset_name: str,
     rec.occ_top1_agreement = occ["top1_agreement"]
     rec.fidelity_plus = occ["fidelity_plus"]
     rec.fidelity_minus = occ["fidelity_minus"]
+    rec.fidelity_ratio = occ.get("fidelity_ratio", float("nan"))
     rec.sparsity = occ["sparsity"]
     rec.characterization = occ.get("characterization", float("nan"))
     rec.unfaithfulness = float(attribution.meta.get("unfaithfulness", float("nan")))
@@ -133,7 +135,8 @@ def aggregate_records(records: list[MoleculeAuditRecord], seed: int = 0) -> dict
     metrics = [
         "gt_auroc", "gt_auprc", "atom_gini", "top20_mass", "salient_cc_frac",
         "motif_top1_share", "occ_spearman", "occ_top1_agreement",
-        "fidelity_plus", "fidelity_minus", "sparsity", "characterization",
+        "fidelity_plus", "fidelity_minus", "fidelity_ratio", "sparsity",
+        "characterization",
         "unfaithfulness", "stability", "confidence",
     ]
     agg = {m: summarise(col(m), name=m, seed=seed) for m in metrics}

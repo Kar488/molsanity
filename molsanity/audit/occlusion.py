@@ -73,7 +73,8 @@ def occlusion_faithfulness(
     if not motifs:
         return {"spearman": float("nan"), "top1_agreement": float("nan"),
                 "fidelity_plus": float("nan"), "fidelity_minus": float("nan"),
-                "sparsity": float("nan"), "n_motifs": 0}
+                "fidelity_ratio": float("nan"), "sparsity": float("nan"),
+                "characterization": float("nan"), "n_motifs": 0}
 
     # Baseline (all kept) + one mask per motif (that motif's atoms removed).
     base_mask = np.ones((1, n), dtype=np.float32)
@@ -81,8 +82,20 @@ def occlusion_faithfulness(
     for i, atoms in enumerate(motifs):
         motif_masks[i, atoms] = 0.0
 
-    # Fidelity masks: remove salient / remove non-salient.
-    a = np.clip(node_attr, 0, None)
+    is_reg = task == "graph-regression"
+
+    # Which atoms count as "important" according to the attributor.
+    #
+    # Classification: the attribution is taken w.r.t. the predicted class, so a
+    # positive value means "pushes towards this class" and the positive part is
+    # the quantity of interest. Clipping at zero is the field convention.
+    #
+    # Regression: the output is a signed, unbounded scalar. An atom that drives
+    # the prediction strongly *down* is exactly as causally important as one
+    # that drives it up, but clipping at zero scores it as unimportant, so the
+    # attribution ranking and the occlusion ranking are then compared on
+    # different quantities. Rank by magnitude instead.
+    a = np.abs(node_attr) if is_reg else np.clip(node_attr, 0, None)
     thr = np.quantile(a, salient_quantile) if a.max() > 0 else np.inf
     salient = a >= thr if a.max() > 0 else np.zeros(n, dtype=bool)
     rm_salient = np.ones((1, n), dtype=np.float32); rm_salient[0, salient] = 0.0
@@ -93,9 +106,12 @@ def occlusion_faithfulness(
 
     from ..models.calibration import softmax_1d
 
-    if task == "graph-regression":
-        # Regression: work directly in (standardised) output space — softmax over
-        # a single scalar output is meaningless. "Fidelity" = predicted-value shift.
+    if is_reg:
+        # Regression: work directly in output space; a softmax over a single
+        # scalar is meaningless. The head is trained on targets standardised on
+        # the train split, so this raw output is in units of the training
+        # target's standard deviation, and a "fidelity" here is a shift in
+        # sigma, not a probability.
         def target_prob(row):
             return float(row[target])
     else:
@@ -108,16 +124,22 @@ def occlusion_faithfulness(
     p_rm_salient = target_prob(logits[1 + len(motifs)])
     p_rm_nonsalient = target_prob(logits[2 + len(motifs)])
 
-    occ_delta = base_logit - motif_logits  # target-logit drop when motif removed
+    occ_delta = base_logit - motif_logits  # target shift when the motif is removed
     ig_motif = motif_scores(a, decomp, reduce="sum")
 
-    if len(motifs) >= 2 and np.std(occ_delta) > 0 and np.std(ig_motif) > 0:
-        rho = float(spearmanr(ig_motif, occ_delta).correlation)
+    # Match the occlusion side to the attribution side. Under classification a
+    # signed drop in the target-class logit is the effect of interest. Under
+    # regression the prediction can move either way and the attribution is
+    # ranked by magnitude, so the occlusion effect is a magnitude too.
+    occ_effect = np.abs(occ_delta) if is_reg else occ_delta
+
+    if len(motifs) >= 2 and np.std(occ_effect) > 0 and np.std(ig_motif) > 0:
+        rho = float(spearmanr(ig_motif, occ_effect).correlation)
     else:
         rho = float("nan")
 
     top1_ig = int(np.argmax(ig_motif))
-    top1_occ = int(np.argmax(occ_delta))
+    top1_occ = int(np.argmax(occ_effect))
     top1_agree = float(top1_ig == top1_occ)
 
     # Field-standard fidelity in probability space (Yuan et al. 2022):
@@ -127,13 +149,30 @@ def occlusion_faithfulness(
     fid_minus = float(p_base - p_rm_nonsalient)
     sparsity = float(1.0 - salient.mean())
 
+    # A bounded, scale-free companion that is defined for both tasks: of the
+    # total movement the two complementary occlusions produce, what share comes
+    # from removing the salient atoms? 0.5 means the attributor's atoms are no
+    # more causally influential than the rest; 1 means they carry all of it.
+    # This is what makes the regression cells comparable to each other and to
+    # the classification ones, since the raw regression shift is in sigma and
+    # unbounded.
+    d_sal, d_non = abs(fid_plus), abs(fid_minus)
+    fid_ratio = float(d_sal / (d_sal + d_non)) if (d_sal + d_non) > 0 else float("nan")
+
+    # The GraphFramEx characterisation score is defined on probability-space
+    # fidelities in [0,1]. Clipping a sigma-space shift into that range would
+    # manufacture a number that looks comparable and is not, so regression
+    # reports it as undefined.
+    char = float("nan") if is_reg else characterization_score(fid_plus, fid_minus)
+
     return {
         "spearman": rho,
         "top1_agreement": top1_agree,
         "fidelity_plus": fid_plus,
         "fidelity_minus": fid_minus,
+        "fidelity_ratio": fid_ratio,
         "sparsity": sparsity,
-        "characterization": characterization_score(fid_plus, fid_minus),
+        "characterization": char,
         "n_motifs": len(motifs),
     }
 

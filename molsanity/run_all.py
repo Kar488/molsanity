@@ -82,8 +82,16 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     attributor = build_attributor(
         attributor_name, model, task=task, ig_steps=budget.get("ig_steps", 25),
         train_graphs=train_graphs, pg_epochs=budget.get("pg_epochs", 30),
+        sgx_max_nodes=budget.get("sgx_max_nodes", 8),
+        sgx_rollouts=budget.get("sgx_rollouts", 20),
         seed=cfg["seed"],
     )
+    # SubgraphX rebuilds the graph on every rollout, so it needs to know the
+    # edge-feature width to regenerate edge_attr for a perturbed edge set.
+    if hasattr(attributor, "edge_dim"):
+        probe = dataset[0]
+        attributor.edge_dim = (probe.edge_attr.size(1)
+                               if probe.edge_attr is not None else 1)
 
     # Early-checkpoint model + attributor for cross-checkpoint stability.
     early_model = None

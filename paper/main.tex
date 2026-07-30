@@ -19,7 +19,14 @@
 \usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{adjustbox}
 \usepackage{rotating}
+% Bounds for rotated floats. Inside a sidewaystable the page-geometry lengths
+% are swapped, so these are derived from \paperwidth/\paperheight, which are
+% not: after rotation a float may span the paper's height and is limited by the
+% paper's width, less the margins and the caption.
+\newlength{\rotmaxw}\setlength{\rotmaxw}{\dimexpr\paperheight-2in\relax}
+\newlength{\rotmaxh}\setlength{\rotmaxh}{\dimexpr\paperwidth-3in\relax}
 \usepackage[font=small,labelfont=bf,skip=6pt]{caption}
 \usepackage{xcolor}
 \usepackage[verbose=silent]{microtype}
@@ -139,13 +146,13 @@
     {\LARGE\bfseries\color{headtint} MolSanity: A Reliability Audit for Feature\\[2pt]
      Attributions on Molecular Graph Neural Networks\par}
     \vspace{10pt}
-    {\large Karthik Iyer\textsuperscript{1,*}\par}
+    {\large Karthik Iyer\textsuperscript{1,*} \quad Nasser Sabar\textsuperscript{1}\par}
     \vspace{5pt}
     {\small\textsuperscript{1}Department of Computer Science and Information
      Technology, La Trobe University, Melbourne, Victoria 3086, Australia\par}
     \vspace{3pt}
-    {\footnotesize *\,Correspondence: \href{mailto:kar488@hotmail.com}%
-     {kar488@hotmail.com} \quad ORCID:
+    {\footnotesize *\,Correspondence: \href{mailto:karthik.iyer@hotmail.com}%
+     {karthik.iyer@hotmail.com} \quad ORCID:
      \href{https://orcid.org/0009-0004-0593-1602}{0009-0004-0593-1602}\par}
     \vspace{18pt}
     \begin{minipage}{0.86\textwidth}

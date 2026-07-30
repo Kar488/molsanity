@@ -438,8 +438,11 @@ def tab_tier1():
          "only; values are unaltered).}",
          "\\label{tab:tier1}",
          "\\small",
-         "\\renewcommand{\\arraystretch}{1.3}",
-         "\\resizebox{\\textwidth}{!}{%",
+         "\\renewcommand{\\arraystretch}{1.25}",
+         # Width-only scaling overshot the page by ~1pt; clamp the height too,
+         # leaving room for the five-line caption above it.
+         "\\adjustbox{max width=\\textwidth,"
+         "max totalheight=0.80\\textheight}{%",
          "\\begin{tabular}{lllcrrrrrrrrr}",
          "\\toprule",
          "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "
@@ -660,7 +663,9 @@ def tab_molecular():
         if seen >= half:
             cut = i + 1
             break
-    parts = [datasets]   # one reference table; two rotated pages read as a wall
+    # 56 rows do not fit one rotated page at a legible size; split on a
+    # dataset boundary near the halfway row so each part is readable.
+    parts = [datasets[:cut], datasets[cut:]]
     blocks: dict[str, list] = {}
     for r in rows:
         blocks.setdefault(r["dataset"], []).append(r)
@@ -683,11 +688,14 @@ def tab_molecular():
         sub = [r for r in rows if r["dataset"] in part]
         suffix = "" if len(parts) == 1 else f", {pi + 1} of {len(parts)}"
         L = ["\\begin{sidewaystable*}[p]", "\\centering",
-             "\\captionsetup{width=0.94\\textheight}",
+             "\\captionsetup{width=\\rotmaxw}",
              "\\caption{" + head + suffix + tail,
              "\\label{tab:molecular" + ("" if pi == 0 else chr(97 + pi)) + "}",
-             "\\renewcommand{\\arraystretch}{1.3}",
-             "\\resizebox{0.94\\textheight}{!}{%",
+             "\\renewcommand{\\arraystretch}{1.15}",
+             # Constrain BOTH dimensions. A rotated float has at most
+             # \\textheight of width and \\textwidth of height; a width-only
+             # \\resizebox scales a tall table *up* and runs it off the page.
+             "\\adjustbox{max width=\\rotmaxw,max totalheight=\\rotmaxh}{%",
              "\\begin{tabular}{lllcrrrrrrrrrrrr}",
              "\\toprule",
              "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "

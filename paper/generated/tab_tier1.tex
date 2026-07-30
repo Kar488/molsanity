@@ -3,8 +3,8 @@
 \caption{\textbf{Every committed cell in which attribution \emph{correctness} is measurable.} Ground truth is exact for the synthetic sets and a chemically motivated nitro-motif proxy for MUTAG. GT AUROC $=0.5$ is chance; below $0.5$ the attribution is anti-aligned with the true motif. Occlusion $\rho$ is the attribution--occlusion rank agreement (higher $=$ more faithful to the model). Rows marked \textsuperscript{c} are \emph{carried}: they survive in the results matrix from an earlier reduced-budget CPU run because the corresponding cell failed in the latest run (Table~\ref{tab:ledger}); every other row was produced by the run in Table~\ref{tab:ledger}. Bold marks the best GT AUROC and the best occlusion $\rho$ within each dataset$\times$split block (emphasis only; values are unaltered).}
 \label{tab:tier1}
 \small
-\renewcommand{\arraystretch}{1.3}
-\resizebox{\textwidth}{!}{%
+\renewcommand{\arraystretch}{1.25}
+\adjustbox{max width=\textwidth,max totalheight=0.80\textheight}{%
 \begin{tabular}{lllcrrrrrrrrr}
 \toprule
 \textbf{dataset} & \textbf{backbone} & \textbf{attributor} & \textbf{split} & \textbf{$n$} & \textbf{acc} & \textbf{AUC} & \textbf{GT AUROC} & \textbf{GT AUPRC} & \textbf{occ.\ $\rho$} & \textbf{Fid+} & \textbf{Fid--} & \textbf{stab.} \\

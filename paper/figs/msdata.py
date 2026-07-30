@@ -232,6 +232,39 @@ def paired_wilcoxon(a, b):
     return {"n": len(a), "median_delta": med, "p": p}
 
 
+def benjamini_hochberg(pvalues) -> list[float]:
+    """Benjamini-Hochberg adjusted p-values (q-values) for a family of tests.
+
+    Every paired test in this paper belongs to a family: the attributor-vs-
+    attributor contrasts within a cell, and the selection tests across cells.
+    Reporting raw p-values across dozens of such tests inflates the false
+    discovery rate, which is why the tables previously carried a note saying
+    they should be read as descriptive. Controlling the FDR at the family level
+    lets the surviving contrasts be read as findings instead.
+
+    Returns adjusted values in the input order. NaN inputs stay NaN and are
+    excluded from the family size, since a test that could not be computed is
+    not a test that was performed.
+    """
+    import math
+
+    idx = [i for i, p in enumerate(pvalues)
+           if p is not None and not (isinstance(p, float) and math.isnan(p))]
+    m = len(idx)
+    out = [float("nan")] * len(pvalues)
+    if m == 0:
+        return out
+    order = sorted(idx, key=lambda i: pvalues[i])
+    # Step up from the largest p, enforcing monotonicity.
+    prev = 1.0
+    for rank in range(m, 0, -1):
+        i = order[rank - 1]
+        q = min(prev, float(pvalues[i]) * m / rank)
+        out[i] = q
+        prev = q
+    return out
+
+
 def by_graph(records) -> dict:
     return {r["graph_id"]: r for r in records}
 

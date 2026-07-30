@@ -31,8 +31,9 @@ whose agreement with the mutagenic nitro motif is GT AUROC
 $\mutShiftPickGtOccspearman{}$, while the ground truth ranks \mutShiftGtBest{}
 best at $\mutShiftGtBestVal{}$. The median per-molecule gap is
 $\mutShiftGapOccspearman{}$ AUROC (paired Wilcoxon
-$p\mutShiftPOccspearman{}$, $n=\mutShiftNPairedOccspearman{}$), and the rank
-correlation between faithfulness and correctness is \emph{negative}
+$p\mutShiftPOccspearman{}$, $n=\mutShiftNPairedOccspearman{}$; Benjamini--Hochberg
+$q\mutShiftQOccspearman{}$ across the $\nSelectionTests{}$ selection tests), and
+the rank correlation between faithfulness and correctness is \emph{negative}
 ($\mutShiftRhoOccspearman{}$ to $\mutShiftRhoCharacterization{}$). In
 distribution on the same dataset, two of the three metrics instead select the
 ground-truth-best attributor and the rank correlation is
@@ -543,7 +544,10 @@ split (Table~\ref{tab:selection}, Figure~\ref{fig:dissociation}).
 \mutShiftPickOccspearman{} first, at $\mutShiftPickGtOccspearman{}$, the
 worst of the $\mutShiftNAttr{}$. On paired per-molecule GT AUROC over the
 $\mutShiftNPairedOccspearman{}$ shared molecules the median gap is
-$\mutShiftGapOccspearman{}$ with $p\mutShiftPOccspearman{}$. The
+$\mutShiftGapOccspearman{}$ with $p\mutShiftPOccspearman{}$, and
+$q\mutShiftQOccspearman{}$ after controlling the false discovery rate over all
+$\nSelectionTests{}$ selection tests, so this contrast is not an artefact of
+testing many of them. The
 faithfulness--truth rank correlation is negative for every metric:
 $\mutShiftRhoOccspearman{}$ for occlusion $\rho$,
 $\mutShiftRhoFidelityplus{}$ for Fidelity+ and
@@ -911,9 +915,13 @@ rests on GNNExplainer alone in the current-run cells. SubgraphX is wrapped and
 tested but its cells postdate this sweep, so the gap stands for the numbers
 reported here.
 
-\paragraph{Multiplicity} $p$-values are unadjusted across a large number of
-paired comparisons; individual contrasts in Table~\ref{tab:paired} should be
-read as descriptive.
+\paragraph{Multiplicity} The selection tests carry Benjamini--Hochberg
+adjusted $q$ values over the family of $\nSelectionTests{}$ tests, and the
+attributor contrasts carry them over the family within each cell block, so the
+headline mismatches are false-discovery-rate controlled rather than descriptive.
+What the adjustment cannot repair is power: at $n=\mutShiftNMol{}$ molecules per
+arm a contrast that fails to reach significance is weak evidence of no
+difference, not evidence of none.
 
 \section{Conclusion}
 

@@ -68,6 +68,21 @@ current alongside RESULTS.md.
   budget are the **regression** tasks (ESOL/FreeSolv/Lipophilicity), where models
   reach honest R² (e.g. ESOL ≈ 0.67–0.69 across backbones).
 
+## Statistics
+
+- **Multiplicity is now controlled.** Selection tests carry Benjamini-Hochberg
+  adjusted q-values over the family of 12 tests; attributor contrasts carry them
+  over the family within each cell block. Every headline mismatch on the MUTAG
+  and SynthMotifs scaffold-shift arms survives at q < 0.001, so those are
+  false-discovery-rate controlled findings rather than descriptive numbers. The
+  adjustment is pinned against `scipy.stats.false_discovery_control` in
+  `tests/test_multiplicity.py`, including a test that fails if a future run
+  weakens the headline contrast.
+- **What the adjustment does not fix is power.** At n = 20 molecules per
+  ground-truth arm, a contrast that fails to reach significance is weak evidence
+  of no difference, not evidence of none. Raising n on the ground-truth arms is
+  the outstanding statistical work.
+
 ## Methods
 
 - **The regression occlusion metric was mis-specified in the committed run.**

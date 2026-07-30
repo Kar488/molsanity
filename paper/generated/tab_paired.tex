@@ -1,48 +1,48 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{Paired attributor comparisons on shared molecules}, computed from the committed per-molecule records (Wilcoxon signed-rank on per-molecule occlusion faithfulness, $\Delta = A - B$). Same cell family as Table~\ref{tab:selection}. $p$ values are unadjusted for multiplicity and should be read as descriptive at these sample sizes.}
+\caption{\textbf{Paired attributor comparisons on shared molecules}, computed from the committed per-molecule records (Wilcoxon signed-rank on per-molecule occlusion faithfulness, $\Delta = A - B$). Same cell family as Table~\ref{tab:selection}. $p$ is the raw two-sided Wilcoxon value and $q$ its Benjamini--Hochberg adjustment, controlling the false discovery rate over the contrasts within each cell block, which is the family a reader compares across.}
 \label{tab:paired}
 \footnotesize
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{A vs.\ B} & \textbf{$n$} & \textbf{median $\Delta$} & \textbf{$p$} \\
+\textbf{A vs.\ B} & \textbf{$n$} & \textbf{median $\Delta$} & \textbf{$p$} & \textbf{$q$} \\
 \midrule
-\multicolumn{4}{l}{\itshape MUTAG, GINE, random split} \\
+\multicolumn{5}{l}{\itshape MUTAG, GINE, random split} \\
 \addlinespace[1pt]
-IG vs.\ Saliency & 20 & 0.000 & 0.161 \\
-IG vs.\ Input$\times$Grad & 20 & 0.000 & 0.180 \\
-IG vs.\ GuidedBP & 20 & 0.000 & 0.374 \\
-IG vs.\ GNNExpl. & 20 & $-$0.029 & 0.088 \\
-IG vs.\ PGExpl. & 20 & $-$0.086 & 0.108 \\
-Saliency vs.\ Input$\times$Grad & 20 & 0.000 & 0.236 \\
-Saliency vs.\ GuidedBP & 20 & 0.000 & 0.600 \\
-Saliency vs.\ GNNExpl. & 20 & 0.000 & 0.363 \\
-Saliency vs.\ PGExpl. & 20 & $-$0.186 & 0.083 \\
-Input$\times$Grad vs.\ GuidedBP & 20 & 0.000 & 0.533 \\
-Input$\times$Grad vs.\ GNNExpl. & 20 & $-$0.029 & 0.134 \\
-Input$\times$Grad vs.\ PGExpl. & 20 & $-$0.086 & 0.116 \\
-GuidedBP vs.\ GNNExpl. & 20 & $-$0.029 & 0.393 \\
-GuidedBP vs.\ PGExpl. & 20 & $-$0.114 & 0.245 \\
-GNNExpl. vs.\ PGExpl. & 20 & 0.000 & 0.363 \\
+IG vs.\ Saliency & 20 & 0.000 & 0.161 & 0.385 \\
+IG vs.\ Input$\times$Grad & 20 & 0.000 & 0.180 & 0.385 \\
+IG vs.\ GuidedBP & 20 & 0.000 & 0.374 & 0.454 \\
+IG vs.\ GNNExpl. & 20 & $-$0.029 & 0.088 & 0.385 \\
+IG vs.\ PGExpl. & 20 & $-$0.086 & 0.108 & 0.385 \\
+Saliency vs.\ Input$\times$Grad & 20 & 0.000 & 0.236 & 0.409 \\
+Saliency vs.\ GuidedBP & 20 & 0.000 & 0.600 & 0.600 \\
+Saliency vs.\ GNNExpl. & 20 & 0.000 & 0.363 & 0.454 \\
+Saliency vs.\ PGExpl. & 20 & $-$0.186 & 0.083 & 0.385 \\
+Input$\times$Grad vs.\ GuidedBP & 20 & 0.000 & 0.533 & 0.571 \\
+Input$\times$Grad vs.\ GNNExpl. & 20 & $-$0.029 & 0.134 & 0.385 \\
+Input$\times$Grad vs.\ PGExpl. & 20 & $-$0.086 & 0.116 & 0.385 \\
+GuidedBP vs.\ GNNExpl. & 20 & $-$0.029 & 0.393 & 0.454 \\
+GuidedBP vs.\ PGExpl. & 20 & $-$0.114 & 0.245 & 0.409 \\
+GNNExpl. vs.\ PGExpl. & 20 & 0.000 & 0.363 & 0.454 \\
 \addlinespace[3pt]
-\multicolumn{4}{l}{\itshape MUTAG, GINE, scaffold split} \\
+\multicolumn{5}{l}{\itshape MUTAG, GINE, scaffold split} \\
 \addlinespace[1pt]
-IG vs.\ Saliency & 20 & $-$0.200 & 0.011 \\
-IG vs.\ Input$\times$Grad & 20 & $-$0.250 & 0.003 \\
-IG vs.\ GuidedBP & 20 & $-$0.350 & 0.004 \\
-IG vs.\ GNNExpl. & 20 & $-$0.104 & 0.010 \\
-IG vs.\ PGExpl. & 19 & $-$0.036 & 0.527 \\
-Saliency vs.\ Input$\times$Grad & 20 & 0.000 & 0.292 \\
-Saliency vs.\ GuidedBP & 20 & 0.000 & 0.027 \\
-Saliency vs.\ GNNExpl. & 20 & $-$0.029 & 0.962 \\
-Saliency vs.\ PGExpl. & 19 & 0.143 & 0.047 \\
-Input$\times$Grad vs.\ GuidedBP & 20 & 0.000 & 0.063 \\
-Input$\times$Grad vs.\ GNNExpl. & 20 & 0.000 & 0.571 \\
-Input$\times$Grad vs.\ PGExpl. & 19 & 0.143 & 0.021 \\
-GuidedBP vs.\ GNNExpl. & 20 & 0.050 & 0.276 \\
-GuidedBP vs.\ PGExpl. & 19 & 0.483 & 0.012 \\
-GNNExpl. vs.\ PGExpl. & 19 & 0.200 & 0.011 \\
+IG vs.\ Saliency & 20 & $-$0.200 & 0.011 & 0.030 \\
+IG vs.\ Input$\times$Grad & 20 & $-$0.250 & 0.003 & 0.030 \\
+IG vs.\ GuidedBP & 20 & $-$0.350 & 0.004 & 0.030 \\
+IG vs.\ GNNExpl. & 20 & $-$0.104 & 0.010 & 0.030 \\
+IG vs.\ PGExpl. & 19 & $-$0.036 & 0.527 & 0.609 \\
+Saliency vs.\ Input$\times$Grad & 20 & 0.000 & 0.292 & 0.365 \\
+Saliency vs.\ GuidedBP & 20 & 0.000 & 0.027 & 0.051 \\
+Saliency vs.\ GNNExpl. & 20 & $-$0.029 & 0.962 & 0.962 \\
+Saliency vs.\ PGExpl. & 19 & 0.143 & 0.047 & 0.078 \\
+Input$\times$Grad vs.\ GuidedBP & 20 & 0.000 & 0.063 & 0.094 \\
+Input$\times$Grad vs.\ GNNExpl. & 20 & 0.000 & 0.571 & 0.612 \\
+Input$\times$Grad vs.\ PGExpl. & 19 & 0.143 & 0.021 & 0.046 \\
+GuidedBP vs.\ GNNExpl. & 20 & 0.050 & 0.276 & 0.365 \\
+GuidedBP vs.\ PGExpl. & 19 & 0.483 & 0.012 & 0.030 \\
+GNNExpl. vs.\ PGExpl. & 19 & 0.200 & 0.011 & 0.030 \\
 \bottomrule
 \end{tabular}
 \end{table}

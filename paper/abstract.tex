@@ -21,7 +21,8 @@ agreement with the mutagenic nitro motif is GT AUROC
 $\mutShiftPickGtOccspearman{}$, the worst of the $\mutShiftNAttr{}$ attributors
 audited, while the ground truth ranks \mutShiftGtBest{} best at
 $\mutShiftGtBestVal{}$ (median paired gap $\mutShiftGapOccspearman{}$ AUROC,
-Wilcoxon $p\mutShiftPOccspearman{}$). The faithfulness--truth rank correlation
+Wilcoxon $p\mutShiftPOccspearman{}$, Benjamini--Hochberg
+$q\mutShiftQOccspearman{}$ over the $\nSelectionTests{}$ selection tests). The faithfulness--truth rank correlation
 is $+\mutIndRhoOccspearman{}$ in distribution and
 $\mutShiftRhoOccspearman{}$ under shift; on a synthetic set with \emph{exact}
 node labels the same inversion appears with a smaller penalty. Faithfulness

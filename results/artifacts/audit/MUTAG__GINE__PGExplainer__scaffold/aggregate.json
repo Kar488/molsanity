@@ -1,0 +1,200 @@
+{
+  "gt_auroc": {
+    "name": "gt_auroc",
+    "mean": 0.1084493937435114,
+    "ci95_lo": 0.06800485421441302,
+    "ci95_hi": 0.16153906142876728,
+    "median": 0.0857843137254902,
+    "frac_positive": 0.9,
+    "n": 20
+  },
+  "gt_auprc": {
+    "name": "gt_auprc",
+    "mean": 0.185573062168011,
+    "ci95_lo": 0.16495495102723365,
+    "ci95_hi": 0.20468292215297493,
+    "median": 0.1875,
+    "frac_positive": 1.0,
+    "n": 20
+  },
+  "atom_gini": {
+    "name": "atom_gini",
+    "mean": 0.7746886753893814,
+    "ci95_lo": 0.6748074798408089,
+    "ci95_hi": 0.8414683225965488,
+    "median": 0.8460347135431541,
+    "frac_positive": 0.95,
+    "n": 20
+  },
+  "top20_mass": {
+    "name": "top20_mass",
+    "mean": 0.8884560091929868,
+    "ci95_lo": 0.7685733694304077,
+    "ci95_hi": 0.9713821390341897,
+    "median": 0.9983460860279225,
+    "frac_positive": 0.95,
+    "n": 20
+  },
+  "salient_cc_frac": {
+    "name": "salient_cc_frac",
+    "mean": 0.7883333333333333,
+    "ci95_lo": 0.6616666666666666,
+    "ci95_hi": 0.9033333333333333,
+    "median": 1.0,
+    "frac_positive": 0.95,
+    "n": 20
+  },
+  "motif_top1_share": {
+    "name": "motif_top1_share",
+    "mean": 0.95,
+    "ci95_lo": 0.85,
+    "ci95_hi": 1.0,
+    "median": 1.0,
+    "frac_positive": 0.95,
+    "n": 20
+  },
+  "occ_spearman": {
+    "name": "occ_spearman",
+    "mean": 0.4067075146692402,
+    "ci95_lo": 0.18532796919993694,
+    "ci95_hi": 0.6070922528542596,
+    "median": 0.40006613209931946,
+    "frac_positive": 0.7894736842105263,
+    "n": 19
+  },
+  "occ_top1_agreement": {
+    "name": "occ_top1_agreement",
+    "mean": 0.35,
+    "ci95_lo": 0.15,
+    "ci95_hi": 0.55,
+    "median": 0.0,
+    "frac_positive": 0.35,
+    "n": 20
+  },
+  "fidelity_plus": {
+    "name": "fidelity_plus",
+    "mean": 0.054275823237000954,
+    "ci95_lo": -0.005453823554500499,
+    "ci95_hi": 0.11840066626697025,
+    "median": 0.005379804788741227,
+    "frac_positive": 0.8,
+    "n": 20
+  },
+  "fidelity_minus": {
+    "name": "fidelity_minus",
+    "mean": 0.368110897889769,
+    "ci95_lo": 0.2615231255115286,
+    "ci95_hi": 0.46428943842082593,
+    "median": 0.36364680567502156,
+    "frac_positive": 0.9,
+    "n": 20
+  },
+  "sparsity": {
+    "name": "sparsity",
+    "mean": 0.7739594399632762,
+    "ci95_lo": 0.7480320869986791,
+    "ci95_hi": 0.8053825016628725,
+    "median": 0.7692307692307692,
+    "frac_positive": 1.0,
+    "n": 20
+  },
+  "characterization": {
+    "name": "characterization",
+    "mean": 0.09051196296914174,
+    "ci95_lo": 0.03325840915479988,
+    "ci95_hi": 0.15345616977641935,
+    "median": 0.010665819729965508,
+    "frac_positive": 0.8,
+    "n": 20
+  },
+  "unfaithfulness": {
+    "name": "unfaithfulness",
+    "mean": NaN,
+    "ci95_lo": NaN,
+    "ci95_hi": NaN,
+    "median": NaN,
+    "frac_positive": NaN,
+    "n": 0
+  },
+  "stability": {
+    "name": "stability",
+    "mean": 0.8292514367334919,
+    "ci95_lo": 0.7295779194885041,
+    "ci95_hi": 0.9088927371589058,
+    "median": 0.8999999999999998,
+    "frac_positive": 1.0,
+    "n": 19
+  },
+  "confidence": {
+    "name": "confidence",
+    "mean": 0.7848572162128564,
+    "ci95_lo": 0.7077590469634559,
+    "ci95_hi": 0.8597642295290209,
+    "median": 0.8265948908297924,
+    "frac_positive": 1.0,
+    "n": 20
+  },
+  "n_molecules": 20,
+  "accuracy": 0.75,
+  "regime_counts": {
+    "confident_correct": 10,
+    "confident_error": 0,
+    "borderline": 10
+  },
+  "regime_stratified": {
+    "gt_auroc": {
+      "confident_correct": {
+        "n": 10,
+        "mean": 0.11995837495837494
+      },
+      "confident_error": {
+        "n": 0,
+        "mean": NaN
+      },
+      "borderline": {
+        "n": 10,
+        "mean": 0.09694041252864782
+      }
+    },
+    "occ_spearman": {
+      "confident_correct": {
+        "n": 9,
+        "mean": 0.13126587606266915
+      },
+      "confident_error": {
+        "n": 0,
+        "mean": NaN
+      },
+      "borderline": {
+        "n": 10,
+        "mean": 0.6546049894151541
+      }
+    },
+    "stability": {
+      "confident_correct": {
+        "n": 9,
+        "mean": 0.9383129266352724
+      },
+      "confident_error": {
+        "n": 0,
+        "mean": NaN
+      },
+      "borderline": {
+        "n": 10,
+        "mean": 0.7310960958218894
+      }
+    }
+  },
+  "calibration_linkage": {
+    "occ_spearman": {
+      "spearman": -0.43532963468871094,
+      "n": 19,
+      "reliability_metric": "occ_spearman"
+    },
+    "gt_auroc": {
+      "spearman": 0.1274997917209727,
+      "n": 20,
+      "reliability_metric": "gt_auroc"
+    }
+  }
+}

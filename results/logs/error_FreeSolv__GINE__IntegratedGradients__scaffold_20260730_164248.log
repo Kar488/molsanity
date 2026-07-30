@@ -1,0 +1,42 @@
+Traceback (most recent call last):
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/run_all.py", line 195, in main
+    res = stage(
+          ^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/pipeline.py", line 58, in stage
+    payload = fn(out_dir)
+              ^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/run_all.py", line 197, in <lambda>
+    lambda _out, c=cell, s=split_kind: run_cell(c, cfg, s, log, ts),
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/run_all.py", line 73, in run_cell
+    model, train_res = train_model(
+                       ^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/models/train.py", line 233, in train_model
+    best_state, best_monitor, best_epoch, history = _train_epochs(
+                                                    ^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/models/train.py", line 110, in _train_epochs
+    out = model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/models/gine.py", line 76, in forward
+    h = bn(h)
+        ^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/batchnorm.py", line 194, in forward
+    return F.batch_norm(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py", line 2841, in batch_norm
+    _verify_batch_size(input.size())
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/functional.py", line 2806, in _verify_batch_size
+    raise ValueError(
+ValueError: Expected more than 1 value per channel when training, got input size torch.Size([1, 64])

@@ -1,0 +1,16 @@
+[
+  {
+    "dataset": "SynthMotifsXL",
+    "backbone": "GINE",
+    "split": "random",
+    "error": "need >=2 attributors with records",
+    "attributors": []
+  },
+  {
+    "dataset": "MUTAG",
+    "backbone": "GINE",
+    "split": "scaffold",
+    "error": "need >=2 attributors with records",
+    "attributors": []
+  }
+]

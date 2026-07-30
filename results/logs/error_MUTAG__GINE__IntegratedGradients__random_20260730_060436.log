@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/run_all.py", line 195, in main
+    res = stage(
+          ^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/pipeline.py", line 58, in stage
+    payload = fn(out_dir)
+              ^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/run_all.py", line 197, in <lambda>
+    lambda _out, c=cell, s=split_kind: run_cell(c, cfg, s, log, ts),
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/run_all.py", line 119, in run_cell
+    rec = audit_molecule(model, g, attribution, dataset_name,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/audit/run.py", line 117, in audit_molecule
+    gt = ground_truth_mask(dataset_name, data)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/data/groundtruth.py", line 68, in ground_truth_mask
+    return mutag_nitro_mask(data)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/MyDrive/molsanity_runs/molsanity/molsanity/data/groundtruth.py", line 27, in mutag_nitro_mask
+    x = data.x.argmax(dim=1).numpy()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.

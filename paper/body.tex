@@ -135,13 +135,27 @@ choice of attributor is the wrong choice, because it never makes that choice.
 The selection-consistency test of \nameref{sec:selectiondef} makes it, and its
 outcome changes with the split.
 
-\emph{MolFaith}~\cite{molfaith} evaluates feature attributions on molecular
-property models under fidelity-based metrics, which is the situation a
-practitioner is actually in: no rationale labels exist, so faithfulness is all
-there is to rank on. Our results are a caution addressed to that setting. On the
-cells where we can check, the fidelity-based ranking and the ground-truth
-ranking agree in distribution and disagree under scaffold shift, and nothing in
-the fidelity numbers marks the difference.
+\emph{MolFaith}~\cite{molfaith} is the closest work on the faithfulness axis
+and is larger than this study on that axis: eight attribution methods, two
+molecular representations and five architectures over roughly $14{,}000$
+molecules, against the $\nRecords{}$ per-molecule records here. We make no
+claim to broader faithfulness coverage. Two of its findings bear directly on
+ours. First, it reports that some methods are inherently more faithful than
+others largely independently of architecture. We find the same stability from
+the other direction: faithfulness does not shift systematically across the
+$\nSplitPairs{}$ cells audited on both splits (median change
+$\medSplitOccDelta{}$). Two independent studies at different scales agreeing
+that faithfulness is a comparatively stable property of the method is the
+premise our result then acts on, because the ordering that does \emph{not}
+survive the change of split is the ground-truth one
+($\rho=\mutAttrRankRho{}$ on MUTAG, $\synAttrRankRho{}$ on \synDataset{}).
+A stable faithfulness ranking is therefore not evidence of a stable correctness
+ranking, which is what a practitioner with no rationale labels has to assume
+when they use faithfulness to choose a method. Second, it reports that
+faithfulness varies markedly per molecule; our regime stratification locates
+part of that variation, since ground-truth localisation collapses below chance
+precisely on confidently-wrong predictions while faithfulness on the same
+molecules looks unremarkable.
 
 \emph{GraphXAI}~\cite{graphxai} and \emph{GraphFramEx}~\cite{graphframex} are
 general-graph frameworks: GraphXAI supplies generators with exact node ground
@@ -993,9 +1007,10 @@ J.~Zhang, Y.~Liu, K.~Yan, H.~Liu, C.~Fu, B.~M.~Oztekin, X.~Zhang, and S.~Ji.
 DIG: a turnkey library for diving into graph deep learning research.
 \emph{Journal of Machine Learning Research}, 22(240):1--9, 2021.
 
-\bibitem{molfaith} M.~Hiltscher, M.~Bianciotto, and F.~Grisoni. Explaining what
-matters: faithfulness in molecular deep learning. \emph{ChemRxiv preprint},
-2026.
+\bibitem{molfaith} M.~Hiltscher, M.~Bianciotto, and F.~Grisoni. Explaining
+What Matters: Faithfulness in Molecular Deep Learning. \emph{ChemRxiv}, 2026.
+\href{https://doi.org/10.26434/chemrxiv.10001594/v1}
+{doi:10.26434/chemrxiv.10001594/v1}. Platform: \url{https://github.com/molML/MolFaith}.
 
 \bibitem{faber} L.~Faber, A.~K.~Moghaddam, and R.~Wattenhofer. When comparing
 to ground truth is wrong: on evaluating GNN explanation methods.

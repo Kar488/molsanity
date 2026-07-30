@@ -137,13 +137,52 @@ def _fmt(v, nd=3):
         return str(v)
 
 
-# The cells to contrast: an in-distribution control (exact GT, large n) and a
-# distribution-shift case (real molecules, scaffold split). Each is (dataset,
-# backbone, split, regime-label).
+# Preferred cells to contrast, when a run produced them: an in-distribution
+# control and a distribution-shift case. Each is (dataset, backbone, split,
+# regime-label). These are *preferences*, not requirements — see
+# ``eligible_cells``, which falls back to whatever the run actually audited so
+# the report is never silently empty.
 DEFAULT_CELLS = [
     ("SynthMotifsXL", "GINE", "random", "in-distribution (exact GT, n≈120)"),
     ("MUTAG", "GINE", "scaffold", "scaffold shift (motif-proxy GT)"),
 ]
+
+_REGIME_LABEL = {"random": "in-distribution", "scaffold": "scaffold shift"}
+
+
+def eligible_cells(root: Path = AUDIT_ROOT, min_attributors: int = 2) -> list[tuple]:
+    """Cell families this run can actually run the selection test on.
+
+    A family is (dataset, backbone, split) with at least ``min_attributors``
+    audited attributors whose records carry ground truth. Families that also
+    exist on the *other* split come first: comparing two splits of the same
+    dataset isolates distribution shift instead of confounding it with a change
+    of dataset. This is what keeps the report meaningful when the preferred
+    cells of ``DEFAULT_CELLS`` failed or were not part of the sweep.
+    """
+    cells = discover_cells(root)
+    families: dict[tuple, set] = {}
+    for cell_id, recs in cells.items():
+        m = _parse_cell_id(cell_id)
+        has_gt = any(np.isfinite(r.get(CORRECTNESS_METRIC, np.nan)) for r in recs)
+        if has_gt:
+            key = (m["dataset"], m["backbone"], m["split"])
+            families.setdefault(key, set()).add(m["attributor"])
+    keys = [k for k, attrs in families.items() if len(attrs) >= min_attributors]
+    paired = {(d, b) for d, b, _ in keys
+              if sum(1 for k in keys if k[0] == d and k[1] == b) > 1}
+    keys.sort(key=lambda k: (0 if (k[0], k[1]) in paired else 1,
+                             k[0], k[1], k[2] != "random"))
+    return [(d, b, sp, _REGIME_LABEL.get(sp, sp)) for d, b, sp in keys]
+
+
+def resolve_cells(cells=None, root: Path = AUDIT_ROOT) -> list[tuple]:
+    """Preferred cells that this run produced, else whatever it did produce."""
+    available = {(d, b, sp) for d, b, sp, _ in eligible_cells(root)}
+    wanted = [c for c in (cells or DEFAULT_CELLS) if (c[0], c[1], c[2]) in available]
+    if wanted:
+        return wanted
+    return eligible_cells(root)
 
 
 def _section(res: dict, regime: str) -> list[str]:
@@ -189,8 +228,8 @@ def _section(res: dict, regime: str) -> list[str]:
 
 
 def write_report(cells=None, path: str | Path = "BENCHMARK_GT.md",
-                 seed: int = 0) -> dict:
-    cells = cells or DEFAULT_CELLS
+                 seed: int = 0, root: Path = AUDIT_ROOT) -> dict:
+    cells = resolve_cells(cells, root=root)
     results = []
     lines = [
         "# BENCHMARK_GT.md — faithfulness-only evaluation vs ground truth",
@@ -207,8 +246,13 @@ def write_report(cells=None, path: str | Path = "BENCHMARK_GT.md",
         "(≈1 → faithfulness tracks correctness; ≤0 → it does not).",
         "",
     ]
+    if not cells:
+        lines.append("_No cell in this run has >=2 attributors with "
+                     "ground-truth records; the selection test is not "
+                     "computable here. See PROGRESS.md for what failed._")
+        lines.append("")
     for ds, bb, sp, regime in cells:
-        res = analyse(ds, bb, sp, seed=seed)
+        res = analyse(ds, bb, sp, root=root, seed=seed)
         results.append(res)
         lines += _section(res, regime)
 

@@ -1,0 +1,30 @@
+# Rebuild the preprint from the committed results.
+#
+#   make            # figures + tables + PDF
+#   make figures    # vector PDF figures only
+#   make tables     # LaTeX tables + inline-number macros only
+#   make clean      # remove build products (not the sources)
+#
+# Every number, table and figure is derived from RESULTS.md, BENCHMARK.md,
+# BENCHMARK_GT.json and configs/full.yaml by the scripts in figs/. Re-running
+# this after more grid cells land refreshes the whole manuscript.
+
+PY ?= python3
+TEX ?= xelatex
+
+.PHONY: all figures tables pdf clean
+
+all: pdf
+
+figures:
+	$(PY) figs/make_figures.py
+
+tables:
+	$(PY) figs/make_tables.py
+
+pdf: figures tables
+	$(TEX) -interaction=nonstopmode main.tex
+	$(TEX) -interaction=nonstopmode main.tex
+
+clean:
+	rm -f main.aux main.log main.out main.toc main.pdf

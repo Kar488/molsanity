@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\centering
+\caption{\textbf{Does a faithfulness-only ranking pick the ground-truth-best attributor?} Both arms are the same dataset, the same backbone and the same 5 attributors --- only the split changes --- so the contrast isolates distribution shift rather than confounding it with a change of dataset. Each row ranks the attributors by one faithfulness/fidelity metric and asks whether its top choice is the one the exact node ground truth ranks best. $p$ is a paired Wilcoxon test on per-molecule GT AUROC between the selected and the ground-truth-best attributor, over the molecules both audited. Recomputed here from the committed per-molecule records: the shipped \texttt{BENCHMARK\_GT.md} is empty for this run because both of its target cells failed (Table~\ref{tab:ledger}).}
+\label{tab:selection}
+\small
+\renewcommand{\arraystretch}{1.3}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llllrlrcrr}
+\toprule
+\textbf{regime} & \textbf{cell} & \textbf{ranking metric} & \textbf{its top pick} & \textbf{pick GT} & \textbf{GT-best} & \textbf{GT-best} & \textbf{mismatch} & \textbf{Wilcoxon $p$} & \textbf{$\rho$(faith,GT)} \\
+\midrule
+in-distribution & SynthMotifs$\cdot$GINE, random, $n$=20 & occlusion $\rho$ & GuidedBP & 1.000 & GuidedBP & 1.000 & no & --- & 0.900 \\
+ &  & Fidelity+ & Saliency & 0.999 & GuidedBP & 1.000 & \textbf{yes} & 0.109 & 0.400 \\
+ &  & characterisation & Saliency & 0.999 & GuidedBP & 1.000 & \textbf{yes} & 0.109 & 0.700 \\
+\addlinespace[2pt]
+scaffold shift & SynthMotifs$\cdot$GINE, scaffold, $n$=20 & occlusion $\rho$ & IG & 0.901 & Saliency & 0.975 & \textbf{yes} & $<$0.001 & 0.100 \\
+ &  & Fidelity+ & IG & 0.901 & Saliency & 0.975 & \textbf{yes} & $<$0.001 & 0.400 \\
+ &  & characterisation & IG & 0.901 & Saliency & 0.975 & \textbf{yes} & $<$0.001 & 0.400 \\
+\bottomrule
+\end{tabular}}
+\end{table*}

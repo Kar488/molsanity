@@ -26,6 +26,20 @@ def cast_inputs(x, edge_attr):
     return x, edge_attr
 
 
+def ensure_edge_attr(x, edge_index, edge_attr, edge_dim: int):
+    """Materialise a zero edge-feature tensor when the dataset has none.
+
+    Some graph datasets (BA-2Motifs, and synthetic generators in general) carry
+    no edge features, but the edge-conditioned convolutions used here require a
+    tensor. Passing ``None`` through reaches ``Linear(None)`` and raises. Shared
+    by every backbone's forward so a new backbone cannot forget it.
+    """
+    if edge_attr is not None:
+        return edge_attr
+    return torch.zeros(edge_index.size(1), edge_dim,
+                       device=x.device, dtype=x.dtype)
+
+
 class GINE(nn.Module):
     def __init__(
         self,
@@ -43,6 +57,7 @@ class GINE(nn.Module):
         self.dropout = dropout
         self.pool = global_mean_pool if pool == "mean" else global_add_pool
 
+        self.edge_dim = edge_dim
         self.node_encoder = nn.Linear(in_channels, hidden_channels)
         self.edge_encoder = nn.Linear(edge_dim, hidden_channels)
 
@@ -70,7 +85,8 @@ class GINE(nn.Module):
             # Broadcast a per-node scalar (or per-feature) multiplier onto inputs.
             x = x * node_mask
         h = self.node_encoder(x)
-        e = self.edge_encoder(edge_attr) if edge_attr is not None else None
+        e = self.edge_encoder(ensure_edge_attr(x, edge_index, edge_attr,
+                                               self.edge_dim))
         for conv, bn in zip(self.convs, self.bns):
             h = conv(h, edge_index, e)
             h = bn(h)
@@ -83,7 +99,8 @@ class GINE(nn.Module):
     def embed(self, x, edge_index, edge_attr, batch):
         x, edge_attr = cast_inputs(x, edge_attr)
         h = self.node_encoder(x)
-        e = self.edge_encoder(edge_attr) if edge_attr is not None else None
+        e = self.edge_encoder(ensure_edge_attr(x, edge_index, edge_attr,
+                                               self.edge_dim))
         for conv, bn in zip(self.convs, self.bns):
             h = F.relu(bn(conv(h, edge_index, e)))
         return self.pool(h, batch)

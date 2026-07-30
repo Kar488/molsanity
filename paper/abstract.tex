@@ -1,0 +1,38 @@
+\small
+\textbf{Abstract.}
+Feature attributions are routinely used to justify molecular graph neural
+network (GNN) predictions to chemists, yet they are almost never audited for
+\emph{reliability}: existing evaluation frameworks ask whether an explanation
+is faithful to the model, not whether the model's explanation can be trusted,
+and not where it stops being trustworthy under the scaffold shift that
+characterises real drug-discovery workflows. We present \textbf{MolSanity}, a
+reliability-audit framework that wraps canonical attribution implementations
+(Captum, PyTorch Geometric, RDKit) rather than proposing a new attributor, and
+scores every (dataset × backbone × attributor × split) cell on six axes:
+motif-native coherence, occlusion--attribution faithfulness, ground-truth
+localisation where node labels exist, cross-checkpoint stability, calibration
+linkage, and confidence/correctness regime stratification. Our central finding
+is that \emph{faithfulness is not correctness}, and that the gap opens under
+shift. On a synthetic task with \emph{exact} node ground truth, holding the
+dataset, the backbone and the attributor set fixed and changing only the split,
+a faithfulness-only ranking is harmless in distribution --- its top pick differs
+from the ground-truth-best attributor by $\indGapFidelityplus{}$ AUROC
+($p=\indPFidelityplus{}$) --- but under scaffold shift all
+$\shiftNMismatch{}$ of $\shiftNMetrics{}$ ranking metrics, including our own
+occlusion measure, select an attributor that is significantly worse than the
+ground-truth-best (median gap $\shiftGapCharacterization{}$ AUROC, paired
+Wilcoxon $p\shiftPCharacterization{}$), and the faithfulness--truth rank
+correlation falls from $\indRhoOccspearman{}$ to $\shiftRhoOccspearman{}$.
+Across all \nGtCells{} committed cells that carry a node-level ground truth,
+\nFaithfulButWrong{} are positively faithful to the model yet anti-aligned with
+the true motif. Reliability is not a property of the attributor alone: the
+backbone ordering does not survive the change of split
+($\rho=\bbRankRho{}$), and the best-performing, best-calibrated molecular cell
+in the matrix (\bestAucDataset{}·\bestAucBackbone{}, AUC $\bestAucAuc{}$, ECE
+$\bestAucEce{}$) carries the most anti-faithful attributions of any
+($\rho=\bestAucOcc{}$). Results are reported as of the committed
+\texttt{\runConfig{}} run, which completed \nDone{} of \nAttempted{} attempted
+cell-runs; the \nFailed{} failures and the \nCarried{} rows carried over from an
+earlier run are labelled as such throughout and never merged into a
+this-run aggregate. Every number, figure and table is regenerated from the
+committed artifacts by scripts in the repository.

@@ -1,0 +1,45 @@
+# Pinned to the versions the committed sweep actually ran on, read out of
+# results/artifacts/run_manifest.json. Install these before reporting that a
+# number failed to reproduce.
+#
+#     pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+#     pip install -r requirements-lock.txt
+#
+# Why pin at all: `pip install torch-geometric captum rdkit` resolves to
+# whatever is current on the day, and the resolved set is NOT
+# interchangeable. On torch 2.13 with numpy 2.4, PyG's Captum adapter raises
+# IndexError inside set_masks and every gradient-attribution cell dies, while
+# the same PyG and Captum versions work on the pinned stack. A reviewer who
+# hits that and concludes the repo is broken would be drawing the wrong
+# conclusion from the right observation.
+#
+# torch itself is deliberately not listed here: the wheel differs by platform
+# and accelerator, so it is installed separately from the PyTorch index. The
+# sweep ran on torch 2.11.0+cu128 (GPU) and the CPU build of the same version
+# reproduces it.
+
+torch-geometric==2.8.0.post1
+captum==0.9.0
+rdkit==2026.3.4
+numpy==2.0.2
+scipy==1.16.3
+scikit-learn==1.6.1
+PyYAML>=6.0
+matplotlib>=3.8
+pandas>=2.0
+
+# Paper build only (paper/Makefile). pikepdf backs the arXiv font check.
+pikepdf>=8.0
+
+# Optional, and genuinely awkward, so they are NOT pinned here:
+#   SubgraphX  -> torch-scatter, torch-sparse, dive-into-graphs
+#                 No PyPI wheel; use PyG's prebuilt index, which is keyed to
+#                 your exact torch + CUDA build:
+#                   pip install torch-scatter torch-sparse \
+#                     -f https://data.pyg.org/whl/torch-<ver>+<cuda>.html
+#                 Falling back to a source build takes 30-90 minutes.
+#   ShapeGGen  -> graphxai. Its published wheel packages only the top-level
+#                 module and cannot be imported usefully; install from a source
+#                 checkout of https://github.com/mims-harvard/GraphXAI, and note
+#                 it imports ipdb.
+# Both are optional: the sweep skips and logs their cells if absent.

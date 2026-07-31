@@ -83,6 +83,24 @@ current alongside RESULTS.md.
   budget are the **regression** tasks (ESOL/FreeSolv/Lipophilicity), where models
   reach honest R² (e.g. ESOL ≈ 0.67–0.69 across backbones).
 
+## Practical utility
+
+- **The audit does not propose a replacement selection method.** It shows that
+  faithfulness metrics fail to pick the ground-truth-best attributor under
+  shift, and does not offer a metric that succeeds. That is deliberate: on this
+  evidence no available signal does, and inventing one would invite the same
+  criticism one level up.
+- **What it offers instead is abstention.** `audit/abstention.py` reframes the
+  question from *which explanation to choose* to *when to trust any of them*,
+  as a coverage-reliability curve over signals available at inference time.
+  `ABSTENTION.md` reports a recommended operating point, or states plainly that
+  no signal buys reliability. **The transfer assumption is the weak point**: the
+  curves are computed where ground truth exists, and applying the rule to a real
+  molecular dataset assumes the relationship carries over to cells where
+  correctness cannot be measured. This paper's own central finding is that such
+  transfer fails across splits, so the assumption is stated rather than relied
+  on silently.
+
 ## Statistics
 
 - **Multiplicity is now controlled.** Selection tests carry Benjamini-Hochberg

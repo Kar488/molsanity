@@ -23,6 +23,28 @@ implementations are wrapped, never reimplemented.
 > publication figures in [`figures/`](figures/INDEX.md). See
 > [`TASKS.md`](TASKS.md) for what remains.
 
+### Reproducing the committed numbers
+
+`pip install torch-geometric captum rdkit` resolves to whatever is current
+today, and that set is **not** interchangeable with the one the sweep ran on.
+On torch 2.13 with numpy 2.4, PyG's Captum adapter raises inside `set_masks`
+and every gradient-attribution cell dies, on the same PyG and Captum versions
+that work on the pinned stack. Install the pinned versions before concluding a
+number fails to reproduce:
+
+```bash
+pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements-lock.txt
+pip install -e ".[dev]"
+pytest -q
+python -m molsanity.run_all --config configs/smoke.yaml
+```
+
+CI runs exactly that on every push, plus a second job that rebuilds the paper
+from the committed results and fails on a LaTeX error, a missing glyph, or a
+font arXiv would reject. If either job is green, the reproducibility claim
+holds; if not, it does not.
+
 ## Install
 
 ```bash

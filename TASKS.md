@@ -70,8 +70,29 @@ After the sweep: `cd paper && make` regenerates every figure, table and inline
 number, then re-read the withdrawn regression paragraph and the two BA-2Motifs
 paragraphs in `body.tex`, which are written for the pre-fix state.
 
+## After the sweep — analyses that need its output
+
+- [ ] **Read `ABSTENTION.md` first.** If a signal shows positive lift, the paper
+      gains an actionable rule ("keep the top X% by <signal>") and answers the
+      "no practical utility" criticism. If no signal works, that is a reportable
+      negative and the Discussion should say so plainly rather than hedging.
+- [ ] **Read `RATIONALE_USE.md`.** `n_anti_aligned_despite_model_using_it` is
+      the number that answers Faber et al. Promote it into the Results if it is
+      non-trivial; it converts the strongest reviewer objection from a framing
+      argument into a statistic.
+- [ ] **Restate the headline on the MolMotif arm.** It is the only arm that is
+      both molecular and exactly labelled, so if the inversion replicates there
+      it should lead, with MUTAG demoted to a supporting proxy result.
+
 ## Known-good, do not regress
 
+- [x] CI has two jobs: the smoke pipeline on the **pinned** stack
+      (`requirements-lock.txt`), and a paper rebuild that fails on a LaTeX
+      error, a missing glyph or a non-embeddable font. The reproducibility
+      claim in the paper is exactly what those jobs test.
+- [x] `configs/smoke.yaml` runs two seeds, so CI exercises the multi-seed path.
+      A single-seed smoke config could not have caught the row-key bug that
+      would have discarded two thirds of a three-seed matrix.
 - [x] Fonts: `make` runs `figs/check_fonts.py`, which fails the build on a Type 3
       or non-embedded font. arXiv rejects both. matplotlib's PDF default is
       Type 3, so any new figure code must set `pdf.fonttype: 42`.

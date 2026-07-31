@@ -200,5 +200,30 @@ def write_abstention_md(records, out_path: str | Path = "ABSTENTION.md",
                         for d in ranked], "n_signals": len(ranked)}
 
 
+def load_all_records(root: str | Path = "artifacts/audit") -> list[dict]:
+    """Every per-molecule record the run has written so far, tagged by cell.
+
+    Abstention is a question about molecules, not cells, so the curves are
+    computed over the pooled Tier-1 records. The cell identity is kept on each
+    record so a caller can re-split if needed.
+    """
+    import json
+
+    out: list[dict] = []
+    base = Path(root)
+    if not base.is_dir():
+        return out
+    for rec_file in sorted(base.glob("*/records.json")):
+        try:
+            recs = json.loads(rec_file.read_text())
+        except Exception:  # noqa: BLE001 - a partial write must not kill the run
+            continue
+        cell = rec_file.parent.name
+        for r in recs:
+            if isinstance(r, dict):
+                out.append({**r, "cell": cell})
+    return out
+
+
 __all__ = ["coverage_reliability_curve", "operating_point", "rank_signals",
-           "write_abstention_md", "SIGNALS"]
+           "write_abstention_md", "load_all_records", "SIGNALS"]

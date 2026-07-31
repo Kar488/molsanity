@@ -45,6 +45,11 @@ class MoleculeAuditRecord:
     # takes the training-set mean feature vector instead of zeros). The gap
     # between the two bounds how much of the score is an off-manifold artefact.
     occ_spearman_imputed: float = float("nan")
+    # Does the model actually read the ground-truth substructure on THIS
+    # molecule? Separates "the attribution is wrong" from "the model used a
+    # different rationale", which is the Faber et al. objection.
+    rationale_reliance: float = float("nan")
+    rationale_delta_gt: float = float("nan")
     sparsity: float = float("nan")
     characterization: float = float("nan")
     unfaithfulness: float = float("nan")
@@ -129,6 +134,12 @@ def audit_molecule(model, data, attribution, dataset_name: str,
     if has_ground_truth(dataset_name):
         gt = ground_truth_mask(dataset_name, data)
         if gt is not None:
+            from .rationale import rationale_use
+
+            ru = rationale_use(model, data, gt, target=int(target), task=task)
+            rec.rationale_reliance = ru["reliance"]
+            rec.rationale_delta_gt = ru["delta_gt"]
+        if gt is not None:
             gs = attribution_gt_scores(node_attr, gt)
             rec.gt_auroc = gs["auroc"]
             rec.gt_auprc = gs["auprc"]
@@ -147,7 +158,8 @@ def aggregate_records(records: list[MoleculeAuditRecord], seed: int = 0) -> dict
         "gt_auroc", "gt_auprc", "atom_gini", "top20_mass", "salient_cc_frac",
         "motif_top1_share", "occ_spearman", "occ_top1_agreement",
         "fidelity_plus", "fidelity_minus", "fidelity_ratio",
-        "occ_spearman_imputed", "sparsity", "characterization",
+        "occ_spearman_imputed", "rationale_reliance", "rationale_delta_gt",
+        "sparsity", "characterization",
         "unfaithfulness", "stability", "confidence",
     ]
     agg = {m: summarise(col(m), name=m, seed=seed) for m in metrics}

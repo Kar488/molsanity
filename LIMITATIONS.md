@@ -8,6 +8,21 @@ current alongside RESULTS.md.
 - **CPU-only development environment.** All defaults are CPU-tractable. The
   overnight full matrix assumes a single modern GPU; without one, use `--budget`
   to run a reduced-but-honest subset (clearly labelled in reports).
+- **The proxy objection is now answered two ways.** Faber et al. (KDD 2021)
+  argue that comparing against a known rationale misleads when the trained model
+  does not use that rationale, so a low GT AUROC may say something about the
+  model rather than the attribution. Two additions address it directly:
+  - **MolMotif** (`molsanity/data/molmotif.py`): real drug-like molecules
+    relabelled so the class *is* presence of a chemical substructure. The
+    ground truth is exact **by construction**, and the arm is molecular. It is
+    the only arm that is both. Easy by design, and labelled as a probe of the
+    audit rather than a hard benchmark.
+  - **The rationale-use test** (`molsanity/audit/rationale.py`): per molecule,
+    occlude the ground-truth substructure. If the prediction collapses, the
+    model demonstrably uses it, and an anti-aligned attribution is wrong by the
+    model's own behaviour, not by disagreement with a chemical prior. If it does
+    not, Faber applies and the molecule is reported separately. The headline
+    number is `n_anti_aligned_despite_model_using_it`.
 - **MUTAG "ground truth" is quasi-ground-truth.** MUTAG has no per-atom
   explanation labels shipped with the PyG `TUDataset`. We derive a chemically
   motivated proxy mask (nitro / aromatic-nitro groups, the canonical
@@ -67,6 +82,24 @@ current alongside RESULTS.md.
   scaffold split — tracked in `TASKS.md`. The meaningful Tier-2 results at this
   budget are the **regression** tasks (ESOL/FreeSolv/Lipophilicity), where models
   reach honest R² (e.g. ESOL ≈ 0.67–0.69 across backbones).
+
+## Practical utility
+
+- **The audit does not propose a replacement selection method.** It shows that
+  faithfulness metrics fail to pick the ground-truth-best attributor under
+  shift, and does not offer a metric that succeeds. That is deliberate: on this
+  evidence no available signal does, and inventing one would invite the same
+  criticism one level up.
+- **What it offers instead is abstention.** `audit/abstention.py` reframes the
+  question from *which explanation to choose* to *when to trust any of them*,
+  as a coverage-reliability curve over signals available at inference time.
+  `ABSTENTION.md` reports a recommended operating point, or states plainly that
+  no signal buys reliability. **The transfer assumption is the weak point**: the
+  curves are computed where ground truth exists, and applying the rule to a real
+  molecular dataset assumes the relationship carries over to cells where
+  correctness cannot be measured. This paper's own central finding is that such
+  transfer fails across splits, so the assumption is stated rather than relied
+  on silently.
 
 ## Statistics
 

@@ -72,6 +72,21 @@ cells:
   - {dataset: MUTAG, backbone: GAT,         attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: MPNN,        attributor: IntegratedGradients}
   - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+  # --- Tier-1 exact GT AND molecular (MolMotif) ---
+  # The only arm that is both: real drug-like molecules whose label IS the
+  # presence of a chemical substructure, so the ground truth is exact by
+  # construction rather than a chemically motivated guess.
+  - {dataset: MolMotif, backbone: GINE,        attributor: IntegratedGradients}
+  - {dataset: MolMotif, backbone: GINE,        attributor: Saliency}
+  - {dataset: MolMotif, backbone: GINE,        attributor: InputXGradient}
+  - {dataset: MolMotif, backbone: GINE,        attributor: GuidedBackprop}
+  - {dataset: MolMotif, backbone: GINE,        attributor: GNNExplainer}
+  - {dataset: MolMotif, backbone: GINE,        attributor: PGExplainer}
+  - {dataset: MolMotif, backbone: GINE,        attributor: SubgraphX}
+  - {dataset: MolMotif, backbone: GCN,         attributor: IntegratedGradients}
+  - {dataset: MolMotif, backbone: GAT,         attributor: IntegratedGradients}
+  - {dataset: MolMotif, backbone: MPNN,        attributor: IntegratedGradients}
+  - {dataset: MolMotif, backbone: AttentiveFP, attributor: IntegratedGradients}
   # --- Tier-1 exact GT (ShapeGGen, via k-hop enclosing subgraphs) ---
   - {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
   - {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}

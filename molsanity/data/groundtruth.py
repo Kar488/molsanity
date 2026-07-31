@@ -137,7 +137,8 @@ def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
         return mutag_nitro_mask(data)
     if dataset_name == "BA-2Motifs":
         return ba2motifs_node_mask(data)
-    if dataset_name.startswith("SynthMotifs") or dataset_name == "ShapeGGen":
+    if (dataset_name.startswith("SynthMotifs")
+            or dataset_name in {"ShapeGGen", "MolMotif"}):
         # Both carry an exact per-node mask on the graph object as ``node_gt``.
         return synth_motifs_node_mask(data)
     return None
@@ -145,7 +146,7 @@ def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
 
 def has_ground_truth(dataset_name: str) -> bool:
     # Any SynthMotifs* variant (e.g. SynthMotifsXL) carries exact node_gt.
-    return (dataset_name in {"MUTAG", "BA-2Motifs", "ShapeGGen"}
+    return (dataset_name in {"MUTAG", "BA-2Motifs", "ShapeGGen", "MolMotif"}
             or dataset_name.startswith("SynthMotifs"))
 
 

@@ -32,6 +32,50 @@ def _load_config(path: str) -> dict:
     return yaml.safe_load(Path(path).read_text())
 
 
+def _rationale_md(fp: dict) -> str:
+    """RATIONALE_USE.md — the number that answers Faber et al. (KDD 2021).
+
+    Their objection is that a low ground-truth AUROC may mean the model solved
+    the task another way, so the attribution is describing the model correctly.
+    Occluding the ground-truth substructure settles it per molecule.
+    """
+    def f(x, nd=3):
+        try:
+            v = float(x)
+            return "n/a" if v != v else f"{v:.{nd}f}"
+        except (TypeError, ValueError):
+            return "n/a"
+
+    return "\n".join([
+        "# RATIONALE_USE.md — does the model actually read the ground truth?",
+        "",
+        "Faber et al. (KDD 2021) argue that scoring attributions against a known",
+        "rationale misleads when the trained model did not use that rationale: a",
+        "low GT AUROC would then be a fact about the model, not the explanation.",
+        "This is testable. Occlude the ground-truth substructure; if the",
+        "prediction collapses, the model *is* using it.",
+        "",
+        f"- molecules where the model reads the ground truth: "
+        f"**{fp['n_uses_rationale']}**",
+        f"- molecules where it does not (Faber applies): "
+        f"**{fp['n_ignores_rationale']}**",
+        f"- mean GT AUROC when the model reads it: "
+        f"**{f(fp['mean_gt_auroc_when_used'])}**",
+        f"- mean GT AUROC when it does not: "
+        f"**{f(fp['mean_gt_auroc_when_ignored'])}**",
+        "",
+        "## The number that answers the objection",
+        "",
+        f"**{fp['n_anti_aligned_despite_model_using_it']}** molecules "
+        f"({f(fp['frac_anti_aligned_despite_model_using_it'])} of those the model",
+        "demonstrably reads the ground truth from) still receive an attribution",
+        "anti-aligned with it. On those, no appeal to an alternative rationale",
+        "explains the result: the attribution misdescribes a model that is",
+        "provably using the substructure the attribution ranks lowest.",
+        "",
+    ])
+
+
 def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     """Run one audit cell end to end. Returns a dict with agg + train + row."""
     import torch
@@ -272,6 +316,27 @@ def main(argv=None):
         log.info("Wrote SEED_VARIANCE.md (%d multi-seed cells)", sv["n_cells"])
     except Exception as exc:  # noqa: BLE001
         log.warning("Seed-variance report failed: %s", exc)
+
+    # When should an attribution not be trusted? Coverage-reliability curves
+    # over the pooled per-molecule records, plus the partition that answers the
+    # Faber objection directly.
+    try:
+        from .audit.abstention import load_all_records, write_abstention_md
+        from .audit.rationale import faber_partition
+
+        all_recs = load_all_records()
+        ab = write_abstention_md(all_recs)
+        log.info("Wrote ABSTENTION.md (%d signals ranked over %d records)",
+                 ab["n_signals"], len(all_recs))
+
+        fp = faber_partition(all_recs)
+        Path("RATIONALE_USE.md").write_text(_rationale_md(fp))
+        log.info("Wrote RATIONALE_USE.md (%d molecules where the model reads "
+                 "the ground truth, %d anti-aligned despite that)",
+                 fp["n_uses_rationale"],
+                 fp["n_anti_aligned_despite_model_using_it"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Abstention/rationale reports failed: %s", exc)
 
     # Head-to-head benchmark table over everything audited so far.
     try:

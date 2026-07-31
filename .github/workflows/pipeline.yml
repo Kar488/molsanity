@@ -12,10 +12,13 @@ on:
         default: "smoke"
 
 jobs:
+  # What a reviewer does: clone, install, run. If this job is red, the
+  # reproducibility claim in the paper is false, and we would rather find that
+  # out here than in review.
   smoke:
-    name: smoke pipeline + tests
+    name: smoke pipeline + tests (pinned stack)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -25,21 +28,41 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install CPU torch
+      - name: Install the pinned stack
         run: |
           python -m pip install --upgrade pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-      - name: Install package (graph + dev)
-        run: |
+          # torch is installed separately: the wheel is platform/accelerator
+          # specific, so it cannot live in the shared lock file.
+          pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-lock.txt
           pip install -e ".[dev]"
-          pip install torch-geometric captum rdkit
+
+      - name: Record what actually got installed
+        run: pip freeze | sort
 
       - name: Unit tests
         run: pytest -q
 
-      - name: Smoke pipeline (tiny subset)
+      - name: Smoke pipeline (tiny subset, end to end)
         run: python -m molsanity.run_all --config configs/smoke.yaml
+
+      - name: The pipeline must produce numbers, not just exit zero
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          p = Path("RESULTS.md")
+          if not p.exists():
+              sys.exit("smoke run produced no RESULTS.md")
+          rows = [l for l in p.read_text().splitlines()
+                  if l.startswith("| MUTAG")]
+          if not rows:
+              sys.exit("RESULTS.md has no audited rows")
+          print(f"{len(rows)} audited row(s):")
+          for r in rows:
+              print(" ", r)
+          PY
 
       - name: Upload artifacts
         if: always()
@@ -50,6 +73,73 @@ jobs:
             artifacts/**
             logs/**
             RESULTS.md
+            ABSTENTION.md
+            SEED_VARIANCE.md
+            RATIONALE_USE.md
+          if-no-files-found: ignore
+
+  # The paper's central claim about itself is that every figure, table and
+  # inline number regenerates from the committed results. This job is that
+  # claim, tested.
+  paper:
+    name: paper rebuilds from committed results
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install figure/table dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy matplotlib pikepdf
+
+      - name: Install XeLaTeX and TeX Gyre Pagella
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            texlive-xetex texlive-fonts-recommended texlive-fonts-extra \
+            texlive-latex-extra fonts-texgyre
+
+      - name: Rebuild figures, tables and the PDF
+        run: make -C paper XELATEX=xelatex
+
+      - name: No LaTeX errors, no missing glyphs
+        run: |
+          python - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          log = Path("paper/main.log").read_text(errors="ignore")
+          problems = []
+          errors = [l for l in log.splitlines() if l.startswith("!")]
+          if errors:
+              problems.append(f"{len(errors)} LaTeX error(s): {errors[:3]}")
+          if re.search(r"[Mm]issing character", log):
+              problems.append("missing glyphs in the output")
+          if "LaTeX Warning: There were undefined references" in log:
+              problems.append("undefined references")
+          if problems:
+              sys.exit("; ".join(problems))
+          print("paper build clean")
+          PY
+
+      # arXiv rejects Type 3 and non-embedded fonts. matplotlib's PDF default
+      # is Type 3, so this can regress from an ordinary figure edit.
+      - name: Fonts are arXiv-acceptable
+        run: python paper/figs/check_fonts.py paper/main.pdf
+
+      - name: Upload the PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper
+          path: paper/main.pdf
           if-no-files-found: ignore
 
   full:
@@ -65,8 +155,8 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-lock.txt
           pip install -e ".[dev]"
-          pip install torch-geometric captum rdkit
       - name: Full pipeline
         run: python -m molsanity.run_all --config configs/full.yaml

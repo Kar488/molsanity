@@ -220,6 +220,57 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
             "n_eval": len(eval_idx), "capped": bool(cap)}
 
 
+def preflight(cfg, log) -> list[str]:
+    """Check the installed stack against the attributors the config asks for.
+
+    A dependency can be importable and still be wrong. The first full sweep ran
+    for six hours and returned 204 failed Integrated Gradients cells because
+    installing DIG for SubgraphX had quietly downgraded Captum to the 0.2.0 it
+    pins, and Captum 0.2 is incompatible with the PyG ``CaptumExplainer`` this
+    project uses. Nothing detected it: every cell failed, was logged, and the
+    run continued exactly as designed.
+
+    Returns a list of warnings, logged loudly at the start of the run. This
+    does not abort — a broken optional attributor should still leave the rest
+    of the matrix runnable, which is the whole point of the graceful-failure
+    policy — but it must not be discovered afterwards.
+    """
+    wanted = {c.get("attributor") for c in cfg.get("cells", [])}
+    warnings: list[str] = []
+
+    if wanted & {"IntegratedGradients", "Saliency", "InputXGradient",
+                 "GuidedBackprop", "Deconvolution"}:
+        try:
+            import captum
+
+            major, minor = (int(v) for v in captum.__version__.split(".")[:2])
+            if (major, minor) < (0, 7):
+                warnings.append(
+                    f"captum {captum.__version__} is too old for PyG's "
+                    "CaptumExplainer. Every IntegratedGradients cell will fail "
+                    "with 'IndexError: index 1 is out of bounds'. This is what "
+                    "'pip install dive-into-graphs' does if run without "
+                    "--no-deps. Fix: pip install -U 'captum>=0.7'.")
+        except Exception as exc:  # noqa: BLE001
+            warnings.append(f"captum unavailable ({exc}); gradient attributors "
+                            "will be skipped.")
+
+    if "SubgraphX" in wanted:
+        try:
+            from .attributors.subgraphx import _import_subgraphx
+
+            _import_subgraphx()
+        except Exception as exc:  # noqa: BLE001
+            warnings.append(f"SubgraphX unavailable ({type(exc).__name__}: "
+                            f"{exc}); its cells will be skipped and logged.")
+
+    for w in warnings:
+        log.warning("PREFLIGHT: %s", w)
+    if not warnings:
+        log.info("Preflight: attributor dependencies OK.")
+    return warnings
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="MolSanity audit matrix runner")
     parser.add_argument("--config", required=True)
@@ -241,7 +292,7 @@ def main(argv=None):
 
     split_kinds = [cfg["split"]["kind"]] + list(cfg.get("extra_splits", []))
     ledger = RunLedger()
-    blockers: list[str] = []
+    blockers: list[str] = list(preflight(cfg, log))
     rows: list[dict] = []
 
     from .data import DatasetBlocked

@@ -99,6 +99,24 @@ MANIFEST: dict[str, DatasetSpec] = {
                "passing depth), which is where its explanation lives. Needs "
                "GraphXAI from a source checkout; skip+log if unavailable."),
     ),
+    "MolMotif": DatasetSpec(
+        name="MolMotif",
+        tier=1,
+        task="graph-classification",
+        source="MoleculeNet BBBP molecules, relabelled by substructure presence",
+        licence="MoleculeNet (open)",
+        loader="molmotif",
+        has_ground_truth=True,
+        extras={"source_dataset": "BBBP", "motif": "halogen_aromatic",
+                "max_graphs": 1000, "radius": 1, "seed": 0},
+        notes=("Real drug-like molecules with EXACT node ground truth: the "
+               "label is presence of a chemical substructure, so that "
+               "substructure determines the label by construction rather than "
+               "by assumption. Closes the gap where every other ground-truth "
+               "arm is either molecular-but-proxy (MUTAG) or "
+               "exact-but-non-molecular (SynthMotifs, BA-2Motifs). Easy by "
+               "design: a probe of the audit, not a hard benchmark."),
+    ),
     # ---- Tier 2: real molecular property prediction -------------------------
     "ESOL": DatasetSpec(
         name="ESOL", tier=2, task="graph-regression",

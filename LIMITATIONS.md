@@ -8,6 +8,21 @@ current alongside RESULTS.md.
 - **CPU-only development environment.** All defaults are CPU-tractable. The
   overnight full matrix assumes a single modern GPU; without one, use `--budget`
   to run a reduced-but-honest subset (clearly labelled in reports).
+- **The proxy objection is now answered two ways.** Faber et al. (KDD 2021)
+  argue that comparing against a known rationale misleads when the trained model
+  does not use that rationale, so a low GT AUROC may say something about the
+  model rather than the attribution. Two additions address it directly:
+  - **MolMotif** (`molsanity/data/molmotif.py`): real drug-like molecules
+    relabelled so the class *is* presence of a chemical substructure. The
+    ground truth is exact **by construction**, and the arm is molecular. It is
+    the only arm that is both. Easy by design, and labelled as a probe of the
+    audit rather than a hard benchmark.
+  - **The rationale-use test** (`molsanity/audit/rationale.py`): per molecule,
+    occlude the ground-truth substructure. If the prediction collapses, the
+    model demonstrably uses it, and an anti-aligned attribution is wrong by the
+    model's own behaviour, not by disagreement with a chemical prior. If it does
+    not, Faber applies and the molecule is reported separately. The headline
+    number is `n_anti_aligned_despite_model_using_it`.
 - **MUTAG "ground truth" is quasi-ground-truth.** MUTAG has no per-atom
   explanation labels shipped with the PyG `TUDataset`. We derive a chemically
   motivated proxy mask (nitro / aromatic-nitro groups, the canonical

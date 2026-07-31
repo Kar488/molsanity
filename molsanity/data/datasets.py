@@ -169,6 +169,27 @@ def _load_synthmotifs(spec: DatasetSpec) -> LoadedDataset:
     return LoadedDataset(spec, ds, prov)
 
 
+def _load_molmotif(spec: DatasetSpec) -> LoadedDataset:
+    """Real molecules relabelled so the ground truth is exact by construction."""
+    from .molmotif import generate_mol_motif
+
+    extras = spec.extras or {}
+    src = load_dataset(extras.get("source_dataset", "BBBP"))
+    graphs = generate_mol_motif(
+        src.dataset,
+        motif=extras.get("motif", "halogen_aromatic"),
+        max_graphs=int(extras.get("max_graphs", 1000)),
+        seed=int(extras.get("seed", 0)),
+        radius=int(extras.get("radius", 1)),
+    )
+    cache_dir = DATA_ROOT / spec.name
+    checksum = _verify_or_record_checksum(spec, graphs, cache_dir)
+    prov = _write_provenance(spec, graphs, cache_dir, checksum)
+    log.info("Loaded MolMotif: %d molecules with exact node ground truth",
+             len(graphs))
+    return LoadedDataset(spec, graphs, prov)
+
+
 def _load_shapeggen(spec: DatasetSpec) -> LoadedDataset:
     """ShapeGGen as a graph-classification task, via k-hop enclosing subgraphs.
 
@@ -354,6 +375,7 @@ _LOADERS = {
     "synthmotifs": _load_synthmotifs,
     "moleculenet": _load_moleculenet,
     "shapeggen": _load_shapeggen,
+    "molmotif": _load_molmotif,
     "tdc": _load_tdc,
 }
 

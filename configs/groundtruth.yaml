@@ -37,6 +37,17 @@ cells:
 - {dataset: MUTAG, backbone: GAT, attributor: IntegratedGradients}
 - {dataset: MUTAG, backbone: MPNN, attributor: IntegratedGradients}
 - {dataset: MUTAG, backbone: AttentiveFP, attributor: IntegratedGradients}
+- {dataset: MolMotif, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: MolMotif, backbone: GINE, attributor: Saliency}
+- {dataset: MolMotif, backbone: GINE, attributor: InputXGradient}
+- {dataset: MolMotif, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: MolMotif, backbone: GINE, attributor: GNNExplainer}
+- {dataset: MolMotif, backbone: GINE, attributor: PGExplainer}
+- {dataset: MolMotif, backbone: GINE, attributor: SubgraphX}
+- {dataset: MolMotif, backbone: GCN, attributor: IntegratedGradients}
+- {dataset: MolMotif, backbone: GAT, attributor: IntegratedGradients}
+- {dataset: MolMotif, backbone: MPNN, attributor: IntegratedGradients}
+- {dataset: MolMotif, backbone: AttentiveFP, attributor: IntegratedGradients}
 - {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
 - {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}
 - {dataset: ShapeGGen, backbone: GINE, attributor: InputXGradient}

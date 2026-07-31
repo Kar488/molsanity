@@ -36,6 +36,14 @@ change what the *next* run produces. Re-run `python -m molsanity.run_all
       The current regression numbers are withdrawn from interpretation. After
       the re-run, either restore the regression faithfulness claim or state the
       corrected finding.
+- [ ] **MolMotif gives a molecular AND exactly-labelled arm.** 906 balanced
+      BBBP molecules whose label is presence of an aromatic halogen, mask = the
+      matched atoms grown by one bond. Removes the proxy objection outright on
+      one arm.
+- [ ] **The rationale-use test runs on every ground-truth molecule.** Reports
+      whether the model actually reads the ground-truth substructure, so the
+      central finding can be restated on the subset where the Faber objection
+      provably does not apply.
 - [ ] **ShapeGGen closes the grid.** The 2 skipped cells in the 86/88 tally
       were both ShapeGGen. It is now wired as graph classification by taking
       each labelled node's k-hop enclosing subgraph, which is where a node's

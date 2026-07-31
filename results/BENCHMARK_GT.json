@@ -11,40 +11,40 @@
       "PGExplainer",
       "Saliency"
     ],
-    "gt_best": "GNNExplainer",
+    "gt_best": "PGExplainer",
     "per_attributor": {
       "GNNExplainer": {
-        "n_mol": 20,
-        "gt_auroc_mean": 0.6711043422808128,
+        "n_mol": 53,
+        "gt_auroc_mean": 0.5279947348967882,
         "gt_auroc_ci": [
-          0.5467744934803758,
-          0.7944214584435173
+          0.4809530892043378,
+          0.5765610813978947
         ],
-        "occ_spearman_mean": 0.6067857142857143,
-        "fidelity_plus_mean": 0.07909715819339838,
-        "characterization_mean": 0.13254699600184155
+        "occ_spearman_mean": 0.36457168568704035,
+        "fidelity_plus_mean": 0.07106505322369538,
+        "characterization_mean": 0.1487523964866643
       },
       "GuidedBackprop": {
-        "n_mol": 20,
-        "gt_auroc_mean": 0.015677361853832443,
+        "n_mol": 53,
+        "gt_auroc_mean": 0.14577408245554746,
         "gt_auroc_ci": [
-          0.0,
-          0.0400679590017825
+          0.09064350697397311,
+          0.2116105354853967
         ],
-        "occ_spearman_mean": 0.7005745071006539,
-        "fidelity_plus_mean": 0.2038088615521966,
-        "characterization_mean": 0.2815510522412043
+        "occ_spearman_mean": 0.5508151907761476,
+        "fidelity_plus_mean": 0.20992701028814928,
+        "characterization_mean": 0.2969365067902281
       },
       "InputXGradient": {
-        "n_mol": 20,
-        "gt_auroc_mean": 0.04896514161220043,
+        "n_mol": 53,
+        "gt_auroc_mean": 0.048034317595915824,
         "gt_auroc_ci": [
-          0.016372549019607847,
-          0.08277777777777776
+          0.029952932287837953,
+          0.0707433005601707
         ],
-        "occ_spearman_mean": 0.6402173642435111,
-        "fidelity_plus_mean": 0.16467609364571126,
-        "characterization_mean": 0.2590937880112553
+        "occ_spearman_mean": 0.5335937000529938,
+        "fidelity_plus_mean": 0.19855195707486237,
+        "characterization_mean": 0.29642728697230797
       },
       "IntegratedGradients": {
         "n_mol": 20,
@@ -58,75 +58,75 @@
         "characterization_mean": 0.13293988294882758
       },
       "PGExplainer": {
-        "n_mol": 20,
-        "gt_auroc_mean": 0.1084493937435114,
+        "n_mol": 53,
+        "gt_auroc_mean": 0.9811567394253298,
         "gt_auroc_ci": [
-          0.06800485421441302,
-          0.16153906142876728
+          0.9651991614255765,
+          0.9962264150943396
         ],
-        "occ_spearman_mean": 0.4067075146692402,
-        "fidelity_plus_mean": 0.054275823237000954,
-        "characterization_mean": 0.09051196296914174
+        "occ_spearman_mean": 0.2150366048508127,
+        "fidelity_plus_mean": 0.0973670685602234,
+        "characterization_mean": 0.13394711840795762
       },
       "Saliency": {
-        "n_mol": 20,
-        "gt_auroc_mean": 0.009368191721132898,
+        "n_mol": 53,
+        "gt_auroc_mean": 0.013739370343143925,
         "gt_auroc_ci": [
-          0.0,
-          0.026143790849673203
+          0.007826694619147447,
+          0.020624937606069677
         ],
-        "occ_spearman_mean": 0.6112887928149395,
-        "fidelity_plus_mean": 0.15817629482192547,
-        "characterization_mean": 0.23786275897042986
+        "occ_spearman_mean": 0.5314354125173176,
+        "fidelity_plus_mean": 0.1978580656169428,
+        "characterization_mean": 0.29508529645854986
       }
     },
     "selections": [
       {
         "faithfulness_metric": "occ_spearman",
         "faithfulness_pick": "GuidedBackprop",
-        "faithfulness_pick_gt_auroc": 0.015677361853832443,
-        "gt_best": "GNNExplainer",
-        "gt_best_gt_auroc": 0.6711043422808128,
+        "faithfulness_pick_gt_auroc": 0.14577408245554746,
+        "gt_best": "PGExplainer",
+        "gt_best_gt_auroc": 0.9811567394253298,
         "mismatch": true,
-        "paired_gt_gap_median": 0.7666666666666666,
-        "paired_gt_pvalue": 8.596886147715013e-05,
-        "n_paired": 20
+        "paired_gt_gap_median": 0.9666666666666667,
+        "paired_gt_pvalue": 1.3833225782685347e-10,
+        "n_paired": 53
       },
       {
         "faithfulness_metric": "fidelity_plus",
         "faithfulness_pick": "GuidedBackprop",
-        "faithfulness_pick_gt_auroc": 0.015677361853832443,
-        "gt_best": "GNNExplainer",
-        "gt_best_gt_auroc": 0.6711043422808128,
+        "faithfulness_pick_gt_auroc": 0.14577408245554746,
+        "gt_best": "PGExplainer",
+        "gt_best_gt_auroc": 0.9811567394253298,
         "mismatch": true,
-        "paired_gt_gap_median": 0.7666666666666666,
-        "paired_gt_pvalue": 8.596886147715013e-05,
-        "n_paired": 20
+        "paired_gt_gap_median": 0.9666666666666667,
+        "paired_gt_pvalue": 1.3833225782685347e-10,
+        "n_paired": 53
       },
       {
         "faithfulness_metric": "characterization",
         "faithfulness_pick": "GuidedBackprop",
-        "faithfulness_pick_gt_auroc": 0.015677361853832443,
-        "gt_best": "GNNExplainer",
-        "gt_best_gt_auroc": 0.6711043422808128,
+        "faithfulness_pick_gt_auroc": 0.14577408245554746,
+        "gt_best": "PGExplainer",
+        "gt_best_gt_auroc": 0.9811567394253298,
         "mismatch": true,
-        "paired_gt_gap_median": 0.7666666666666666,
-        "paired_gt_pvalue": 8.596886147715013e-05,
-        "n_paired": 20
+        "paired_gt_gap_median": 0.9666666666666667,
+        "paired_gt_pvalue": 1.3833225782685347e-10,
+        "n_paired": 53
       }
     ],
     "rank_correlation": {
       "occ_spearman": {
-        "rho": -0.6,
-        "pvalue": 0.20799999999999982
+        "rho": -0.7142857142857143,
+        "pvalue": 0.1107871720116617
       },
       "fidelity_plus": {
-        "rho": -0.6571428571428573,
-        "pvalue": 0.15617492711370237
+        "rho": -0.5428571428571429,
+        "pvalue": 0.26570262390670557
       },
       "characterization": {
-        "rho": -0.6571428571428573,
-        "pvalue": 0.15617492711370237
+        "rho": -0.7142857142857143,
+        "pvalue": 0.1107871720116617
       }
     }
   }

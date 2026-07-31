@@ -1,0 +1,59 @@
+Traceback (most recent call last):
+  File "/content/molsanity/molsanity/run_all.py", line 272, in main
+    res = stage(
+          ^^^^^^
+  File "/content/molsanity/molsanity/pipeline.py", line 58, in stage
+    payload = fn(out_dir)
+              ^^^^^^^^^^^
+  File "/content/molsanity/molsanity/run_all.py", line 275, in <lambda>
+    run_cell(c, cs, s, log, ts),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/molsanity/molsanity/run_all.py", line 175, in run_cell
+    attribution = attributor.attribute(g)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/molsanity/molsanity/attributors/subgraphx.py", line 113, in attribute
+    _, explanation, _related = self._explainer(
+                               ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/dig/xgraph/method/subgraphx.py", line 647, in __call__
+    results = self.mcts_state_map.mcts(verbose=False)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/dig/xgraph/method/subgraphx.py", line 467, in mcts
+    self.mcts_rollout(self.root)
+  File "/usr/local/lib/python3.12/dist-packages/dig/xgraph/method/subgraphx.py", line 452, in mcts_rollout
+    scores = compute_scores(self.score_func, tree_node.children)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/dig/xgraph/method/subgraphx.py", line 165, in compute_scores
+    score = score_func(child.coalition, child.data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/dig/xgraph/method/shapley.py", line 218, in mc_l_shapley
+    marginal_contribution(data, exclude_mask, include_mask, value_func, subgraph_build_func)
+  File "/usr/local/lib/python3.12/dist-packages/dig/xgraph/method/shapley.py", line 75, in marginal_contribution
+    for exclude_data, include_data in dataloader:
+                                      ^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py", line 741, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py", line 803, in _next_data
+    data = _utils.pin_memory.pin_memory(data, self._pin_memory_device)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 100, in pin_memory
+    clone[i] = pin_memory(item, device)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 60, in pin_memory
+    return data.pin_memory()
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch_geometric/data/data.py", line 386, in pin_memory
+    return self.apply(lambda x: x.pin_memory(), *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch_geometric/data/data.py", line 343, in apply
+    store.apply(func, *args)
+  File "/usr/local/lib/python3.12/dist-packages/torch_geometric/data/storage.py", line 201, in apply
+    self[key] = recursive_apply(value, func)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch_geometric/data/storage.py", line 905, in recursive_apply
+    return func(data)
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch_geometric/data/data.py", line 386, in <lambda>
+    return self.apply(lambda x: x.pin_memory(), *args)
+                                ^^^^^^^^^^^^^^
+RuntimeError: cannot pin 'torch.cuda.FloatTensor' only dense CPU tensors can be pinned

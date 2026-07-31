@@ -1,11 +1,11 @@
 {
   "seed": 0,
-  "config_hash": "58975fd946550cda",
-  "timestamp": "20260730_184508",
+  "config_hash": "a77772f96ecc6a59",
+  "timestamp": "20260731_005714",
   "python": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
   "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
   "processor": "x86_64",
-  "git_rev": "966fa437a0a290dc84427eab4041097b9c5d142b",
+  "git_rev": "af6ad48f57f3dccf60438bee13429cd3424ffd58",
   "versions": {
     "numpy": "2.0.2",
     "scipy": "1.16.3",
@@ -13,7 +13,7 @@
     "torch": "2.11.0+cu128",
     "torch_geometric": "2.8.0.post1",
     "rdkit": "2026.03.4",
-    "captum": "0.9.0"
+    "captum": "0.2.0"
   },
   "cuda": {
     "available": true,

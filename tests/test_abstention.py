@@ -17,6 +17,7 @@ from molsanity.audit.abstention import (
     load_all_records,
     operating_point,
     rank_signals,
+    risk_operating_point,
     write_abstention_md,
 )
 
@@ -86,6 +87,49 @@ def test_no_operating_point_when_the_bar_is_unreachable():
 
 
 # ----------------------------------------------------------------- report ---
+def test_rule_is_never_stated_as_keep_everything(tmp_path):
+    """The first real run produced "keep the top 100%, threshold >= -1.000".
+
+    That is not a rule. It happened because the criterion was the *mean*, which
+    already cleared the bar at full coverage. The criterion is now the share of
+    retained explanations that are below chance, which full coverage cannot
+    trivially satisfy when that share is large.
+    """
+    rng = np.random.default_rng(7)
+    n = 200
+    conf = rng.uniform(0.5, 1.0, n)
+    # Mean localisation is high (0.72) but a quarter are below chance, exactly
+    # the shape of the real data.
+    gt = np.where(rng.random(n) < 0.25, rng.uniform(0.0, 0.5, n),
+                  rng.uniform(0.8, 1.0, n))
+    gt = np.clip(gt + (conf - 0.75) * 0.5, 0, 1)
+    out = tmp_path / "ABSTENTION.md"
+    write_abstention_md(_records(list(zip(conf, gt))), out,
+                        min_reliability=0.7, max_below_chance=0.10)
+    text = out.read_text()
+    assert "top 100%" not in text, "the rule degenerated to keeping everything"
+    assert "below chance" in text
+    # It should also flag that a mean-based rule would have been vacuous.
+    assert "vacuous" in text or "does not solve it" in text or "not needed" in text
+
+
+def test_risk_operating_point_targets_the_tail_not_the_mean():
+    curve = [
+        {"coverage": 1.00, "n_kept": 100, "mean_target": 0.72,
+         "frac_below_chance": 0.25, "threshold": -1.0},
+        {"coverage": 0.70, "n_kept": 70, "mean_target": 0.80,
+         "frac_below_chance": 0.12, "threshold": 0.4},
+        {"coverage": 0.50, "n_kept": 50, "mean_target": 0.86,
+         "frac_below_chance": 0.06, "threshold": 0.6},
+        {"coverage": 0.30, "n_kept": 30, "mean_target": 0.91,
+         "frac_below_chance": 0.02, "threshold": 0.8},
+    ]
+    got = risk_operating_point(curve, max_below_chance=0.10)
+    assert got["coverage"] == 0.50, "must take the WIDEST coverage that qualifies"
+    assert risk_operating_point(curve, max_below_chance=0.30)["coverage"] == 1.00
+    assert risk_operating_point(curve, max_below_chance=0.001) is None
+
+
 def test_report_recommends_a_rule_when_one_exists(tmp_path):
     out = tmp_path / "ABSTENTION.md"
     res = write_abstention_md(_informative(), out, min_reliability=0.8)
@@ -94,6 +138,7 @@ def test_report_recommends_a_rule_when_one_exists(tmp_path):
     assert "Recommended rule" in text
     assert "confidence" in text
     assert "transfer assumption" in text.lower()
+    assert "top 100%" not in text
 
 
 def test_report_says_so_plainly_when_no_signal_works(tmp_path):

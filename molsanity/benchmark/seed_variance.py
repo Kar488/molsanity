@@ -25,9 +25,18 @@ from ..utils import get_logger
 
 log = get_logger()
 
-METRICS = ("gt_auroc", "occ_spearman", "fid+", "acc", "auc")
+METRICS = ("gt_auroc", "occ_spearman", "fid+", "acc", "auc", "rmse", "r2")
 _LABEL = {"gt_auroc": "GT AUROC", "occ_spearman": "occlusion rho",
-          "fid+": "Fidelity+", "acc": "accuracy", "auc": "ROC-AUC"}
+          "fid+": "Fidelity+", "acc": "accuracy", "auc": "ROC-AUC",
+          "rmse": "RMSE", "r2": "R-squared"}
+
+# A metric that does not exist for a task must be omitted, not reported as
+# zero. A regression cell has no accuracy, and printing 0.000 for it invites
+# the reader to compare it against a classification cell's 0.9.
+_TASK_METRICS = {
+    "graph-classification": ("gt_auroc", "occ_spearman", "fid+", "acc", "auc"),
+    "graph-regression": ("occ_spearman", "fid+", "rmse", "r2"),
+}
 
 
 def _key(row: dict) -> tuple:
@@ -46,10 +55,13 @@ def summarise_seeds(rows) -> dict:
         seeds = sorted({r.get("seed") for r in group if r.get("seed") is not None})
         if len(seeds) < 2:
             continue
+        task = next((r.get("task") for r in group if r.get("task")),
+                    "graph-classification")
+        allowed = _TASK_METRICS.get(task, METRICS)
         entry = {"dataset": key[0], "backbone": key[1], "attributor": key[2],
                  "split": key[3], "seeds": seeds, "n_seeds": len(seeds),
-                 "metrics": {}}
-        for m in METRICS:
+                 "task": task, "metrics": {}}
+        for m in allowed:
             vals = [r.get(m) for r in group]
             vals = [float(v) for v in vals
                     if v is not None and not (isinstance(v, float) and math.isnan(v))]

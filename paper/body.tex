@@ -560,7 +560,9 @@ behaves differently. Occlusion $\rho$ and Fidelity+ both select
 \mutIndPickOccspearman{}, which is also the ground-truth-best, and their rank
 correlation with truth is $+\mutIndRhoOccspearman{}$. The characterisation
 score is the exception, selecting \mutIndPickCharacterization{} at
-$\mutIndPickGtCharacterization{}$ ($p\mutIndPCharacterization{}$) with rank
+$\mutIndPickGtCharacterization{}$
+\ifHasmutIndPCharacterization($p\mutIndPCharacterization{}$)\fi
+with rank
 correlation $\mutIndRhoCharacterization{}$. The sign flip between the two arms
 is large ($+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$ for
 occlusion $\rho$), though this does not make in-distribution evaluation safe,
@@ -585,13 +587,20 @@ field-standard ones on the MUTAG shift arm. We therefore do not claim that
 MolSanity's occlusion measure is a better selector. Under shift, \emph{no}
 faithfulness metric in this experiment carries reliable information about which
 attributor is correct, which argues for measuring correctness rather than for
-building a better proxy. Second, $\nDegenerateGtCells{}$
+building a better proxy.
+\ifHasDegenerateCells
+Second, $\nDegenerateGtCells{}$
 of the ground-truth cells are degenerate in a way that matters here: every
 audited molecule returns an identical GT AUROC of $\degenVal{}$, including
 \degenCell{} ($n=\degenN{}$). That cell is the one the in-distribution MUTAG
 arm names as ground-truth-best, so the ``no mismatch'' verdict there rests on a
 cell with zero between-molecule variance and should not be read as a positive
 result. The shift arm, which carries the argument, does not involve it.
+\else
+Second, the in-distribution verdict rests on a single split of a single
+dataset, and the agreement it reports is weaker evidence than the disagreement
+under shift: agreement is what the null predicts.
+\fi
 
 \subsection{Reliability is a property of the cell}
 
@@ -609,6 +618,7 @@ value carried from an earlier run.}
 \label{fig:heatmaps}
 \end{figure*}
 
+\ifHasBackboneSweep
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_backbone.pdf}
@@ -619,11 +629,13 @@ scaffold shift \textbf{(b)}. Dashed line is chance. Spearman correlation
 between the two orderings is $\bbRankRho{}$ over $\bbRankN{}$ backbones.}
 \label{fig:backbone}
 \end{figure}
+\fi
 
 Figure~\ref{fig:heatmaps} lays the two axes over the audited grid, and two
 further comparisons show that neither axis is a stable property of the
 attributor or of the architecture.
 
+\ifHasBackboneSweep
 \paragraph{Backbones} Holding the attributor fixed at Integrated Gradients and
 varying the backbone (Figure~\ref{fig:backbone}) gives a spread of
 $\bbIndSpread{}$ AUROC in distribution (\bbIndBest{} $\bbIndBestVal{}$ down to
@@ -636,6 +648,13 @@ the motif best in distribution is not the one that does so under shift. The
 attributor ordering is somewhat more robust across the same change of split
 ($\rho=\armAttrRankRho{}$ over $\armAttrRankN{}$ attributors) but far from
 preserved.
+\else
+\paragraph{Backbones} The backbone sweep is read at Integrated Gradients, and
+no Integrated Gradients cell completed in the run these numbers come from, so
+this comparison is not reported here. The attributor ordering across the same
+change of split is ($\rho=\armAttrRankRho{}$ over $\armAttrRankN{}$
+attributors), far from preserved.
+\fi
 
 \paragraph{The shift itself does not lower faithfulness} It would be tidy if
 scaffold shift simply made attributions less faithful. It does not. Across the
@@ -779,12 +798,14 @@ degrades to the behaviour reported here. The numbers in this paper predate that
 fix: BA-2Motifs is counted as audited and not as a ground-truth cell throughout,
 and the third exact-ground-truth arm it will provide is not claimed here.
 
+\ifHasDegenerateCells
 \paragraph{Degenerate ground truth} $\nDegenerateGtCells{}$ ground-truth cells
 return the identical value $\degenVal{}$ on every audited molecule, including
 \degenCell{} ($n=\degenN{}$). A cell with zero between-molecule variance
 cannot support a confidence interval or a paired test, and one of the two is
 the attributor the in-distribution MUTAG arm names as ground-truth-best. We
 report those cells with the rest and mark what rests on them.
+\fi
 
 \paragraph{The best model has the worst attributions} The highest-AUC molecular
 classification cell in the run is \bestAucDataset{}·\bestAucBackbone{} under the
@@ -806,8 +827,12 @@ satisfied by this cell.
 
 \paragraph{Accuracy is the wrong headline on imbalanced sets}
 \nHighAccRows{} committed rows report test accuracy $\geq0.95$, with ROC-AUC as
-low as $\minHighAccAuc{}$. On Tox21, accuracy runs $\toxAccMin{}$--$\toxAccMax{}$
-against AUC $\toxAucMin{}$--$\toxAucMax{}$. We report AUC alongside accuracy
+low as $\minHighAccAuc{}$.
+\ifHasTox
+On Tox21, accuracy runs $\toxAccMin{}$--$\toxAccMax{}$
+against AUC $\toxAucMin{}$--$\toxAucMax{}$.
+\fi
+We report AUC alongside accuracy
 throughout for this reason, and the lowest-AUC cell in the run
 (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$ at accuracy
 $\worstAucAcc{}$) is exactly the case where accuracy alone would mislead.
@@ -877,12 +902,14 @@ across both, which is the strongest available evidence, but neither arm is
 simultaneously molecular and exactly labelled. No public dataset is, which is
 the gap this paper is about.
 
+\ifHasDegenerateCells
 \paragraph{Degenerate ground-truth cells} $\nDegenerateGtCells{}$ cells return
 an identical GT AUROC on every audited molecule, including \degenCell{}
 ($\degenVal{}$, $n=\degenN{}$). Zero between-molecule variance means the
 bootstrap interval is uninformative and any ``best attributor'' verdict resting
 on such a cell is fragile; we flag them rather than drop them, and the shift
 arms that carry the argument do not involve them.
+\fi
 
 \paragraph{A dataset that trains but was not scored} BA-2Motifs loads and
 trains in this run, but its cells contribute faithfulness only and appear in

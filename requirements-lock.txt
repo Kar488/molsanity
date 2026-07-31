@@ -5,13 +5,25 @@
 #     pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cpu
 #     pip install -r requirements-lock.txt
 #
-# Why pin at all: `pip install torch-geometric captum rdkit` resolves to
-# whatever is current on the day, and the resolved set is NOT
-# interchangeable. On torch 2.13 with numpy 2.4, PyG's Captum adapter raises
-# IndexError inside set_masks and every gradient-attribution cell dies, while
-# the same PyG and Captum versions work on the pinned stack. A reviewer who
-# hits that and concludes the repo is broken would be drawing the wrong
-# conclusion from the right observation.
+# Why pin at all: `pip install torch-geometric captum rdkit dive-into-graphs`
+# resolves to a set that is NOT interchangeable, and one combination silently
+# destroys a whole attributor.
+#
+# ONE PIN HERE DELIBERATELY DIFFERS FROM THE RECORDED RUN. The manifest for the
+# committed sweep says captum 0.2.0, because `pip install dive-into-graphs`
+# honours DIG's `captum==0.2.0` pin and downgrades whatever Captum was already
+# installed. Captum 0.2 imports cleanly and then fails on every molecule: PyG's
+# CaptumExplainer forces `internal_batch_size=1`, and Captum 0.2 slices the
+# additional forward arguments along dimension 0 after expanding them, so
+# `edge_index` arrives at `set_masks` with shape (1, E) instead of (2, E) and
+# raises `IndexError: index 1 is out of bounds for dimension 0 with size 1`.
+# Integrated Gradients is the only method in the sweep that takes
+# `internal_batch_size`, which is why it alone lost all 204 of its cells while
+# Saliency, InputXGradient and GuidedBackprop came through untouched.
+#
+# So: install DIG with `--no-deps` (molsanity imports SubgraphX without
+# executing DIG's package `__init__`, so DIG's dependency list is not needed),
+# and keep captum at the version below.
 #
 # torch itself is deliberately not listed here: the wheel differs by platform
 # and accelerator, so it is installed separately from the PyTorch index. The
@@ -32,12 +44,14 @@ pandas>=2.0
 pikepdf>=8.0
 
 # Optional, and genuinely awkward, so they are NOT pinned here:
-#   SubgraphX  -> torch-scatter, torch-sparse, dive-into-graphs
-#                 No PyPI wheel; use PyG's prebuilt index, which is keyed to
-#                 your exact torch + CUDA build:
-#                   pip install torch-scatter torch-sparse \
-#                     -f https://data.pyg.org/whl/torch-<ver>+<cuda>.html
-#                 Falling back to a source build takes 30-90 minutes.
+#   SubgraphX  -> pip install --no-deps dive-into-graphs cilog \
+#                   typed-argument-parser munch
+#                 --no-deps is required, not an optimisation: DIG's dependency
+#                 list downgrades captum (see above) and pulls rdkit-pypi,
+#                 which collides with rdkit. torch-scatter and torch-sparse are
+#                 NOT needed; they are imported by DIG's package __init__,
+#                 which molsanity bypasses, so the 30-90 minute source build
+#                 that used to be part of this setup is gone.
 #   ShapeGGen  -> graphxai. Its published wheel packages only the top-level
 #                 module and cannot be imported usefully; install from a source
 #                 checkout of https://github.com/mims-harvard/GraphXAI, and note

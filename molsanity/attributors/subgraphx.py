@@ -13,16 +13,88 @@ conversion is lossy in one direction only (a hard mask carries no ranking
 within the subgraph), which the audit's rank statistics tolerate because they
 handle ties, and which is stated where SubgraphX results are reported.
 
-DIG needs the compiled ``torch_sparse``/``torch_scatter`` extensions. Where no
-wheel exists for the pinned torch version the import fails, and the audit skips
-and logs the cell rather than aborting the run.
+Two compatibility problems stand between the published DIG package and a
+working cell, and both are handled in :func:`_import_subgraphx` rather than by
+forking DIG.
+
+The first is that ``dig.xgraph.method.__init__`` imports every explainer in the
+package, including DeepLIFT and GradCAM, which reach into private Captum
+internals (``captum.attr._utils.typing.Literal``, ``_verify_select_column``)
+that were removed after Captum 0.2, and into ``torch_sparse``. DIG pins
+``captum==0.2.0`` for exactly that reason. Honouring that pin is not an option
+here: Captum 0.2's ``internal_batch_size`` path is itself incompatible with the
+PyG ``CaptumExplainer`` this project uses for Integrated Gradients, so
+installing DIG the obvious way silently breaks a different attributor. The
+first real run lost all 204 Integrated Gradients cells to precisely that
+downgrade. ``subgraphx.py`` and the ``shapley.py`` it depends on need neither
+Captum nor ``torch_sparse``, so the package ``__init__`` is bypassed and the
+submodule imported directly, leaving Captum modern.
+
+The second is that DIG's Shapley value function iterates a
+``torch_geometric.loader.DataLoader`` over subgraphs that are already on the
+compute device. Where the installed Torch pins by default, that raises
+``cannot pin 'torch.cuda.FloatTensor'`` on the first rollout and takes every
+SubgraphX cell with it. Pinned memory is a host-to-device staging optimisation
+and is meaningless for tensors already resident on the device, so the loader
+DIG constructs is forced to ``pin_memory=False``.
+
+Where DIG is genuinely absent the import fails, and the audit skips and logs
+the cell rather than aborting the run.
 """
 from __future__ import annotations
+
+import importlib.util
+import sys
+import types
 
 import numpy as np
 import torch
 
 from .base import Attribution
+
+_DIG_METHOD_PKG = "dig.xgraph.method"
+
+
+def _shim_dataloader(shapley_module) -> None:
+    """Stop DIG's Shapley loader from pinning device-resident tensors."""
+    loader_cls = getattr(shapley_module, "DataLoader", None)
+    if loader_cls is None or getattr(loader_cls, "_molsanity_no_pin", False):
+        return
+
+    class _UnpinnedDataLoader(loader_cls):
+        _molsanity_no_pin = True
+
+        def __init__(self, *args, **kwargs):
+            kwargs["pin_memory"] = False
+            super().__init__(*args, **kwargs)
+
+    shapley_module.DataLoader = _UnpinnedDataLoader
+
+
+def _import_subgraphx():
+    """DIG's ``SubgraphX`` without executing the package ``__init__``.
+
+    A synthetic module object carrying the real package's ``__path__`` is
+    installed in ``sys.modules`` first, so Python resolves the submodule
+    against it and never runs the ``__init__`` that would drag in Captum 0.2
+    and ``torch_sparse``. If the real package is already imported, that import
+    is reused untouched.
+    """
+    if _DIG_METHOD_PKG not in sys.modules:
+        spec = importlib.util.find_spec(_DIG_METHOD_PKG)
+        if spec is None:
+            raise ImportError(f"{_DIG_METHOD_PKG} not found")
+        stub = types.ModuleType(_DIG_METHOD_PKG)
+        stub.__path__ = list(spec.submodule_search_locations or [])
+        stub.__package__ = _DIG_METHOD_PKG
+        stub.__spec__ = spec
+        sys.modules[_DIG_METHOD_PKG] = stub
+
+    from dig.xgraph.method import shapley as _shapley
+    from dig.xgraph.method.subgraphx import SubgraphX
+
+    _shim_dataloader(_shapley)
+    return SubgraphX
 
 
 class _TwoArgWrapper(torch.nn.Module):
@@ -80,11 +152,10 @@ class SubgraphXAttributor:
 
     def _build(self, num_classes: int):
         try:
-            from dig.xgraph.method import SubgraphX
+            SubgraphX = _import_subgraphx()
         except Exception as exc:  # noqa: BLE001
             raise SubgraphXUnavailable(
-                f"SubgraphX needs DIG and its compiled torch_sparse/"
-                f"torch_scatter extensions: {exc}"
+                f"SubgraphX needs DIG (dive-into-graphs): {exc}"
             ) from exc
         device = next(self.model.parameters()).device
         return SubgraphX(

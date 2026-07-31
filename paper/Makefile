@@ -12,7 +12,7 @@
 PY ?= python3
 XELATEX ?= xelatex
 
-.PHONY: all figures tables pdf fontcheck clean
+.PHONY: all figures tables pdf fontcheck macrocheck clean
 
 all: pdf
 
@@ -25,7 +25,13 @@ tables:
 pdf: figures tables
 	$(XELATEX) -interaction=nonstopmode main.tex
 	$(XELATEX) -interaction=nonstopmode main.tex
+	$(PY) figs/check_macros.py main.log
 	$(PY) figs/check_fonts.py main.pdf
+
+# Which macros the prose quotes that the current results do not support.
+# Runs against main.log, so build first.
+macrocheck:
+	$(PY) figs/check_macros.py main.log
 
 # arXiv rejects Type 3 and non-embedded fonts; run this before uploading.
 fontcheck:

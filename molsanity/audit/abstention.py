@@ -101,6 +101,21 @@ def operating_point(curve, min_reliability: float = 0.7) -> dict | None:
     return max(ok, key=lambda p: p["coverage"]) if ok else None
 
 
+def risk_operating_point(curve, max_below_chance: float = 0.10) -> dict | None:
+    """The widest coverage at which few enough retained explanations are
+    actively misleading.
+
+    Mean localisation is the wrong quantity to set a threshold on, because a
+    mean above the bar at *full* coverage makes the rule "keep everything",
+    which is not a rule. What a chemist cares about is the share of retained
+    molecules whose attribution points away from the causal substructure, i.e.
+    below chance. This finds the widest coverage holding that share under
+    ``max_below_chance``.
+    """
+    ok = [p for p in curve if p["frac_below_chance"] <= max_below_chance]
+    return max(ok, key=lambda p: p["coverage"]) if ok else None
+
+
 def rank_signals(records, target: str = _TARGET) -> list[dict]:
     """Which abstention signal actually buys reliability, and how much?
 
@@ -130,7 +145,8 @@ def rank_signals(records, target: str = _TARGET) -> list[dict]:
 
 
 def write_abstention_md(records, out_path: str | Path = "ABSTENTION.md",
-                        min_reliability: float = 0.7) -> dict:
+                        min_reliability: float = 0.7,
+                        max_below_chance: float = 0.10) -> dict:
     ranked = rank_signals(records)
     out = Path(out_path)
     L = ["# ABSTENTION.md — when not to trust an attribution", ""]
@@ -164,21 +180,49 @@ def write_abstention_md(records, out_path: str | Path = "ABSTENTION.md",
 
     best = ranked[0]
     if best["lift"] > 0:
-        op = operating_point(best["curve"], min_reliability)
-        L += [f"## Recommended rule", "",
+        curve = best["curve"]
+        full = curve[0]
+        L += ["## Recommended rule", "",
               f"Rank molecules by **{best['signal']}** and abstain on the tail."]
-        if op:
-            L.append(f"Keeping the top **{op['coverage']:.0%}** gives mean GT "
-                     f"AUROC **{op['mean_target']:.3f}** (n={op['n_kept']}), with "
-                     f"{op['frac_below_chance']:.1%} of retained molecules still "
-                     f"below chance. Threshold: {best['signal']} >= "
-                     f"{op['threshold']:.3f}.")
+
+        # Thresholding on the MEAN is the wrong operating criterion: if the
+        # mean already clears the bar at full coverage, the "rule" degenerates
+        # to keeping everything. The actionable quantity is how many retained
+        # explanations are actively misleading, i.e. below chance.
+        risk = risk_operating_point(curve, max_below_chance)
+        if risk is not None and risk["coverage"] < 0.999:
+            L.append(
+                f"Keeping the top **{risk['coverage']:.0%}** holds the share of "
+                f"retained molecules whose attribution is *below chance* to "
+                f"**{risk['frac_below_chance']:.1%}** (from "
+                f"{full['frac_below_chance']:.1%} at full coverage), with mean "
+                f"GT AUROC {risk['mean_target']:.3f} over n={risk['n_kept']}. "
+                f"Threshold: {best['signal']} $\\geq$ {risk['threshold']:.3f}.")
+        elif risk is not None:
+            L.append(
+                f"Fewer than {max_below_chance:.0%} of explanations are below "
+                f"chance even at full coverage "
+                f"({full['frac_below_chance']:.1%}), so abstention is not "
+                f"needed to reach that standard on this data.")
         else:
+            tightest = min(curve, key=lambda p: p["frac_below_chance"])
+            L.append(
+                f"No coverage level gets the below-chance share under "
+                f"{max_below_chance:.0%}. The best achievable is "
+                f"**{tightest['frac_below_chance']:.1%}** at "
+                f"{tightest['coverage']:.0%} coverage. Abstention narrows the "
+                f"problem here but does not solve it, and that is the honest "
+                f"reading.")
+
+        op = operating_point(curve, min_reliability)
+        if op is None:
             L.append(f"No coverage level reaches mean GT AUROC "
-                     f"{min_reliability:.2f}, so on this data there is no "
-                     f"operating point that would make an attribution "
-                     f"trustworthy by that standard. That is a negative result "
-                     f"and is reported as one.")
+                     f"{min_reliability:.2f} either.")
+        elif op["coverage"] > 0.999:
+            L.append(f"Mean GT AUROC already exceeds {min_reliability:.2f} at "
+                     f"full coverage ({full['mean_target']:.3f}), so a rule "
+                     f"stated against the mean would be vacuous. The pooled "
+                     f"mean hides the tail; the below-chance share does not.")
     else:
         L += ["## No usable rule", "",
               "No signal available at inference time buys reliability on this "
@@ -225,5 +269,6 @@ def load_all_records(root: str | Path = "artifacts/audit") -> list[dict]:
     return out
 
 
-__all__ = ["coverage_reliability_curve", "operating_point", "rank_signals",
+__all__ = ["coverage_reliability_curve", "operating_point",
+           "risk_operating_point", "rank_signals",
            "write_abstention_md", "load_all_records", "SIGNALS"]

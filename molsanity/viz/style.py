@@ -156,12 +156,26 @@ def panel_label(ax, letter: str, dx: float = -0.14, dy: float = 1.06):
 
 
 def save_vector(fig, out_path) -> dict:
+    """Write the figure as PDF and SVG, with the font type pinned at save time.
+
+    ``apply_style`` already sets ``pdf.fonttype`` to 42, but a global rcParam
+    can be reset by anything that runs between styling a figure and writing it.
+    That is not hypothetical: in one full run the molecule grids came out with
+    Type 3 fonts while every other figure in the same run was fine, which arXiv
+    rejects and which is invisible until an upload is refused.
+
+    The rc context makes the cause moot. Whatever the state of the global
+    rcParams, these two files are written with embeddable fonts.
+    """
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     pdf, svg = out_path.with_suffix(".pdf"), out_path.with_suffix(".svg")
-    fig.savefig(pdf, bbox_inches="tight")
-    fig.savefig(svg, bbox_inches="tight")
-    import matplotlib.pyplot as plt
-
+    with mpl.rc_context({"pdf.fonttype": 42, "ps.fonttype": 42,
+                         "svg.fonttype": "none"}):
+        fig.savefig(pdf, bbox_inches="tight")
+        fig.savefig(svg, bbox_inches="tight")
     plt.close(fig)
     return {"pdf": str(pdf), "svg": str(svg)}

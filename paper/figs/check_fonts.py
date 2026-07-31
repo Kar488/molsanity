@@ -46,6 +46,31 @@ def audit(pdf_path: Path) -> list[tuple[str, str, str]]:
     return problems
 
 
+def offending_figures(figs_dir: Path) -> list[str]:
+    """Which included figure carries a Type 3 font.
+
+    Naming the font is not enough to act on: every figure in the manuscript
+    uses the same typeface, so ``Inter-Bold [/Type3]`` does not say which file
+    to regenerate. This checks each figure PDF individually.
+    """
+    try:
+        import pikepdf
+    except ImportError:
+        return []
+    bad = []
+    for path in sorted(figs_dir.glob("*.pdf")):
+        try:
+            with pikepdf.open(path) as pdf:
+                if any(isinstance(o, pikepdf.Dictionary)
+                       and o.get("/Type") == "/Font"
+                       and str(o.get("/Subtype")) == "/Type3"
+                       for o in pdf.objects):
+                    bad.append(path.name)
+        except Exception:  # noqa: BLE001 - a bad figure must not mask the report
+            continue
+    return bad
+
+
 def main() -> int:
     pdf_path = Path(sys.argv[1] if len(sys.argv) > 1 else "main.pdf")
     if not pdf_path.exists():
@@ -62,8 +87,20 @@ def main() -> int:
               f"rejected by arXiv:", file=sys.stderr)
         for name, subtype, why in sorted(set(problems)):
             print(f"    {name}  [{subtype}]  {why}", file=sys.stderr)
-        print("    fix: set pdf.fonttype=42 wherever the figure is generated",
-              file=sys.stderr)
+        culprits = offending_figures(pdf_path.parent / "figs")
+        if culprits:
+            print("\n    the offending figure(s):", file=sys.stderr)
+            for f in culprits:
+                print(f"      {f}", file=sys.stderr)
+            print("\n    These are written by the audit run, not by the paper "
+                  "build, so re-running make here will not clear them: they "
+                  "carry whatever font type the run that produced them used. "
+                  "molsanity.viz.style.save_vector now pins pdf.fonttype=42 at "
+                  "save time, so the next sweep regenerates them clean.",
+                  file=sys.stderr)
+        else:
+            print("    fix: set pdf.fonttype=42 wherever the figure is "
+                  "generated", file=sys.stderr)
         return 1
     print(f"check_fonts: {n} font objects, all embedded, no Type 3.")
     return 0

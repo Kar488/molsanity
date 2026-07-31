@@ -8,24 +8,25 @@
 \toprule
 \textbf{dataset} & \textbf{done} & \textbf{failed} & \textbf{skipped} & \textbf{carried} \\
 \midrule
-BA-2Motifs & 2 & 0 & 0 & 0 \\
-BACE & 4 & 0 & 0 & 3 \\
-BBBP & 14 & 0 & 0 & 3 \\
-ClinTox & 4 & 0 & 0 & 2 \\
-DILI & 2 & 0 & 0 & 3 \\
-ESOL & 8 & 0 & 0 & 3 \\
-FreeSolv & 2 & 0 & 0 & 4 \\
-Lipophilicity & 2 & 0 & 0 & 4 \\
-MUTAG & 20 & 0 & 0 & 0 \\
-SIDER & 4 & 0 & 0 & 3 \\
-ShapeGGen & 0 & 0 & 2 & 0 \\
-SynthMotifs & 20 & 0 & 0 & 0 \\
-Tox21 & 2 & 0 & 0 & 3 \\
-hERG & 2 & 0 & 0 & 4 \\
+BA-2Motifs & 30 & 6 & 0 & 0 \\
+BACE & 0 & 12 & 0 & 0 \\
+BBBP & 12 & 30 & 0 & 0 \\
+ClinTox & 6 & 6 & 0 & 0 \\
+DILI & 0 & 6 & 0 & 0 \\
+ESOL & 6 & 18 & 0 & 0 \\
+FreeSolv & 0 & 6 & 0 & 0 \\
+Lipophilicity & 0 & 6 & 0 & 0 \\
+MUTAG & 30 & 36 & 0 & 0 \\
+MolMotif & 30 & 36 & 0 & 0 \\
+SIDER & 0 & 12 & 0 & 0 \\
+ShapeGGen & 0 & 0 & 42 & 0 \\
+SynthMotifs & 30 & 36 & 0 & 0 \\
+Tox21 & 0 & 6 & 0 & 0 \\
+hERG & 0 & 6 & 0 & 0 \\
 \midrule
-\textbf{total} & \textbf{86} & \textbf{0} & \textbf{2} & \textbf{38} \\
+\textbf{total} & \textbf{144} & \textbf{222} & \textbf{42} & \textbf{0} \\
 \bottomrule
 \end{tabular}
 \\[4pt]\raggedright\footnotesize \textbf{Failure reasons.} 
-.
+204~$\times$ ``index 1 is out of bounds for dimension 0 with size 1\dots''; 18~$\times$ ``cannot pin 'torch.cuda.FloatTensor' only dense CPU tensors can be \dots''.
 \end{table}

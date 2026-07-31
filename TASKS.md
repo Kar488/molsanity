@@ -219,13 +219,27 @@ paragraphs in `body.tex`, which are written for the pre-fix state.
 - [ ] Full overnight `configs/full.yaml` run on GPU
 
 ## Blockers / notes
+- **CI: the paper job's font check is red, and correctly so.** The two molecule
+  grids (`fig_molgrid_MUTAG.pdf`, `fig_molgrid_SynthMotifs.pdf`) are copied
+  verbatim from the audit run, and the 31 July run wrote them with Type 3
+  fonts, which arXiv rejects. Every other figure in the same run is Type 0, so
+  the global `pdf.fonttype` was reset somewhere between styling and saving
+  those two. `viz/style.save_vector` now pins the font type at save time inside
+  an `rc_context`, which makes the cause moot — but it cannot retroactively fix
+  a committed PDF. **The next full run clears this.** Verified: with the global
+  rcParam deliberately set to 3, `save_vector` still emits Type 0. Everything
+  else in the paper job passes, including the new undefined-macro gate.
 - **BA-2Motifs**: PyG download source returns HTTP 403 in this environment.
   Loader + ground-truth extractor are implemented; blocked on data fetch only.
-- **SubgraphX (DIG) / ShapeGGen (GraphXAI)**: both need the pre-2.5 PyG
-  `torch_sparse`/`torch_scatter` compiled extensions; no wheel exists for the
-  torch 2.13 here and source builds hang/fail. DIG installs but can't import;
-  GraphXAI's wheel is broken. Kept blocked-tolerant; ShapeGGen's exact-GT role is
-  covered by SynthMotifs.
+- **SubgraphX (DIG)**: no longer blocked, and no longer needs
+  `torch_sparse`/`torch_scatter` at all — those come from DIG's package
+  `__init__`, which the wrapper now bypasses. Install with
+  `pip install --no-deps dive-into-graphs`; `--no-deps` is required because
+  DIG pins `captum==0.2.0`, which breaks Integrated Gradients under PyG's
+  `CaptumExplainer` (this cost the 31 July run all 204 of its IG cells).
+- **ShapeGGen (GraphXAI)**: GraphXAI's PyPI wheel omits its subpackages, so it
+  imports but is unusable; install from a source checkout. Its exact-GT role is
+  covered by SynthMotifs, so this is redundant rather than a gap.
 - **TDC (PyTDC)**: installed and wired (DILI, hERG). Install needs a minimal
   footprint (`pip install --no-deps PyTDC` + `huggingface_hub`/`httpx`) because
   the full dependency set conflicts with the pinned numpy/rdkit here.

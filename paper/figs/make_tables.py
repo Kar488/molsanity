@@ -106,6 +106,18 @@ def macros():
     def add(cmd, val):
         m.append(f"\\newcommand{{\\{cmd}}}{{{val}}}")
 
+    def add_flag(name: str, on: bool):
+        """A LaTeX conditional the prose can branch on.
+
+        Some findings exist in one run and not the next. A macro that is only
+        emitted when the finding exists breaks the build the moment it stops
+        existing, and -- worse -- prose written around it would silently become
+        a false claim if the macro were merely given a default. Emitting a
+        boolean instead lets the manuscript drop the whole passage.
+        """
+        m.append(f"\\newif\\if{name}")
+        m.append(f"\\{name}{'true' if on else 'false'}")
+
     # --- run provenance ----------------------------------------------------
     add("runConfig", tex(MAN["config_name"]))
     add("runStamp", MAN["timestamp"].replace("_", "-"))
@@ -212,6 +224,9 @@ def macros():
                 add(f"{pre}Pick{t}", SHORT.get(x["faithfulness_pick"],
                                                x["faithfulness_pick"]))
                 add(f"{pre}PickGt{t}", num(x["faithfulness_pick_gt_auroc"]))
+                # A selection with too few paired molecules carries no p-value,
+                # so the passage quoting one has to be able to disappear.
+                add_flag(f"Has{pre}P{t}", x["paired_gt_pvalue"] is not None)
                 if x["paired_gt_pvalue"] is not None:
                     pv = x["paired_gt_pvalue"]
                     add(f"{pre}P{t}",
@@ -243,12 +258,21 @@ def macros():
         if len(vals) >= 10 and len(set(round(v, 6) for v in vals)) == 1:
             degen.append(((dsx, bbx, atx, spx), vals[0], len(vals)))
     add("nDegenerateGtCells", len(degen))
+    # Degenerate cells were present in the first single-seed run and absent
+    # afterwards. The macros below must therefore always be defined, and the
+    # prose that quotes them must disappear when there are none, rather than
+    # describing a cell that no longer exists.
+    add_flag("HasDegenerateCells", bool(degen))
     if degen:
         (k, v, nmol) = degen[0]
         add("degenCell", tex(k[0]) + "$\\cdot$" + k[1] + "$\\cdot$"
             + SHORT.get(k[2], k[2]) + ", " + k[3])
         add("degenVal", num(v))
         add("degenN", nmol)
+    else:
+        add("degenCell", "---")
+        add("degenVal", "---")
+        add("degenN", "0")
 
     # attributor GT ordering: does it survive the change of split?
     def gt_by_attr(sp):
@@ -283,12 +307,14 @@ def macros():
     # --- backbone sweeps at IG, both splits, on the exact-GT dataset -------
     bb_ds = "SynthMotifs"
     add("bbDataset", bb_ds)
+    bb_sweep_ok = True
     for sp, pre in (("scaffold", "bbShift"), ("random", "bbInd")):
         rows = [r for r in CLS if r["dataset"] == bb_ds and r["split"] == sp
                 and r["attributor"] == "IntegratedGradients"
                 and r["gt_auroc"] is not None]
         for r in rows:
             add(f"{pre}{r['backbone']}", num(r["gt_auroc"]))
+        bb_sweep_ok = bb_sweep_ok and bool(rows)
         if rows:
             best = max(rows, key=lambda r: r["gt_auroc"])
             worst = min(rows, key=lambda r: r["gt_auroc"])
@@ -298,6 +324,11 @@ def macros():
             add(f"{pre}WorstVal", num(worst["gt_auroc"]))
             add(f"{pre}Spread", num(best["gt_auroc"] - worst["gt_auroc"]))
             add(f"{pre}N", len(rows))
+    # The backbone sweep is read at Integrated Gradients on both splits, so it
+    # empties completely whenever IG fails -- which is exactly what a Captum
+    # downgrade does. The passage quoting it must drop out rather than quote
+    # macros that were never written.
+    add_flag("HasBackboneSweep", bb_sweep_ok)
     Ab = {r["backbone"]: r["gt_auroc"] for r in CLS
           if r["dataset"] == bb_ds and r["split"] == "random"
           and r["attributor"] == "IntegratedGradients" and r["gt_auroc"] is not None}
@@ -407,6 +438,7 @@ def macros():
     add("nHighAccRows", len(hi))
     add("minHighAccAuc", num(min(r["auc"] for r in hi)))
     tox = [r for r in CLS if r["dataset"] == "Tox21" and r["auc"] is not None]
+    add_flag("HasTox", bool(tox))
     if tox:
         add("nToxRows", len(tox))
         add("toxAccMin", num(min(r["acc"] for r in tox)))

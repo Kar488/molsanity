@@ -44,6 +44,7 @@ the cell rather than aborting the run.
 from __future__ import annotations
 
 import importlib.util
+import random
 import sys
 import types
 
@@ -180,7 +181,26 @@ class SubgraphXAttributor:
         if self._explainer is None:
             self._explainer = self._build(n_classes)
 
-        torch.manual_seed(self.seed + int(getattr(data, "graph_id", 0) or 0))
+        # Seed every generator DIG's search actually draws from, keyed by the
+        # molecule rather than by the call.
+        #
+        # torch.manual_seed alone was not enough, and the gap was not cosmetic.
+        # dig/xgraph/method/shapley.py estimates the Shapley value with
+        # ``np.random.permutation``, i.e. the *global* NumPy generator, which
+        # torch does not touch. That made a molecule's attribution depend on how
+        # many molecules had been attributed before it: a run resumed partway
+        # through, or one that skipped a cached cell, would draw a different
+        # permutation and could return a different subgraph for the same input.
+        # Reproducibility is this project's central claim, so that is a defect
+        # in the serial path and not merely an obstacle to parallelising it.
+        #
+        # Seeding by (seed, graph_id) makes the result a function of the
+        # molecule alone: order-independent, resume-safe, and identical whether
+        # the cell runs in one process or several.
+        molecule_seed = self.seed + int(getattr(data, "graph_id", 0) or 0)
+        torch.manual_seed(molecule_seed)
+        np.random.seed(molecule_seed % (2 ** 32))
+        random.seed(molecule_seed)
         _, explanation, _related = self._explainer(
             data.x, data.edge_index, max_nodes=self.max_nodes
         )

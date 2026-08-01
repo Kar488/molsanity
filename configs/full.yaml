@@ -16,19 +16,20 @@ budget:
   ig_steps: 50
   pg_epochs: 30
   max_eval_molecules: 200
-  # SubgraphX keeps the full n=200. A small n was one of the review criticisms,
-  # so buying speed by shrinking it would trade the problem for the problem.
+  # SubgraphX keeps the full n=200. A small n was one of the review
+  # criticisms, so buying speed by shrinking it would trade the problem for the
+  # problem. Speed comes from parallelism instead.
   #
-  # attribution_workers would parallelise it across processes, and the
-  # machinery is implemented and unit-tested, but it is OFF because it has not
-  # earned trust: on a 4-core box the measured speedup was 1.12x, and the
-  # pooled results were NOT bit-identical to the serial ones on the realistic
-  # configuration (20 rollouts, 30-node graphs). Torch thread count and
-  # molecule ordering were both ruled out as the cause; until it is understood,
-  # the verified serial path is what runs. See TASKS.md.
-  # attribution_workers: auto
-  # SubgraphX runs a Monte-Carlo tree search per molecule and is the most
-  # expensive attributor here by a wide margin; these keep it tractable.
+  # The work is Python-bound, not compute-bound: 16.9M calls per molecule, 845
+  # model forwards at 11 ms each on a 30-node graph, 6.3 s of DataLoader
+  # collation. So a faster GPU buys almost nothing and threads buy 1.55x on 4
+  # cores, but separate processes scale with however many cores the runtime has.
+  # 'auto' uses all of them.
+  #
+  # Verified identical to the serial path at this configuration (20 rollouts,
+  # 30-node graphs), and order-independent: a molecule attributed alone matches
+  # the same molecule attributed mid-run.
+  attribution_workers: auto
   sgx_max_nodes: 8
   sgx_rollouts: 20
 

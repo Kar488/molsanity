@@ -83,3 +83,52 @@ def test_selection_follows_digs_own_rule():
         {"coalition": [6, 7], "P": 0.4},
     ]
     assert _selected_nodes([results], 0, max_nodes=5) == [3, 4, 5]
+
+
+def test_every_generator_dig_draws_from_is_seeded_per_molecule():
+    """The reproducibility defect that hid behind torch.manual_seed.
+
+    ``dig/xgraph/method/shapley.py`` estimates the Shapley value with
+    ``np.random.permutation`` -- the *global* NumPy generator, which
+    ``torch.manual_seed`` does not reset. A molecule's attribution therefore
+    depended on how many molecules had been attributed before it, so a resumed
+    run, or one that skipped a cached cell, could return a different subgraph
+    for the same input. That is a defect in the serial path, not merely an
+    obstacle to parallelising it.
+    """
+    import numpy as np
+    import random as _random
+
+    g, attr = _fixture()
+    g.graph_id = 7
+
+    # Disturb every global generator between the two calls. A correctly seeded
+    # attributor is indifferent to all of it.
+    first = attr.attribute(g).node_attr.copy()
+    np.random.seed(12345)
+    np.random.permutation(50)
+    _random.seed(999)
+    _random.random()
+    torch.manual_seed(4242)
+    torch.rand(10)
+    second = attr.attribute(g).node_attr.copy()
+
+    np.testing.assert_array_equal(first, second)
+
+
+def test_the_seed_follows_the_molecule_not_the_call_order():
+    """Two different molecules must not collide, and the same molecule must
+    give the same answer wherever it appears in the sequence."""
+    import numpy as np
+
+    from molsanity.data.synthetic import generate_synth_motifs
+
+    g, attr = _fixture()
+    others = generate_synth_motifs(num_graphs=4, num_nodes=12, seed=0)
+    a = others[0]; a.graph_id = 0
+    b = others[1]; b.graph_id = 1
+
+    alone = attr.attribute(a).node_attr.copy()
+    attr.attribute(b)                      # a different molecule in between
+    after = attr.attribute(a).node_attr.copy()
+    np.testing.assert_array_equal(alone, after)

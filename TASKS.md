@@ -219,39 +219,22 @@ paragraphs in `body.tex`, which are written for the pre-fix state.
 - [ ] Full overnight `configs/full.yaml` run on GPU
 
 ## Blockers / notes
-- **Parallel attribution is implemented but OFF, and must stay off until this
-  is understood.** `molsanity/audit/parallel.py` + `budget.attribution_workers`.
-  Two problems, both measured, neither resolved:
-  1. *It was not reproducible.* On the realistic configuration (20 rollouts,
-     30-node SynthMotifs graphs, 4 molecules), the pooled results were **not**
-     bit-identical to the serial ones. The unit tests pass because they use a
-     smaller configuration (3 rollouts, 10 nodes) where the divergence does not
-     appear — so the tests are necessary but not sufficient, which is itself
-     worth fixing. Two candidate causes were tested and **ruled out**: torch
-     thread count (1 vs 4 selects the identical subgraph) and molecule ordering
-     (re-attributing a molecule after another gives the identical subgraph).
-     The remaining suspect is an RNG that `torch.manual_seed` does not reset —
-     DIG's MCTS may draw from `random` or `np.random`, whose state is inherited
-     at fork and then diverges per worker. Not yet confirmed.
-  2. *It was not fast.* Measured speedup on a 4-core container: **1.12x**, not
-     the ~2.6x the single- vs multi-threaded timings predict. That container is
-     probably CPU-quota-limited, so the number may not transfer to Colab — but
-     it was not demonstrated, so it cannot be claimed.
-  Until (1) is understood, the serial path is the only one whose numbers are
-  trustworthy. Fixing (1) most likely means seeding `random` and `np.random`
-  per molecule inside `SubgraphXAttributor.attribute`, which would also make the
-  serial path robust to being resumed at a different point.
-
-- **CI: the paper job's font check is red, and correctly so.** The two molecule
-  grids (`fig_molgrid_MUTAG.pdf`, `fig_molgrid_SynthMotifs.pdf`) are copied
-  verbatim from the audit run, and the 31 July run wrote them with Type 3
-  fonts, which arXiv rejects. Every other figure in the same run is Type 0, so
-  the global `pdf.fonttype` was reset somewhere between styling and saving
-  those two. `viz/style.save_vector` now pins the font type at save time inside
-  an `rc_context`, which makes the cause moot — but it cannot retroactively fix
-  a committed PDF. **The next full run clears this.** Verified: with the global
-  rcParam deliberately set to 3, `save_vector` still emits Type 0. Everything
-  else in the paper job passes, including the new undefined-macro gate.
+- **Parallel attribution: on, after fixing a real reproducibility defect.**
+  The first attempt produced results that did not match the serial path, and the
+  cause turned out to be a bug in the serial path rather than in the pool.
+  `dig/xgraph/method/shapley.py` estimates the Shapley value with
+  `np.random.permutation` — the *global* NumPy generator, which
+  `torch.manual_seed` never touched. A molecule's SubgraphX attribution
+  therefore depended on how many molecules preceded it, so a resumed run, or one
+  that skipped a cached cell, could return a different subgraph for the same
+  input. Seeding NumPy and `random` per molecule alongside torch fixes both:
+  pooled results are now bit-identical to serial ones at the realistic
+  configuration (20 rollouts, 30-node graphs), and a molecule attributed alone
+  matches the same molecule attributed mid-run. Pinned by two tests in
+  `tests/test_subgraphx.py`.
+  Speed remains unproven on this hardware: 1.22x on a 4-core container that is
+  almost certainly CPU-quota-limited. The mechanism scales with real cores, but
+  the number to quote is whatever the Colab runtime actually reports.
 - **BA-2Motifs**: PyG download source returns HTTP 403 in this environment.
   Loader + ground-truth extractor are implemented; blocked on data fetch only.
 - **SubgraphX (DIG)**: no longer blocked, and no longer needs

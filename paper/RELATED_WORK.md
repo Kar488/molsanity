@@ -20,6 +20,7 @@ Legend: ✓ = core capability · ~ = partial / possible but not central · ✗ =
 | **Scaffold-shift regime stratification** | ✗ | ~ | ✗ | ✗ | ✓ (the core differentiator) |
 | Multiple GNN backbones (agnostic) | ~ | ✓ | ✓ | ~ | ✓ (GINE/GCN/GAT/MPNN/AttentiveFP) |
 | Paired statistics (Wilcoxon, bootstrap CI) | ~ | ~ | ~ | ~ | ✓ |
+| Across-seed variance reported per cell | ✗ | ✗ | ✗ | ✗ | ✓ (3 seeds, `SEED_VARIANCE.md`) |
 | Wraps canonical implementations (no re-impl) | ✓ | ✓ | ✓ | ✓ | ✓ (Captum/PyG/RDKit) |
 
 ## The explicit delta

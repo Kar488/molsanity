@@ -1,0 +1,124 @@
+"""Attribute molecules in parallel, without changing a single number.
+
+SubgraphX runs a Monte-Carlo tree search per molecule and is three orders of
+magnitude slower than the gradient family. Profiling one molecule shows why, and
+rules out the obvious fixes: 16.9 million Python calls, 9.7 s across 845 model
+forwards at 11 ms each on a 30-node graph, and 6.3 s of pure DataLoader
+collation. It is framework-overhead bound, not compute bound, so a GPU buys
+almost nothing (the arithmetic is already trivial), and a cluster framework buys
+less than nothing (it adds serialisation to a problem that is already
+serialisation).
+
+Threads do not help much either, for the same reason: 51.6 s per molecule on one
+thread against 33 s on four, a 1.55x return on 4x the cores. The Python
+interpreter is the bottleneck and a single process cannot escape it.
+
+Separate processes can. Each molecule's attribution is completely independent --
+no shared state, no ordering -- so this is embarrassingly parallel, and four
+single-threaded workers beat one four-threaded process by about 2.6x.
+
+**Reproducibility is the whole constraint here.** A parallel path that produced
+different numbers would be worthless whatever its speed. Two properties make
+this safe, and both are tested rather than assumed:
+
+* Every attributor seeds per molecule (``seed + graph_id``), not per call, so a
+  molecule's result does not depend on how many molecules preceded it or on
+  which worker took it.
+* Results are reassembled in the caller's index order, so the record list is
+  identical to the serial one even though workers finish out of order.
+
+``fork`` is used deliberately: the model and the attributor are inherited
+copy-on-write rather than pickled, which matters because DIG's explainer object
+does not pickle. CUDA and ``fork`` are incompatible, so the caller must hand
+over a CPU model -- no loss, since the GPU was not helping.
+"""
+from __future__ import annotations
+
+import os
+
+from ..utils import get_logger
+
+log = get_logger()
+
+# Set in the parent before the pool is created; inherited by fork.
+_CTX: dict = {}
+
+
+def _init_worker() -> None:
+    """One thread per worker.
+
+    With N workers each spawning N torch threads the machine thrashes and the
+    parallel version can be slower than the serial one. Single-threaded workers
+    cost 51.6 s per molecule against 33 s multi-threaded, but N of them run at
+    once, which is the trade that pays.
+    """
+    import torch
+
+    torch.set_num_threads(1)
+
+
+def _attribute_one(index: int):
+    """Attribute one molecule inside a worker. Returns (index, Attribution)."""
+    attributor = _CTX["attributor"]
+    dataset = _CTX["dataset"]
+    graph = dataset[index]
+    graph.graph_id = index
+    return index, attributor.attribute(graph)
+
+
+def resolve_workers(requested, n_items: int) -> int:
+    """How many workers to actually use.
+
+    Never more than there is work for, never more than the machine has, and
+    never so few that the pool costs more than it saves.
+    """
+    if not requested:
+        return 1
+    if requested in ("auto", -1):
+        requested = os.cpu_count() or 1
+    workers = max(1, min(int(requested), n_items, os.cpu_count() or 1))
+    return workers if workers > 1 and n_items > 1 else 1
+
+
+def parallel_attributions(attributor, dataset, indices, workers: int):
+    """Attributions for ``indices``, in ``indices`` order, computed in parallel.
+
+    Falls back to the serial path for a single worker, so the caller has one
+    code path and the serial behaviour is untouched when parallelism is off.
+    """
+    indices = list(indices)
+    workers = resolve_workers(workers, len(indices))
+
+    if workers == 1:
+        out = []
+        for i in indices:
+            graph = dataset[i]
+            graph.graph_id = i
+            out.append(attributor.attribute(graph))
+        return out
+
+    import multiprocessing as mp
+
+    _CTX.clear()
+    _CTX.update({"attributor": attributor, "dataset": dataset})
+    try:
+        ctx = mp.get_context("fork")
+        with ctx.Pool(workers, initializer=_init_worker) as pool:
+            done = {}
+            for index, attribution in pool.imap_unordered(
+                    _attribute_one, indices, chunksize=1):
+                done[index] = attribution
+    finally:
+        _CTX.clear()
+
+    missing = [i for i in indices if i not in done]
+    if missing:
+        raise RuntimeError(
+            f"{len(missing)} molecule(s) returned nothing from the worker pool "
+            f"(first: {missing[0]}). Refusing to report a cell with holes in it.")
+    # Reassembled in the caller's order: workers finish out of order, the
+    # record list must not.
+    return [done[i] for i in indices]
+
+
+__all__ = ["parallel_attributions", "resolve_workers"]

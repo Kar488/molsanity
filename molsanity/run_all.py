@@ -76,6 +76,13 @@ def _rationale_md(fp: dict) -> str:
     ])
 
 
+# Attributors whose per-molecule cost justifies a worker pool. The gradient
+# family runs in milliseconds, where process startup would dominate; SubgraphX
+# is tens of seconds per molecule, where it is the difference between a four
+# hour cell and a twenty hour one.
+PARALLEL_ATTRIBUTORS = frozenset({"SubgraphX"})
+
+
 def effective_budget(budget: dict | None, attributor: str) -> dict:
     """The budget as it applies to one attributor, with overrides resolved.
 
@@ -199,6 +206,33 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
              f" (capped from {len(split.test)})" if cap and len(split.test) > cap
              else "")
 
+    # Attribution is the expensive half for the search-based attributors and is
+    # embarrassingly parallel, so it can be lifted out of the audit loop and run
+    # across processes. Only worth it where a molecule costs seconds: below the
+    # threshold the pool costs more than it saves, and the serial path is used.
+    from .audit.parallel import parallel_attributions, resolve_workers
+
+    n_workers = resolve_workers(
+        budget.get("attribution_workers") if attributor_name in PARALLEL_ATTRIBUTORS
+        else None,
+        len(eval_idx))
+    precomputed = None
+    if n_workers > 1:
+        # CUDA cannot survive fork, and the GPU was not helping these
+        # attributors anyway: the cost is Python dispatch, not arithmetic.
+        model.to("cpu")
+        if hasattr(attributor, "model"):
+            attributor.model = model
+        attributor._explainer = getattr(attributor, "_explainer", None)
+        log.info("[cell %s] attributing on %d worker processes (CPU)",
+                 cell_id, n_workers)
+        t_par = time.time()
+        precomputed = parallel_attributions(attributor, dataset, eval_idx,
+                                            n_workers)
+        log.info("[cell %s] attribution done in %.1f min (%.1fs per molecule)",
+                 cell_id, (time.time() - t_par) / 60,
+                 (time.time() - t_par) / max(1, len(eval_idx)))
+
     records = []
     first_attribution = None
     # A cell that prints nothing for twenty minutes is indistinguishable from a
@@ -211,7 +245,8 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     for n_done, i in enumerate(eval_idx, 1):
         g = dataset[i]
         g.graph_id = i
-        attribution = attributor.attribute(g)
+        attribution = (precomputed[n_done - 1] if precomputed is not None
+                       else attributor.attribute(g))
         now = time.time()
         if now - t_beat >= HEARTBEAT_S:
             rate = (now - t_cell) / n_done

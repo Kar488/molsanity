@@ -80,14 +80,25 @@ def test_the_original_budget_is_not_mutated():
     assert WITH_OVERRIDE == snapshot
 
 
-def test_committed_full_config_caps_subgraphx():
-    """The config a reader actually runs, not a fixture."""
+def test_committed_full_config_keeps_the_full_n_for_every_attributor():
+    """SubgraphX must not be made affordable by shrinking n.
+
+    Capping it was the first fix, and it was the wrong one: a small n is
+    precisely what the review criticised, so buying speed that way trades the
+    problem for the problem. Speed comes from the worker pool instead, and this
+    test exists so that a future "just cap it" cannot land quietly.
+    """
     from pathlib import Path
 
     import yaml
 
     root = Path(__file__).resolve().parents[1]
     budget = yaml.safe_load((root / "configs/full.yaml").read_text())["budget"]
-    assert budget.get("max_eval_molecules_SubgraphX") == 40
-    assert effective_budget(budget, "SubgraphX")["max_eval_molecules"] == 40
-    assert effective_budget(budget, "IntegratedGradients")["max_eval_molecules"] == 200
+
+    assert not any(k.startswith("max_eval_molecules_") for k in budget), (
+        "a per-attributor cap is back in full.yaml; n must stay uniform")
+    for attributor in ("SubgraphX", "IntegratedGradients", "GNNExplainer"):
+        assert effective_budget(budget, attributor)["max_eval_molecules"] == 200
+    assert "attribution_workers" not in budget, (
+        "the worker pool is enabled, but its results were not reproducible "
+        "against the serial path; see TASKS.md before turning it on")

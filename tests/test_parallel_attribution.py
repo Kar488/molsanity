@@ -187,3 +187,83 @@ def test_subgraphx_gives_the_same_subgraph_in_parallel():
     for s, p in zip(serial, par):
         np.testing.assert_array_equal(s.node_attr, p.node_attr)
         assert s.meta["n_selected"] == p.meta["n_selected"]
+
+
+# --------------------------------------------------- the full audit loop ---
+def test_parallel_audit_matches_serial_on_every_field_of_every_record():
+    """The loop that actually costs the time, compared field by field.
+
+    Parallelising attribution alone optimised the wrong half: measured on a live
+    run, an Integrated Gradients cell spends 0.6-0.7 s per molecule of which
+    attribution is milliseconds. The rest is occlusion faithfulness (a forward
+    pass per motif) and cross-checkpoint stability (a second attribution). A
+    record carries 27 fields and all of them have to survive the move into a
+    worker, so this compares all of them rather than spot-checking one.
+    """
+    import math
+    from dataclasses import asdict
+
+    from molsanity.attributors import build_attributor
+    from molsanity.audit import audit_molecule
+    from molsanity.audit.motifs import decompose
+    from molsanity.audit.occlusion import dataset_feature_mean
+    from molsanity.audit.parallel import parallel_audit
+    from molsanity.data.synthetic import generate_synth_motifs
+    from molsanity.models import build_backbone
+
+    n = 8
+    graphs = list(generate_synth_motifs(num_graphs=n + 4, num_nodes=12, seed=0))
+    model = build_backbone("GINE", graphs[0],
+                           {"hidden_channels": 16, "num_layers": 2,
+                            "task": "graph-classification", "out_channels": 2})
+    model.eval()
+    baseline = dataset_feature_mean(graphs, list(range(n, n + 4)))
+    idx = list(range(n))
+
+    def attributor():
+        a = build_attributor("IntegratedGradients", model,
+                             task="graph-classification", ig_steps=8)
+        a.edge_dim = graphs[0].edge_attr.size(1)
+        return a
+
+    serial = []
+    attr = attributor()
+    for i in idx:
+        g = graphs[i]
+        g.graph_id = i
+        a = attr.attribute(g)
+        serial.append(audit_molecule(model, g, a, "SynthMotifs", temperature=1.0,
+                                     decomp=decompose(g),
+                                     task="graph-classification",
+                                     occ_baseline=baseline))
+
+    par, first = parallel_audit(
+        attributor=attributor(), dataset=graphs, indices=idx, workers=2,
+        model=model, dataset_name="SynthMotifs", temperature=1.0,
+        task="graph-classification", occ_baseline=baseline, early_attr=None)
+
+    assert len(par) == len(serial)
+    assert first is not None, "the case-study figure needs the first attribution"
+
+    def same(a, b):
+        if isinstance(a, float) and isinstance(b, float):
+            return (math.isnan(a) and math.isnan(b)) or a == b
+        return a == b
+
+    mismatches = []
+    for k, (s, p) in enumerate(zip(serial, par)):
+        ds, dp = asdict(s), asdict(p)
+        assert ds.keys() == dp.keys()
+        mismatches += [(k, f) for f in ds if not same(ds[f], dp[f])]
+    assert not mismatches, f"parallel audit differs from serial: {mismatches[:5]}"
+
+
+def test_parallel_audit_refuses_a_single_worker():
+    """The caller keeps its own serial loop, so a silent one-worker 'pool'
+    would be a second code path pretending to be the first."""
+    from molsanity.audit.parallel import parallel_audit
+
+    with pytest.raises(ValueError):
+        parallel_audit(attributor=None, dataset=[], indices=[1], workers=1,
+                       model=None, dataset_name="x", temperature=1.0,
+                       task="graph-classification", occ_baseline=None)

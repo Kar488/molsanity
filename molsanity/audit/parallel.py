@@ -121,4 +121,77 @@ def parallel_attributions(attributor, dataset, indices, workers: int):
     return [done[i] for i in indices]
 
 
-__all__ = ["parallel_attributions", "resolve_workers"]
+def _audit_one(index: int):
+    """Attribute *and* audit one molecule inside a worker.
+
+    Parallelising attribution alone was optimising the wrong half. Measured on
+    the live run, an Integrated Gradients cell spends 0.6-0.7 s per molecule of
+    which attribution is milliseconds: the cost is the audit around it --
+    occlusion faithfulness runs a forward pass per motif, and cross-checkpoint
+    stability attributes the molecule a second time against the early
+    checkpoint. Both are per-molecule and independent, so both belong here.
+    """
+    from ..audit import audit_molecule, cross_checkpoint_stability
+    from ..audit.motifs import decompose
+
+    ctx = _CTX
+    graph = ctx["dataset"][index]
+    graph.graph_id = index
+    attribution = ctx["attributor"].attribute(graph)
+
+    # The decomposition depends only on the molecule, so it is computed once
+    # and shared between the coherence/occlusion audit and the stability check.
+    decomp = decompose(graph)
+    record = audit_molecule(ctx["model"], graph, attribution, ctx["dataset_name"],
+                            temperature=ctx["temperature"], decomp=decomp,
+                            task=ctx["task"], occ_baseline=ctx["occ_baseline"])
+    early = ctx.get("early_attr")
+    if early is not None:
+        try:
+            record.stability = cross_checkpoint_stability(
+                early, graph, decomp, attribution.node_attr)
+        except Exception:  # noqa: BLE001 - one molecule must not fail a cell
+            pass
+    return index, record, attribution
+
+
+def parallel_audit(*, attributor, dataset, indices, workers: int, model,
+                   dataset_name: str, temperature, task: str, occ_baseline,
+                   early_attr=None):
+    """Per-molecule records for ``indices``, in ``indices`` order.
+
+    Returns ``(records, first_attribution)`` so the caller can still draw its
+    case-study figure from the first molecule's attribution.
+    """
+    indices = list(indices)
+    workers = resolve_workers(workers, len(indices))
+    if workers == 1:
+        raise ValueError("caller should use its own serial loop for one worker")
+
+    import multiprocessing as mp
+
+    _CTX.clear()
+    _CTX.update({"attributor": attributor, "dataset": dataset, "model": model,
+                 "dataset_name": dataset_name, "temperature": temperature,
+                 "task": task, "occ_baseline": occ_baseline,
+                 "early_attr": early_attr})
+    try:
+        ctx = mp.get_context("fork")
+        with ctx.Pool(workers, initializer=_init_worker) as pool:
+            done = {}
+            for index, record, attribution in pool.imap_unordered(
+                    _audit_one, indices, chunksize=1):
+                done[index] = (record, attribution)
+    finally:
+        _CTX.clear()
+
+    missing = [i for i in indices if i not in done]
+    if missing:
+        raise RuntimeError(
+            f"{len(missing)} molecule(s) returned nothing from the worker pool "
+            f"(first: {missing[0]}). Refusing to report a cell with holes in it.")
+    records = [done[i][0] for i in indices]
+    return records, done[indices[0]][1]
+
+
+__all__ = ["parallel_attributions", "parallel_audit", "resolve_workers"]

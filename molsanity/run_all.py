@@ -76,13 +76,6 @@ def _rationale_md(fp: dict) -> str:
     ])
 
 
-# Attributors whose per-molecule cost justifies a worker pool. The gradient
-# family runs in milliseconds, where process startup would dominate; SubgraphX
-# is tens of seconds per molecule, where it is the difference between a four
-# hour cell and a twenty hour one.
-PARALLEL_ATTRIBUTORS = frozenset({"SubgraphX"})
-
-
 def effective_budget(budget: dict | None, attributor: str) -> dict:
     """The budget as it applies to one attributor, with overrides resolved.
 
@@ -219,70 +212,74 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
              f" (capped from {len(split.test)})" if cap and len(split.test) > cap
              else "")
 
-    # Attribution is the expensive half for the search-based attributors and is
-    # embarrassingly parallel, so it can be lifted out of the audit loop and run
-    # across processes. Only worth it where a molecule costs seconds: below the
-    # threshold the pool costs more than it saves, and the serial path is used.
-    from .audit.parallel import parallel_attributions, resolve_workers
+    # The whole per-molecule body is independent, not just attribution, so the
+    # whole body is what gets parallelised. Measured on a live run, an
+    # Integrated Gradients cell spends 0.6-0.7 s per molecule of which the
+    # attribution is milliseconds: the cost is occlusion faithfulness (a
+    # forward pass per motif) and cross-checkpoint stability (a second
+    # attribution against the early checkpoint). Parallelising attribution
+    # alone would have optimised the wrong half.
+    from .audit.parallel import parallel_audit, resolve_workers
 
-    n_workers = resolve_workers(
-        budget.get("attribution_workers") if attributor_name in PARALLEL_ATTRIBUTORS
-        else None,
-        len(eval_idx))
-    precomputed = None
-    if n_workers > 1:
-        # CUDA cannot survive fork, and the GPU was not helping these
-        # attributors anyway: the cost is Python dispatch, not arithmetic.
-        model.to("cpu")
-        if hasattr(attributor, "model"):
-            attributor.model = model
-        attributor._explainer = getattr(attributor, "_explainer", None)
-        log.info("[cell %s] attributing on %d worker processes (CPU)",
-                 cell_id, n_workers)
-        t_par = time.time()
-        precomputed = parallel_attributions(attributor, dataset, eval_idx,
-                                            n_workers)
-        log.info("[cell %s] attribution done in %.1f min (%.1fs per molecule)",
-                 cell_id, (time.time() - t_par) / 60,
-                 (time.time() - t_par) / max(1, len(eval_idx)))
-
+    n_workers = resolve_workers(budget.get("attribution_workers"), len(eval_idx))
     records = []
     first_attribution = None
-    # A cell that prints nothing for twenty minutes is indistinguishable from a
-    # crash, and SubgraphX takes seconds per molecule. The heartbeat is by
-    # elapsed time rather than every N molecules so that fast attributors stay
-    # quiet and slow ones report often enough to be trusted.
-    HEARTBEAT_S = 60.0
-    t_cell = time.time()
-    t_beat = t_cell
-    for n_done, i in enumerate(eval_idx, 1):
-        g = dataset[i]
-        g.graph_id = i
-        attribution = (precomputed[n_done - 1] if precomputed is not None
-                       else attributor.attribute(g))
-        now = time.time()
-        if now - t_beat >= HEARTBEAT_S:
-            rate = (now - t_cell) / n_done
-            left = rate * (len(eval_idx) - n_done)
-            log.info("[cell %s] %d/%d molecules (%.1fs each, ~%.0f min left)",
-                     cell_id, n_done, len(eval_idx), rate, left / 60)
-            t_beat = now
-        if first_attribution is None:
-            first_attribution = attribution
-        # Motif decomposition depends only on the molecule; compute once and
-        # share it between the coherence/occlusion audit and the stability check.
-        decomp = decompose(g)
-        rec = audit_molecule(model, g, attribution, dataset_name,
-                             temperature=temperature, decomp=decomp, task=task,
-                             occ_baseline=occ_baseline)
-        if early_attr is not None:
-            try:
-                rec.stability = cross_checkpoint_stability(
-                    early_attr, g, decomp, attribution.node_attr
-                )
-            except Exception:
-                pass
-        records.append(rec)
+
+    if n_workers > 1:
+        # CUDA cannot survive fork, and the GPU was not helping: the cost is
+        # Python dispatch, not arithmetic.
+        model.to("cpu")
+        for obj in (attributor, early_attr):
+            if obj is not None and hasattr(obj, "model"):
+                obj.model = obj.model.to("cpu")
+        occ_cpu = occ_baseline.to("cpu") if occ_baseline is not None else None
+        log.info("[cell %s] auditing on %d worker processes (CPU)",
+                 cell_id, n_workers)
+        t_par = time.time()
+        records, first_attribution = parallel_audit(
+            attributor=attributor, dataset=dataset, indices=eval_idx,
+            workers=n_workers, model=model, dataset_name=dataset_name,
+            temperature=temperature, task=task, occ_baseline=occ_cpu,
+            early_attr=early_attr)
+        dt = time.time() - t_par
+        log.info("[cell %s] %d molecules in %.1f min (%.2fs each, %d workers)",
+                 cell_id, len(eval_idx), dt / 60,
+                 dt / max(1, len(eval_idx)), n_workers)
+    else:
+        # A cell that prints nothing for twenty minutes is indistinguishable
+        # from a crash. The heartbeat is by elapsed time rather than every Nth
+        # molecule, so cheap attributors stay quiet and slow ones report often
+        # enough to be trusted.
+        HEARTBEAT_S = 60.0
+        t_cell = time.time()
+        t_beat = t_cell
+        for n_done, i in enumerate(eval_idx, 1):
+            g = dataset[i]
+            g.graph_id = i
+            attribution = attributor.attribute(g)
+            now = time.time()
+            if now - t_beat >= HEARTBEAT_S:
+                rate = (now - t_cell) / n_done
+                left = rate * (len(eval_idx) - n_done)
+                log.info("[cell %s] %d/%d molecules (%.1fs each, ~%.0f min left)",
+                         cell_id, n_done, len(eval_idx), rate, left / 60)
+                t_beat = now
+            if first_attribution is None:
+                first_attribution = attribution
+            # Motif decomposition depends only on the molecule; compute once and
+            # share it between the coherence/occlusion audit and the stability check.
+            decomp = decompose(g)
+            rec = audit_molecule(model, g, attribution, dataset_name,
+                                 temperature=temperature, decomp=decomp, task=task,
+                                 occ_baseline=occ_baseline)
+            if early_attr is not None:
+                try:
+                    rec.stability = cross_checkpoint_stability(
+                        early_attr, g, decomp, attribution.node_attr
+                    )
+                except Exception:
+                    pass
+            records.append(rec)
 
     agg = aggregate_records(records, seed=cfg["seed"])
 

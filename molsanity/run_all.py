@@ -169,10 +169,24 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
 
     records = []
     first_attribution = None
-    for i in eval_idx:
+    # A cell that prints nothing for twenty minutes is indistinguishable from a
+    # crash, and SubgraphX takes seconds per molecule. The heartbeat is by
+    # elapsed time rather than every N molecules so that fast attributors stay
+    # quiet and slow ones report often enough to be trusted.
+    HEARTBEAT_S = 60.0
+    t_cell = time.time()
+    t_beat = t_cell
+    for n_done, i in enumerate(eval_idx, 1):
         g = dataset[i]
         g.graph_id = i
         attribution = attributor.attribute(g)
+        now = time.time()
+        if now - t_beat >= HEARTBEAT_S:
+            rate = (now - t_cell) / n_done
+            left = rate * (len(eval_idx) - n_done)
+            log.info("[cell %s] %d/%d molecules (%.1fs each, ~%.0f min left)",
+                     cell_id, n_done, len(eval_idx), rate, left / 60)
+            t_beat = now
         if first_attribution is None:
             first_attribution = attribution
         # Motif decomposition depends only on the molecule; compute once and

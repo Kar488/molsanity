@@ -108,6 +108,19 @@ def effective_budget(budget: dict | None, attributor: str) -> dict:
     return budget
 
 
+# Settings that change how the work is scheduled, never what is computed. They
+# must not reach the stage hash: parallelism is proven to give bit-identical
+# results, so switching it on should not discard a run's worth of cached cells
+# -- and if it ever did change a result, the fix is the bug, not the hash.
+EXECUTION_ONLY_KEYS = frozenset({"attribution_workers"})
+
+
+def hashable_budget(budget: dict | None) -> dict:
+    """The budget with execution-only settings removed, for the stage hash."""
+    return {k: v for k, v in (budget or {}).items()
+            if k not in EXECUTION_ONLY_KEYS}
+
+
 def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     """Run one audit cell end to end. Returns a dict with agg + train + row."""
     import torch
@@ -400,7 +413,8 @@ def main(argv=None):
                 cell_id = f"{base_id}__seed{seed}" if multi_seed else base_id
                 eff = effective_budget(cfg.get("budget"), cell["attributor"])
                 cfg_seed = {**cfg_seed, "budget": eff}
-                stage_cfg = {"cell": cell, "split": split_kind, "budget": eff,
+                stage_cfg = {"cell": cell, "split": split_kind,
+                             "budget": hashable_budget(eff),
                              "model": cfg["model"], "train": cfg["train"], "seed": seed}
                 try:
                     res = stage(

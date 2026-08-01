@@ -14,7 +14,7 @@ only on the cap that applies to it.
 """
 from __future__ import annotations
 
-from molsanity.run_all import effective_budget
+from molsanity.run_all import effective_budget, hashable_budget
 from molsanity.utils import hash_config
 
 BASE = {"epochs": 150, "ig_steps": 50, "max_eval_molecules": 200,
@@ -101,3 +101,40 @@ def test_committed_full_config_keeps_the_full_n_for_every_attributor():
         assert effective_budget(budget, attributor)["max_eval_molecules"] == 200
     assert budget.get("attribution_workers"), (
         "SubgraphX at n=200 is a ~20 hour job without the worker pool")
+
+
+# ------------------------------------------------- execution-only settings ---
+def test_turning_parallelism_on_does_not_discard_the_cache():
+    """attribution_workers lives in `budget`, and the stage hash is taken over
+    `budget`, so switching the worker pool on would have rehashed every cell and
+    thrown away 150 completed cell-runs. It schedules work; it does not change
+    what is computed, and that is verified separately by the parallel-equals-
+    serial test. It must not reach the hash."""
+    without = dict(BASE)
+    with_pool = {**BASE, "attribution_workers": "auto"}
+    for attributor in ("IntegratedGradients", "GNNExplainer", "SubgraphX",
+                       "Saliency", "PGExplainer"):
+        before = _stage_hash(without, attributor)
+        after = _stage_hash(hashable_budget(effective_budget(with_pool, attributor)),
+                            attributor)
+        assert before == after, (
+            f"{attributor} lost its .done marker merely because parallelism "
+            "was switched on")
+
+
+def test_the_cell_still_receives_the_setting_it_needs():
+    """Stripping it from the hash must not strip it from the run."""
+    with_pool = {**BASE, "attribution_workers": 8}
+    assert effective_budget(with_pool, "SubgraphX")["attribution_workers"] == 8
+    assert "attribution_workers" not in hashable_budget(with_pool)
+
+
+def test_scientific_parameters_still_reach_the_hash():
+    """Guards the guard: only execution settings are exempt."""
+    for key, value in (("epochs", 999), ("ig_steps", 7),
+                       ("max_eval_molecules", 50), ("sgx_max_nodes", 3)):
+        changed = {**BASE, key: value}
+        assert _stage_hash(hashable_budget(BASE), "SubgraphX") \
+            != _stage_hash(hashable_budget(changed), "SubgraphX"), (
+            f"changing {key} did not invalidate the cache, so a re-run would "
+            "silently reuse results computed under different settings")

@@ -76,6 +76,31 @@ def _rationale_md(fp: dict) -> str:
     ])
 
 
+def effective_budget(budget: dict | None, attributor: str) -> dict:
+    """The budget as it applies to one attributor, with overrides resolved.
+
+    Attributors differ by three orders of magnitude in cost: measured on 30-node
+    SynthMotifs graphs, Integrated Gradients is milliseconds per molecule and
+    SubgraphX is 28-38 seconds. A single ``max_eval_molecules`` is therefore the
+    wrong shape -- a cap that is free for one is a twenty-hour job for the other
+    -- so ``max_eval_molecules_<Attributor>`` overrides it for that attributor
+    alone.
+
+    Resolving the override *here*, rather than inside the cell, is what keeps
+    the cache intact. The stage hash is taken over this dict, so a cell sees
+    only the cap that applies to it: adding an override for SubgraphX leaves
+    every other cell's hash byte-identical and its ``.done`` marker valid.
+    """
+    budget = dict(budget or {})
+    prefix = "max_eval_molecules_"
+    override = budget.pop(f"{prefix}{attributor}", None)
+    for key in [k for k in budget if k.startswith(prefix)]:
+        del budget[key]
+    if override is not None:
+        budget["max_eval_molecules"] = override
+    return budget
+
+
 def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     """Run one audit cell end to end. Returns a dict with agg + train + row."""
     import torch
@@ -163,9 +188,16 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         )
 
     eval_idx = list(split.test)
+    # The per-attributor cap has already been resolved into this budget by
+    # effective_budget(), so that a cell's stage hash reflects only the cap that
+    # applies to it and adding an override for one attributor does not
+    # invalidate every other cell's cache.
     cap = budget.get("max_eval_molecules")
     if cap:
         eval_idx = eval_idx[:cap]
+    log.info("[cell %s] auditing %d molecules%s", cell_id, len(eval_idx),
+             f" (capped from {len(split.test)})" if cap and len(split.test) > cap
+             else "")
 
     records = []
     first_attribution = None
@@ -331,7 +363,9 @@ def main(argv=None):
                 # cached by an earlier run stay cached instead of silently
                 # re-running.
                 cell_id = f"{base_id}__seed{seed}" if multi_seed else base_id
-                stage_cfg = {"cell": cell, "split": split_kind, "budget": cfg.get("budget"),
+                eff = effective_budget(cfg.get("budget"), cell["attributor"])
+                cfg_seed = {**cfg_seed, "budget": eff}
+                stage_cfg = {"cell": cell, "split": split_kind, "budget": eff,
                              "model": cfg["model"], "train": cfg["train"], "seed": seed}
                 try:
                     res = stage(

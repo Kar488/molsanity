@@ -16,6 +16,14 @@ budget:
   ig_steps: 50
   pg_epochs: 30
   max_eval_molecules: 200
+  # SubgraphX is a Monte-Carlo tree search per molecule and is three orders of
+  # magnitude slower than the gradient family: measured at 28-38 s per molecule
+  # on 30-node SynthMotifs graphs, against milliseconds for Integrated
+  # Gradients. At the global cap of 200 its 24 cell-runs are a ~20 hour job that
+  # blocks every cell queued behind it. 40 molecules keeps it in the sweep at
+  # ~4 hours total; the smaller n is reported per cell and must be quoted
+  # wherever SubgraphX results are compared against the others.
+  max_eval_molecules_SubgraphX: 40
   # SubgraphX runs a Monte-Carlo tree search per molecule and is the most
   # expensive attributor here by a wide margin; these keep it tractable.
   sgx_max_nodes: 8

@@ -1,8 +1,12 @@
 name: molsanity-pipeline
 
+# Runs where it earns its keep and nowhere else. It used to fire on every push
+# to every branch, which meant a dozen notifications a day for work in progress
+# and trained everyone to ignore it -- the opposite of what a check is for. On
+# main it guards the record of a run; on a pull request it guards the merge.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:

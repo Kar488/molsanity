@@ -57,6 +57,40 @@ def _init_worker() -> None:
     torch.set_num_threads(1)
 
 
+def to_cpu_for_fork(*objects) -> None:
+    """Move every torch module reachable from ``objects`` onto the CPU.
+
+    This must happen in the *parent*, before the pool is created, and moving the
+    backbone alone is not enough. An attributor owns modules the backbone does
+    not: PGExplainer keeps a mask MLP on ``explainer.algorithm``, and its
+    ``attribute`` re-syncs that module to the model's device on every call.
+
+    Inside a forked child, ``tensor.to('cpu')`` on a CUDA tensor still has to
+    initialise CUDA to read the source, so a module left on the GPU raises
+    ``CUDA error: initialization error`` on the first molecule -- and takes the
+    whole cell with it. Every module has to be off the accelerator before the
+    fork, not after.
+    """
+    import torch
+
+    seen = set()
+
+    def walk(obj, depth=0):
+        if obj is None or depth > 3 or id(obj) in seen:
+            return
+        seen.add(id(obj))
+        if isinstance(obj, torch.nn.Module):
+            obj.to("cpu")
+            return
+        for name in vars(obj) if hasattr(obj, "__dict__") else ():
+            if name.startswith("__"):
+                continue
+            walk(getattr(obj, name, None), depth + 1)
+
+    for obj in objects:
+        walk(obj)
+
+
 def _attribute_one(index: int):
     """Attribute one molecule inside a worker. Returns (index, Attribution)."""
     attributor = _CTX["attributor"]
@@ -194,4 +228,5 @@ def parallel_audit(*, attributor, dataset, indices, workers: int, model,
     return records, done[indices[0]][1]
 
 
-__all__ = ["parallel_attributions", "parallel_audit", "resolve_workers"]
+__all__ = ["parallel_attributions", "parallel_audit", "resolve_workers",
+           "to_cpu_for_fork"]

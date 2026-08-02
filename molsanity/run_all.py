@@ -219,7 +219,7 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     # forward pass per motif) and cross-checkpoint stability (a second
     # attribution against the early checkpoint). Parallelising attribution
     # alone would have optimised the wrong half.
-    from .audit.parallel import parallel_audit, resolve_workers
+    from .audit.parallel import parallel_audit, resolve_workers, to_cpu_for_fork
 
     n_workers = resolve_workers(budget.get("attribution_workers"), len(eval_idx))
     records = []
@@ -229,9 +229,11 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
         # CUDA cannot survive fork, and the GPU was not helping: the cost is
         # Python dispatch, not arithmetic.
         model.to("cpu")
-        for obj in (attributor, early_attr):
-            if obj is not None and hasattr(obj, "model"):
-                obj.model = obj.model.to("cpu")
+        # Not just the backbone: an attributor owns modules of its own (e.g.
+        # PGExplainer's mask MLP on explainer.algorithm) and a single one left
+        # on the GPU raises "CUDA error: initialization error" in the first
+        # child, because moving a CUDA tensor to CPU still needs CUDA.
+        to_cpu_for_fork(model, attributor, early_attr)
         occ_cpu = occ_baseline.to("cpu") if occ_baseline is not None else None
         log.info("[cell %s] auditing on %d worker processes (CPU)",
                  cell_id, n_workers)

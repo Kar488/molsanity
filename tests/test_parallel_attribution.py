@@ -267,3 +267,65 @@ def test_parallel_audit_refuses_a_single_worker():
         parallel_audit(attributor=None, dataset=[], indices=[1], workers=1,
                        model=None, dataset_name="x", temperature=1.0,
                        task="graph-classification", occ_baseline=None)
+
+
+# ------------------------------------------------ everything off the GPU ---
+def test_to_cpu_for_fork_finds_modules_the_backbone_does_not_own():
+    """The bug that failed every GNNExplainer and PGExplainer cell.
+
+    run_cell moved the backbone to CPU before forking and stopped there. But an
+    attributor owns modules of its own -- PGExplainer keeps a mask MLP on
+    ``explainer.algorithm`` -- and inside a forked child even ``.to('cpu')`` on
+    a CUDA tensor has to initialise CUDA to read the source. One module left on
+    the accelerator raises ``CUDA error: initialization error`` on the first
+    molecule and takes the whole cell with it.
+
+    Devices cannot be exercised without a GPU, so this checks the reachability
+    that the fix turns on: every nested module must be found and touched.
+    """
+    from molsanity.audit.parallel import to_cpu_for_fork
+
+    class Inner(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.lin = torch.nn.Linear(2, 2)
+            self.moved = False
+
+        def to(self, *args, **kwargs):
+            self.moved = True
+            return super().to(*args, **kwargs)
+
+    class Algorithm(Inner):
+        pass
+
+    class FakeExplainer:
+        def __init__(self):
+            self.algorithm = Algorithm()
+
+    class FakeAttributor:
+        def __init__(self):
+            self.model = Inner()
+            self._explainer = FakeExplainer()
+            self.not_a_module = 42
+
+    backbone, attributor = Inner(), FakeAttributor()
+    to_cpu_for_fork(backbone, attributor, None)
+
+    assert backbone.moved, "the backbone was missed"
+    assert attributor.model.moved, "the attributor's own model was missed"
+    assert attributor._explainer.algorithm.moved, (
+        "explainer.algorithm was missed -- this is exactly the module that "
+        "failed every PGExplainer cell")
+
+
+def test_to_cpu_for_fork_tolerates_none_and_cycles():
+    """It walks arbitrary attributor objects, so it must not hang or raise."""
+    from molsanity.audit.parallel import to_cpu_for_fork
+
+    class Node:
+        pass
+
+    a, b = Node(), Node()
+    a.peer, b.peer = b, a          # cycle
+    a.module = torch.nn.Linear(2, 2)
+    to_cpu_for_fork(None, a, b)    # must simply return

@@ -219,6 +219,16 @@ paragraphs in `body.tex`, which are written for the pre-fix state.
 - [ ] Full overnight `configs/full.yaml` run on GPU
 
 ## Blockers / notes
+- **GNNExplainer is device-sensitive at the third decimal, and this belongs in
+  the reproducibility statement.** Every other attributor returns bit-identical
+  values on GPU and on the CPU worker pool (IG 0.8886, Saliency 0.96492,
+  GuidedBackprop 0.91328, InputXGradient 0.95144 all matched exactly across the
+  two). GNNExplainer moved by 0.003-0.012 (e.g. 0.66812 -> 0.67156). It is the
+  only attributor that fits a mask with Adam over ~100 steps, so floating-point
+  differences compound. Not a determinism defect -- the per-molecule seeding in
+  `base.py` is correct -- but a reader reproducing on a GPU will not match the
+  committed GNNExplainer numbers to more than two decimals, and the paper
+  should say so rather than let them discover it.
 - **Parallel attribution: on, after fixing a real reproducibility defect.**
   The first attempt produced results that did not match the serial path, and the
   cause turned out to be a bug in the serial path rather than in the pool.

@@ -56,6 +56,24 @@ def _init_worker() -> None:
 
     torch.set_num_threads(1)
 
+    # Hide the accelerator from this child entirely.
+    #
+    # Moving every module to CPU is necessary but not sufficient. A forked child
+    # inherits the parent's initialised CUDA context, which is unusable, and
+    # any CUDA call in it raises "initialization error" -- including a mere
+    # query. torch.optim.Optimizer._accelerator_graph_capture_health_check runs
+    # on every step() and calls torch.accelerator.current_accelerator(), so
+    # GNNExplainer, which fits a mask with Adam per molecule, failed on its
+    # first optimiser step even with every tensor on the CPU.
+    #
+    # Nothing in a worker legitimately needs the GPU: the whole point of the
+    # pool is that this work is Python-bound. So the child is told there is no
+    # accelerator, and the CUDA paths are never entered. Patched in the child
+    # only; the parent keeps its GPU.
+    torch.accelerator.current_accelerator = lambda *a, **k: None
+    torch.accelerator.is_available = lambda *a, **k: False
+    torch.cuda.is_available = lambda: False
+
 
 def to_cpu_for_fork(*objects) -> None:
     """Move every torch module reachable from ``objects`` onto the CPU.

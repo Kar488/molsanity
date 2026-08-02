@@ -329,3 +329,47 @@ def test_to_cpu_for_fork_tolerates_none_and_cycles():
     a.peer, b.peer = b, a          # cycle
     a.module = torch.nn.Linear(2, 2)
     to_cpu_for_fork(None, a, b)    # must simply return
+
+
+def _accelerator_probe(_):
+    """Module level so the fork pool can pickle the callable."""
+    import torch
+
+    from molsanity.audit.parallel import _init_worker
+
+    _init_worker()
+    acc = torch.accelerator.current_accelerator(check_available=True)
+    return (acc.type if acc is not None else None,
+            torch.cuda.is_available(),
+            torch.get_num_threads())
+
+
+def test_worker_init_hides_the_accelerator():
+    """The third failure: even a CUDA *query* fails in a forked child.
+
+    torch.optim.Optimizer._accelerator_graph_capture_health_check runs on every
+    step() and calls torch.accelerator.current_accelerator(). GNNExplainer fits
+    a mask with Adam per molecule, so it died on its first optimiser step even
+    with every tensor on the CPU -- moving modules was necessary but not
+    sufficient. The child is told there is no accelerator at all.
+    """
+    import multiprocessing as mp
+
+    with mp.get_context("fork").Pool(1) as pool:
+        acc_type, cuda_available, threads = pool.map(_accelerator_probe, [0])[0]
+
+    assert acc_type is None, f"worker still sees accelerator {acc_type!r}"
+    assert cuda_available is False, "worker still reports CUDA as available"
+    assert threads == 1, "worker should be single-threaded"
+
+
+def test_the_parent_keeps_its_accelerator():
+    """The patch is worker-local. Neutering the parent would move the whole
+    run onto the CPU, including training."""
+    import torch
+
+    before = torch.cuda.is_available
+    from molsanity.audit import parallel as P  # noqa: F401
+
+    assert torch.cuda.is_available is before, (
+        "importing the parallel module patched the parent's torch")

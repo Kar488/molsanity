@@ -217,42 +217,21 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     # Integrated Gradients cell spends 0.6-0.7 s per molecule of which the
     # attribution is milliseconds: the cost is occlusion faithfulness (a
     # forward pass per motif) and cross-checkpoint stability (a second
-    # attribution against the early checkpoint). Parallelising attribution
-    # alone would have optimised the wrong half.
+    # attribution against the early checkpoint).
     from .audit.parallel import parallel_audit, resolve_workers, to_cpu_for_fork
 
     n_workers = resolve_workers(budget.get("attribution_workers"), len(eval_idx))
-    records = []
-    first_attribution = None
 
-    if n_workers > 1:
-        # CUDA cannot survive fork, and the GPU was not helping: the cost is
-        # Python dispatch, not arithmetic.
-        model.to("cpu")
-        # Not just the backbone: an attributor owns modules of its own (e.g.
-        # PGExplainer's mask MLP on explainer.algorithm) and a single one left
-        # on the GPU raises "CUDA error: initialization error" in the first
-        # child, because moving a CUDA tensor to CPU still needs CUDA.
-        to_cpu_for_fork(model, attributor, early_attr)
-        occ_cpu = occ_baseline.to("cpu") if occ_baseline is not None else None
-        log.info("[cell %s] auditing on %d worker processes (CPU)",
-                 cell_id, n_workers)
-        t_par = time.time()
-        records, first_attribution = parallel_audit(
-            attributor=attributor, dataset=dataset, indices=eval_idx,
-            workers=n_workers, model=model, dataset_name=dataset_name,
-            temperature=temperature, task=task, occ_baseline=occ_cpu,
-            early_attr=early_attr)
-        dt = time.time() - t_par
-        log.info("[cell %s] %d molecules in %.1f min (%.2fs each, %d workers)",
-                 cell_id, len(eval_idx), dt / 60,
-                 dt / max(1, len(eval_idx)), n_workers)
-    else:
-        # A cell that prints nothing for twenty minutes is indistinguishable
-        # from a crash. The heartbeat is by elapsed time rather than every Nth
-        # molecule, so cheap attributors stay quiet and slow ones report often
-        # enough to be trusted.
-        HEARTBEAT_S = 60.0
+    def serial_audit():
+        """The path that has always worked. Also the fallback.
+
+        A cell that prints nothing for twenty minutes is indistinguishable from
+        a crash, so the heartbeat is by elapsed time rather than every Nth
+        molecule: cheap attributors stay quiet and slow ones report often
+        enough to be trusted.
+        """
+        out, first = [], None
+        heartbeat_s = 60.0
         t_cell = time.time()
         t_beat = t_cell
         for n_done, i in enumerate(eval_idx, 1):
@@ -260,14 +239,14 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
             g.graph_id = i
             attribution = attributor.attribute(g)
             now = time.time()
-            if now - t_beat >= HEARTBEAT_S:
+            if now - t_beat >= heartbeat_s:
                 rate = (now - t_cell) / n_done
-                left = rate * (len(eval_idx) - n_done)
                 log.info("[cell %s] %d/%d molecules (%.1fs each, ~%.0f min left)",
-                         cell_id, n_done, len(eval_idx), rate, left / 60)
+                         cell_id, n_done, len(eval_idx), rate,
+                         rate * (len(eval_idx) - n_done) / 60)
                 t_beat = now
-            if first_attribution is None:
-                first_attribution = attribution
+            if first is None:
+                first = attribution
             # Motif decomposition depends only on the molecule; compute once and
             # share it between the coherence/occlusion audit and the stability check.
             decomp = decompose(g)
@@ -277,11 +256,45 @@ def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
             if early_attr is not None:
                 try:
                     rec.stability = cross_checkpoint_stability(
-                        early_attr, g, decomp, attribution.node_attr
-                    )
+                        early_attr, g, decomp, attribution.node_attr)
                 except Exception:
                     pass
-            records.append(rec)
+            out.append(rec)
+        return out, first
+
+    records, first_attribution = [], None
+    if n_workers > 1:
+        # CUDA cannot survive fork, and the GPU was not helping: the cost is
+        # Python dispatch, not arithmetic. Every module has to be off the
+        # accelerator before the fork, including ones the attributor owns.
+        model.to("cpu")
+        to_cpu_for_fork(model, attributor, early_attr)
+        occ_cpu = occ_baseline.to("cpu") if occ_baseline is not None else None
+        log.info("[cell %s] auditing on %d worker processes (CPU)",
+                 cell_id, n_workers)
+        t_par = time.time()
+        try:
+            records, first_attribution = parallel_audit(
+                attributor=attributor, dataset=dataset, indices=eval_idx,
+                workers=n_workers, model=model, dataset_name=dataset_name,
+                temperature=temperature, task=task, occ_baseline=occ_cpu,
+                early_attr=early_attr)
+            dt = time.time() - t_par
+            log.info("[cell %s] %d molecules in %.1f min (%.2fs each, %d workers)",
+                     cell_id, len(eval_idx), dt / 60,
+                     dt / max(1, len(eval_idx)), n_workers)
+        except Exception as exc:  # noqa: BLE001
+            # Parallelism is an optimisation, so its failure must cost time and
+            # nothing else. Falling back keeps the cell -- and the run -- alive
+            # on the path that has always worked, and says so loudly rather
+            # than reporting a slow cell as if nothing happened.
+            log.warning("[cell %s] worker pool failed (%s: %s) — falling back "
+                        "to the serial path for this cell",
+                        cell_id, type(exc).__name__, exc)
+            occ_baseline = occ_cpu
+            records, first_attribution = serial_audit()
+    else:
+        records, first_attribution = serial_audit()
 
     agg = aggregate_records(records, seed=cfg["seed"])
 

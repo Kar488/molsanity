@@ -5,6 +5,89 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 > `RESULTS.md` holds only validated numbers. This file holds everything
 > unfinished. Update continuously.
 
+## PAPER EDITS PENDING — the running list
+
+Everything found during the 2 August sweep that changes what the manuscript may
+claim. Read this before `make -C paper`. Ordered by how much damage it does if
+missed.
+
+### Claims that must change
+
+- [ ] **The SynthMotifs "scaffold" split may not be a shift at all.** The
+      splitter reported `1000 scaffolds -> train 600 / val 100 / test 300` on a
+      1000-graph dataset: every graph is its own scaffold. Compare BBBP,
+      `2038 scaffolds` over ~2039 molecules — real molecules form real groups,
+      synthetic graphs form singletons, and a partition of singletons is an
+      arbitrary deterministic split, not a chemical shift. The abstract
+      currently says the inversion "appears on a synthetic set with exact node
+      labels", and SynthMotifs is that set. **Verify the scaffold structure
+      against the committed records; if it is degenerate, reword or drop that
+      supporting claim.** MUTAG and MolMotif are real molecules and unaffected,
+      so the central claim stands on those.
+- [ ] **ShapeGGen has no scaffold arm.** All 21 of its scaffold cell-runs failed
+      (`graph_to_mol` assumes MUTAG's 7-element atom vocabulary; ShapeGGen's
+      features are not MUTAG one-hots). The deeper point is that a Bemis-Murcko
+      split is undefined for a dataset containing no molecules. ShapeGGen
+      therefore contributes random-split cells only and **cannot participate in
+      the shift contrast**, which is the paper's central axis. State it; do not
+      let it vanish into a cell count.
+- [ ] **Re-decide the headline.** MUTAG PGExplainer was GT-best at 0.981 on one
+      seed but mean 0.670, sd 0.546, range 0.039-0.988 across three. That is not
+      a finding. MolMotif is the stronger anchor: molecular *and* exactly
+      labelled. Read `SEED_VARIANCE.md` before writing any attributor ranking.
+
+### Reproducibility statement
+
+- [ ] **Attribution runs on CPU.** The worker pool forks, and CUDA cannot
+      survive fork, so the audit loop is CPU-only while training uses the GPU.
+- [ ] **GNNExplainer is device-sensitive at the third decimal.** IG, Saliency,
+      GuidedBackprop and InputXGradient were bit-identical GPU vs CPU;
+      GNNExplainer moved 0.003-0.012 because it fits a mask with Adam over ~100
+      steps. A reader reproducing on GPU will not match it beyond two decimals.
+- [ ] **Parallel equals serial.** Verified field-by-field over full records, so
+      a reader may trade cores for time freely. Worth one sentence: it is the
+      kind of claim reviewers assume is untested.
+- [ ] **SubgraphX seeding was a real defect, now fixed.** DIG draws from
+      `np.random`, which `torch.manual_seed` never reset, so results depended on
+      how many molecules preceded them. Seeding per molecule made it
+      order-independent and resume-safe.
+
+### Compute paragraph (Experimental setup, not its own section)
+
+- [ ] Reproduction cost: cell-runs, wall clock, hardware (A100, 12 vCPU),
+      derivable from the log timestamps rather than hand-typed.
+- [ ] **The cost asymmetry is a finding, not filler.** SubgraphX measured at
+      23.67 s per molecule on 12 workers (~79 min per 200-molecule cell) against
+      0.01-0.07 s for the gradient family — two to three orders of magnitude.
+      Compute cost is a hidden selection pressure on which attributors get
+      benchmarked at all, and it biases the literature toward cheap ones. Our
+      own first instinct was to cap SubgraphX's n, which would have introduced
+      exactly the small-n weakness the field criticises.
+- [ ] Do **not** write a "future compute directions" roadmap. Anything genuinely
+      compute-limited belongs in Limitations, phrased as a limitation.
+
+### Positioning
+
+- [ ] **MolFaith is prior art** (Hiltscher, Bianciotto, Grisoni; chemRxiv,
+      27 Jan 2026): 8 methods, 2 representations, 5 architectures, ~14,000
+      molecules, faithfulness only. Already cited with its exact scope and the
+      concession that it is larger on that axis. Keep the distinction explicit
+      in the abstract: their finding is that *faithfulness* ordering is stable
+      across **architectures**; ours is that *correctness* ordering is unstable
+      across **splits**. Not a contradiction, but a reviewer will land on it.
+- [ ] Target venue: Journal of Cheminformatics, "AI and XAI in Drug Discovery"
+      collection, deadline 13 January 2027. Check whether an APC waiver or a
+      read-and-publish agreement applies before committing.
+
+### Done this session
+
+- [x] `LICENSE` (MIT) added; `THIRD_PARTY_LICENSES.md` records that DIG is
+      GPL-3.0, not vendored, and optional.
+- [x] n=200 for every attributor, SubgraphX included — the small-n criticism is
+      answered rather than traded away.
+- [x] Across-seed variance added to the related-work capability matrix; none of
+      GraphXAI, GraphFramEx, DIG or MolFaith reports it.
+
 ## Cost of the strengthened sweep
 
 `configs/full.yaml` is now **58 cells x 2 splits x 3 seeds = 348 cell-runs**, up

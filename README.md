@@ -137,6 +137,21 @@ The pipeline writes figures to `artifacts/figures/` (regenerable) and mirrors
 them here at the end of every run; regenerate the mirror on demand with
 `python -m molsanity.viz.collect`.
 
+## Licence
+
+MolSanity is **MIT** (`LICENSE`). Every *required* dependency is permissive
+(BSD/MIT/PSF), so that is consistent.
+
+One caveat worth reading before you install everything: **DIG
+(`dive-into-graphs`), which provides SubgraphX, is GPL-3.0.** No GPL code is
+vendored here — SubgraphX is wrapped by runtime import — and it is optional:
+`pip install -e .` does not pull DIG, and without it SubgraphX cells are
+skipped and logged while every other cell runs unchanged. If you do install it,
+the combined environment is subject to GPL-3.0. See `THIRD_PARTY_LICENSES.md`.
+
+Datasets are not redistributed here; they are fetched from their sources at run
+time and each carries its own terms, recorded in the manifest below.
+
 ## Dataset manifest & licences
 
 `molsanity.data` holds the manifest (loader, source, licence, cache path,

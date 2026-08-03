@@ -8,9 +8,9 @@ width='500px' height='500px' viewBox='0 0 500 500'>
 <!-- END OF HEADER -->
 <rect style='opacity:1.0;fill:#FFFFFF;stroke:none' width='500.0' height='500.0' x='0.0' y='0.0'> </rect>
 <ellipse cx='252.0' cy='200.7' rx='39.2' ry='39.2' class='atom-0'  style='fill:#FF2626;fill-rule:evenodd;stroke:#FF2626;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='243.1' cy='397.1' rx='39.2' ry='39.2' class='atom-1'  style='fill:#FF6B6B;fill-rule:evenodd;stroke:#FF6B6B;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='419.9' cy='102.9' rx='39.2' ry='39.2' class='atom-2'  style='fill:#FFFFFF;fill-rule:evenodd;stroke:#FFFFFF;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
-<ellipse cx='80.1' cy='102.9' rx='39.2' ry='39.2' class='atom-3'  style='fill:#FFD9D9;fill-rule:evenodd;stroke:#FFD9D9;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='243.1' cy='397.1' rx='39.2' ry='39.2' class='atom-1'  style='fill:#FF4848;fill-rule:evenodd;stroke:#FF4848;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='419.9' cy='102.9' rx='39.2' ry='39.2' class='atom-2'  style='fill:#FF6262;fill-rule:evenodd;stroke:#FF6262;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
+<ellipse cx='80.1' cy='102.9' rx='39.2' ry='39.2' class='atom-3'  style='fill:#FFFFFF;fill-rule:evenodd;stroke:#FFFFFF;stroke-width:1.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-0 atom-0 atom-1' d='M 228.4,221.4 L 228.4,376.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-0 atom-0 atom-1' d='M 257.9,221.4 L 257.9,376.1' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />
 <path class='bond-1 atom-0 atom-2' d='M 278.0,180.6 L 393.6,113.9' style='fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.0px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1' />

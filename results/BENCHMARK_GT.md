@@ -13,16 +13,17 @@ correlation between the faithfulness metric and GT AUROC across attributors
 
 ### MUTAG · GINE · scaffold split — scaffold shift (motif-proxy GT)
 
-6 attributors on the same ~53 molecules.
+7 attributors on the same ~53 molecules.
 
 | attributor | GT AUROC | 95% CI | occ_spearman | Fidelity+ | characterization |
 | --- | --- | --- | --- | --- | --- |
-| PGExplainer ⭐ | 0.981 | (0.965, 0.996) | 0.215 | 0.097 | 0.134 |
-| IntegratedGradients | 0.537 | (0.471, 0.604) | 0.419 | 0.084 | 0.133 |
-| GNNExplainer | 0.528 | (0.481, 0.577) | 0.365 | 0.071 | 0.149 |
+| PGExplainer ⭐ | 0.981 | (0.965, 0.996) | 0.214 | 0.097 | 0.133 |
+| GNNExplainer | 0.534 | (0.479, 0.586) | 0.369 | 0.068 | 0.148 |
+| IntegratedGradients | 0.528 | (0.477, 0.585) | 0.562 | 0.215 | 0.290 |
+| SubgraphX | 0.452 | (0.379, 0.529) | 0.540 | 0.216 | 0.316 |
 | GuidedBackprop | 0.146 | (0.091, 0.212) | 0.551 | 0.210 | 0.297 |
 | InputXGradient | 0.048 | (0.030, 0.071) | 0.534 | 0.199 | 0.296 |
-| Saliency | 0.014 | (0.008, 0.021) | 0.531 | 0.198 | 0.295 |
+| Saliency | 0.014 | (0.008, 0.021) | 0.532 | 0.198 | 0.296 |
 
 ⭐ = attributor the exact/proxy ground truth ranks best.
 
@@ -30,9 +31,9 @@ _Faithfulness-only selection test_ — would a framework ranking by each metric 
 
 | faithfulness metric | its top pick | pick GT AUROC | GT-best | GT-best AUROC | mismatch? | paired Wilcoxon p | rank corr ρ(faith,GT) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| occ_spearman | GuidedBackprop | 0.146 | PGExplainer | 0.981 | **yes** | 0.0000 | -0.714 |
-| fidelity_plus | GuidedBackprop | 0.146 | PGExplainer | 0.981 | **yes** | 0.0000 | -0.543 |
-| characterization | GuidedBackprop | 0.146 | PGExplainer | 0.981 | **yes** | 0.0000 | -0.714 |
+| occ_spearman | IntegratedGradients | 0.528 | PGExplainer | 0.981 | **yes** | 0.0000 | -0.321 |
+| fidelity_plus | SubgraphX | 0.452 | PGExplainer | 0.981 | **yes** | 0.0000 | -0.286 |
+| characterization | SubgraphX | 0.452 | PGExplainer | 0.981 | **yes** | 0.0000 | -0.643 |
 
 ## What this shows
 

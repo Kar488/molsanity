@@ -13,17 +13,49 @@ missed.
 
 ### Claims that must change
 
-- [ ] **The SynthMotifs "scaffold" split may not be a shift at all.** The
-      splitter reported `1000 scaffolds -> train 600 / val 100 / test 300` on a
-      1000-graph dataset: every graph is its own scaffold. Compare BBBP,
-      `2038 scaffolds` over ~2039 molecules — real molecules form real groups,
-      synthetic graphs form singletons, and a partition of singletons is an
-      arbitrary deterministic split, not a chemical shift. The abstract
-      currently says the inversion "appears on a synthetic set with exact node
-      labels", and SynthMotifs is that set. **Verify the scaffold structure
-      against the committed records; if it is degenerate, reword or drop that
-      supporting claim.** MUTAG and MolMotif are real molecules and unaffected,
-      so the central claim stands on those.
+- [!] **THE SCAFFOLD SPLIT WAS BROKEN FOR EVERY DATASET EXCEPT MUTAG.** Found
+      2026-08-03 while checking the SynthMotifs item below; it is the same bug,
+      much wider. `splits._murcko_scaffold_smiles` always went through
+      `graph_to_mol`, which decodes atom features with **MUTAG's 7-way one-hot
+      vocabulary**. MoleculeNet/TDC graphs carry a 9-dim vector whose first
+      entry is the *atomic number*, so `argmax` returned 0 for nearly every
+      atom and every molecule was rebuilt as an all-carbon skeleton. Their
+      Murcko scaffolds came out near-unique, each molecule landed in its own
+      bucket, and the "scaffold split" degenerated into a deterministic index
+      partition. Measured leakage of *true* Bemis-Murcko scaffolds from train
+      into test: **ClinTox 50.3%, BBBP 56.1%, BACE 30.3%** (a real scaffold
+      split leaks 0% by construction). `mol_from_data` — which parses the
+      graph's own SMILES — already existed and is what `motifs.decompose` uses;
+      `splits.py` simply never called it.
+      - Fixed in `splits.py`; leakage now 0.0% on all three. Regression tests in
+        `tests/test_splits.py`, which fail against the old code.
+      - **99 scaffold cell-runs (33 cells x 3 seeds) are invalid and must be
+        re-run**: BACE, BBBP, ClinTox, SIDER, Tox21, DILI, hERG, ESOL, FreeSolv,
+        Lipophilicity, MolMotif. `SCAFFOLD_SPLIT_VERSION = 2` invalidates their
+        `.done` markers automatically and leaves the 204 random-split cell-runs
+        cached. Only 3 of the 99 are SubgraphX.
+      - MUTAG's scaffold split was always computed correctly (it has no SMILES,
+        so the one-hot path is the right one), but its partition shifts slightly
+        under the fix (52 -> 47 groups), so its 33 scaffold cell-runs re-run too.
+      - **Nothing else is affected.** The motif battery, `motif_top1_share`, the
+        GT masks and every random-split number go through `mol_from_data` or
+        never touch RDKit. The random arm is untouched.
+      - **No shift claim in the paper may cite a non-MUTAG dataset until the
+        re-run lands.** That includes the abstract.
+- [x] **The SynthMotifs "scaffold" split may not be a shift at all.** Confirmed,
+      and it is structural rather than a bug: SynthMotifs graphs are not
+      molecules, so they have no Bemis-Murcko scaffold at all. Post-fix
+      `scaffold_split` reports `frac_grouped = 0.000, degenerate = True` — every
+      graph in its own bucket. Same for BA-2Motifs and ShapeGGen. `Split` now
+      carries `degenerate` and the splitter logs a warning. **Drop SynthMotifs,
+      BA-2Motifs and ShapeGGen from the shift contrast entirely**; they are
+      random-split evidence only. The abstract's "appears on a synthetic set
+      with exact node labels" must go — MolMotif (real molecules, exact labels)
+      is the replacement, once re-run.
+      (Note on the evidence that led here: the 2 August log's `2038 scaffolds`
+      over ~2039 BBBP molecules looked like real molecules simply being diverse.
+      RDKit on BBBP's own SMILES gives **1025** scaffolds over 2039. The near-1:1
+      ratio was the bug, not the chemistry.)
 - [ ] **ShapeGGen has no scaffold arm.** All 21 of its scaffold cell-runs failed
       (`graph_to_mol` assumes MUTAG's 7-element atom vocabulary; ShapeGGen's
       features are not MUTAG one-hots). The deeper point is that a Bemis-Murcko

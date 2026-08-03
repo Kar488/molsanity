@@ -41,6 +41,25 @@ class Split:
         }
 
 
+def split_digest(split: "Split") -> str:
+    """Short stable digest of the actual train/val/test partition.
+
+    Anything cached *per split* — trained checkpoints above all — must key on
+    this rather than on ``split.kind``. A checkpoint keyed on the string
+    "scaffold" is reloaded unchanged when the scaffold partition itself is
+    corrected, so the model keeps whatever molecules the old split gave it and
+    is then evaluated on the new test set. That is silent train/test
+    contamination, and it is what the 2026-08-03 scaffold fix would have caused.
+    """
+    import hashlib
+
+    payload = "|".join(
+        ",".join(str(i) for i in idx)
+        for idx in (split.train, split.val, split.test)
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
 def _murcko_scaffold_smiles(data) -> str:
     """Bemis-Murcko scaffold SMILES for one graph.
 

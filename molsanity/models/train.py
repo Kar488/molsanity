@@ -15,6 +15,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
+from ..data.splits import split_digest
 from ..utils import get_device, get_logger, hash_config
 from .backbones import build_backbone
 from .calibration import TemperatureScaler, expected_calibration_error, softmax_np
@@ -153,9 +154,14 @@ def train_model(
     task = model_cfg.get("task", "graph-classification")
     is_reg = task == "graph-regression"
 
+    # The checkpoint identity must include *which molecules* the split assigned,
+    # not just what the split is called. Keying on ``split.kind`` alone means a
+    # corrected partition reloads the model trained on the old one and then
+    # evaluates it on the new test set — silent train/test contamination, and
+    # exactly what would have happened after the 2026-08-03 scaffold-split fix.
     cfg_hash = hash_config(
         {"model": model_cfg, "train": train_cfg, "split": split.kind,
-         "seed": seed, "backbone": backbone}
+         "partition": split_digest(split), "seed": seed, "backbone": backbone}
     )
     ckpt_path = ckpt_dir / f"{backbone.lower()}_{cfg_hash}.pt"
     early_ckpt_path = ckpt_dir / f"{backbone.lower()}_{cfg_hash}_early.pt"

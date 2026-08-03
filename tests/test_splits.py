@@ -133,3 +133,30 @@ def test_mutag_scaffold_split_still_groups(mutag):
     assert split.degenerate is False
     assert split.frac_grouped > 0.5
     assert split.n_scaffolds < len(mutag.dataset) / 2
+
+
+def test_checkpoint_identity_tracks_the_partition_not_the_split_name():
+    """A checkpoint keyed on ``split.kind`` alone is reloaded unchanged when the
+    partition it was trained on is corrected — the model keeps the old training
+    molecules and is then scored on the new test set. Silent contamination, and
+    exactly what the 2026-08-03 scaffold fix would have caused on re-run.
+    """
+    from molsanity.data.splits import Split, split_digest
+
+    old = Split(train=[0, 1, 2, 3], val=[4], test=[5, 6], kind="scaffold")
+    new = Split(train=[0, 1, 5, 6], val=[4], test=[2, 3], kind="scaffold")
+    same = Split(train=[0, 1, 2, 3], val=[4], test=[5, 6], kind="scaffold")
+
+    assert split_digest(old) != split_digest(new), (
+        "two different partitions share a checkpoint identity")
+    assert split_digest(old) == split_digest(same), (
+        "an identical partition must stay cached")
+
+    # And the digest is what train_model actually keys on.
+    import inspect
+
+    from molsanity.models import train as train_mod
+
+    src = inspect.getsource(train_mod.train_model)
+    assert "split_digest(split)" in src, (
+        "train_model must key its checkpoint on the partition, not just its name")

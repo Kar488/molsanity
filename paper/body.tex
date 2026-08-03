@@ -65,27 +65,31 @@ RDKit~\cite{rdkit}) and audits them. Specifically:
 \item We show that a faithfulness-only ranking picks the wrong attributor under
   scaffold shift, in a design where only the split varies, so the effect is not
   confounded with a change of dataset (\nameref{sec:selection}).
-\item We show reliability is a property of the cell, not of the attributor: the
-  backbone ordering does not survive the change of split
-  ($\rho=\bbRankRho{}$ over $\bbRankN{}$ backbones on the exact-ground-truth
-  set), and neither does the attributor ordering
-  ($\rho=\mutAttrRankRho{}$ on MUTAG, $\synAttrRankRho{}$ on
-  \synDataset{}). Faithfulness itself does \emph{not} shift systematically
-  (across the $\nSplitPairs{}$ cells audited on both splits the median change
-  is $\medSplitOccDelta{}$), so what shift breaks is the \emph{relationship}
-  between faithfulness and correctness, not the level of faithfulness.
+\item We separate what shift breaks from what it leaves alone. The
+  \emph{backbone} ordering does not survive the change of split
+  ($\rho=\bbRankRho{}$ over $\bbRankN{}$ backbones), so which architecture
+  localises best in distribution says little about which does under shift. The
+  \emph{attributor} ordering largely does survive ($\rho=\mutAttrRankRho{}$ on
+  MUTAG, $\molAttrRankRho{}$ on \molDataset{}), and the level of faithfulness
+  does not shift systematically either (across the $\nSplitPairs{}$ cells
+  audited on both splits the median change is $\medSplitOccDelta{}$). What
+  breaks is neither of those but the \emph{relationship} between faithfulness
+  and correctness --- which is precisely the quantity a faithfulness-only
+  benchmark cannot see.
 \item Using \nRecords{} per-molecule audit records, we
   stratify reliability by confidence/correctness regime and test the
   calibration-linkage hypothesis directly. It holds per cell
   (median $\rho=\medCalibRho{}$, $\nCalibSigPos{}$ cells significantly positive
-  vs.\ $\nCalibSigNeg{}$ negative) but \emph{reverses} when cells are pooled
-  ($\pooledCalibRho{}$), a Simpson's-paradox trap for anyone reporting a single
-  aggregate number.
-\item We report the negatives with the positives: cells whose ground truth is
-  degenerate, a dataset that trains but yields no usable node labels, rows
-  carried over from an earlier run (labelled, never merged into a this-run
-  aggregate), and the \nNoGtCells{} cells where the correctness axis simply
-  does not exist and is marked as such rather than scored.
+  vs.\ $\nCalibSigNeg{}$ negative) but \emph{attenuates to
+  $\pooledCalibRho{}$} when cells are pooled, a Simpson's-paradox trap for
+  anyone reporting a single aggregate number.
+\item We report the negatives with the positives: a regression faithfulness
+  operator we mis-specified and whose numbers we withdraw, ground-truth arms
+  whose scaffold split is degenerate and are therefore excluded from the shift
+  contrast rather than counted toward it, an exactly-labelled molecular arm too
+  saturated to adjudicate the central claim, and the \nNoGtCells{} cells where
+  the correctness axis simply does not exist and is marked as such rather than
+  scored.
 \end{itemize}
 
 \section{Related work}
@@ -147,16 +151,17 @@ the other direction: faithfulness does not shift systematically across the
 $\nSplitPairs{}$ cells audited on both splits (median change
 $\medSplitOccDelta{}$). Two independent studies at different scales agreeing
 that faithfulness is a comparatively stable property of the method is the
-premise our result then acts on, because the ordering that does \emph{not}
-survive the change of split is the ground-truth one
-($\rho=\mutAttrRankRho{}$ on MUTAG, $\synAttrRankRho{}$ on \synDataset{}).
-A stable faithfulness ranking is therefore not evidence of a stable correctness
-ranking, which is what a practitioner with no rationale labels has to assume
-when they use faithfulness to choose a method. Second, it reports that
-faithfulness varies markedly per molecule; our regime stratification locates
-part of that variation, since ground-truth localisation collapses below chance
-precisely on confidently-wrong predictions while faithfulness on the same
-molecules looks unremarkable.
+premise our result then acts on. The correctness ordering is also fairly
+stable across the split ($\rho=\mutAttrRankRho{}$ on MUTAG,
+$\molAttrRankRho{}$ on \molDataset{}). Both rankings are stable; what changes
+is how they sit relative to each other, and under shift they sit at odds. That
+is the distinction we would press: \emph{stability of a proxy is not validity
+of a proxy}. A practitioner with no rationale labels who selects a method by
+faithfulness inherits a reproducible answer, not a correct one. Second,
+MolFaith reports that faithfulness varies markedly per molecule; our regime
+stratification locates part of that variation, since ground-truth localisation
+degrades precisely on confidently-wrong predictions while faithfulness on those
+same molecules \emph{improves}.
 
 \emph{GraphXAI}~\cite{graphxai} and \emph{GraphFramEx}~\cite{graphframex} are
 general-graph frameworks: GraphXAI supplies generators with exact node ground
@@ -174,9 +179,10 @@ fidelity metrics, motif decompositions and scaffold splits all exist already.
 Two rows of Table~\ref{tab:related} we do not find in any of the four:
 cross-checkpoint stability and calibration linkage. The contribution we would
 defend is neither of those rows alone, but the result they were built to
-support, that the two evaluation traditions above invert under the shift
-molecular models are deployed into and that no metric on the faithfulness side
-signals it.
+support: that the two evaluation traditions above come apart under the shift
+molecular models are deployed into --- far enough that the faithfulness
+ranking and the correctness ranking reverse relative to one another --- and
+that no metric on the faithfulness side signals it.
 
 \input{generated/tab_related}
 
@@ -499,14 +505,17 @@ uncorrelated; they are inverted.
 \caption{\textbf{What the disagreement looks like on the structures
 themselves.} Attribution intensity overlaid on the audited graphs for four
 attributors on the same molecules, rendered by the audit run: RDKit skeletal
-structures for MUTAG (left) and node-link diagrams for the synthetic set
-(right), with the ground-truth motif outlined in green. The quantitative gap of
+structures for MUTAG (left) and node-link diagrams for SynthMotifs (right),
+with the ground-truth motif outlined in green. The quantitative gap of
 Table~\ref{tab:selection} is visible here as a qualitative one: on the
 synthetic graphs the gradient attributors concentrate on the outlined motif
 while GNNExplainer spreads mass across the Barab\'asi--Albert base, and on
 MUTAG the gradient methods saturate the fused aromatic system rather than the
-nitro groups that carry the mutagenicity label. These panels are the
-pipeline's own output, reproduced unmodified.}
+nitro groups that carry the mutagenicity label. SynthMotifs appears here as a
+structural illustration only: it is not a molecular dataset, so it has no
+Bemis--Murcko scaffold and takes no part in the shift contrast
+(\S\ref{sec:limits}). These panels are the pipeline's own output, reproduced
+unmodified.}
 \label{fig:molgrid}
 \end{figure*}
 
@@ -521,13 +530,16 @@ wrong attributor; in distribution it mostly does not.} Ground-truth
 localisation per attributor, with bootstrap 95\% confidence intervals over
 molecules. Within each row the dataset, backbone and attributor set are fixed
 and only the split changes. \textbf{(a)} MUTAG (motif-proxy ground truth):
-in distribution two of three metrics select the ground-truth-best attributor;
-under shift all three select \mutShiftPickOccspearman{}, the worst-localising
-of the six, significantly so (marked~*). \textbf{(b)} \synDataset{} (exact
-node ground truth): the same direction with a smaller penalty. In
-distribution the mismatched picks are statistically indistinguishable from the
-best (marked~$\dagger$); under shift they are not. Rank correlations between
-each faithfulness metric and ground truth are given below each panel.}
+all $\mutShiftNMetrics{}$ metrics mismatch the ground-truth-best attributor in
+both regimes, but only under shift does the occlusion measure select
+\mutShiftPickOccspearman{}, whose localisation ($\mutShiftPickGtOccspearman{}$)
+is anti-aligned with the motif; significant picks are marked~*, picks
+statistically indistinguishable from the best are marked~$\dagger$.
+\textbf{(b)} \molDataset{} (real molecules, exact node ground truth): the
+selection failure replicates, but the top attributors sit at GT AUROC
+$\ge\molShiftGBPGt{}$, so the ranking among them is noise around a ceiling and
+this arm cannot adjudicate the regime contrast. Rank correlations between each
+faithfulness metric and ground truth are given below each panel.}
 \label{fig:dissociation}
 \end{figure*}
 
@@ -568,19 +580,27 @@ is large ($+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$ for
 occlusion $\rho$), though this does not make in-distribution evaluation safe,
 only much less dangerous.
 
-\paragraph{The exact-ground-truth arm agrees, more mildly} On \synDataset{},
-where node labels are exact rather than a motif proxy, the same pattern appears
-with a smaller penalty. In distribution, occlusion $\rho$ picks the
-ground-truth-best and the two field-standard metrics pick a neighbour whose GT
-AUROC is statistically indistinguishable from it
-($\synIndPickGtFidelityplus{}$ vs $\synIndPickGtOccspearman{}$,
-$p=\synIndPFidelityplus{}$). Under shift all three select
-\synShiftPickOccspearman{} ($\synShiftPickGtOccspearman{}$) over the
-ground-truth-best \synShiftGtBest{} ($\synShiftGtBestVal{}$), significantly so
-($p\synShiftPOccspearman{}$), though here the rank correlations stay positive
-($\synShiftRhoOccspearman{}$ to $\synShiftRhoCharacterization{}$). The
-direction replicates across an exact and a proxy ground truth; the severity
-does not.
+\paragraph{The exact-ground-truth arm cannot adjudicate this} \molDataset{} is
+the only arm that is both molecular and exactly labelled, and it is where a
+replication would carry most weight. It cannot supply one, for a reason worth
+stating rather than burying: the task is too easy. The top attributors sit at
+GT AUROC $\molShiftIxGGt{}$, $\molShiftSalGt{}$ and $\molShiftGBPGt{}$ under
+shift, so the ranking among them is noise around a ceiling, and the
+faithfulness--truth rank correlation is negative in \emph{both} regimes
+($\molIndRhoOccspearman{}$ in distribution, $\molShiftRhoOccspearman{}$ under
+shift) rather than turning negative under shift. All
+$\molShiftNMismatch{}$ metrics still mismatch the ground-truth-best
+(\molShiftGtBest{}, $\molShiftGtBestVal{}$), so the selection failure
+replicates; the \emph{regime contrast} does not, because \molDataset{} has no
+headroom in which to degrade. We report it as a probe that the audit machinery
+works on real molecules with exact labels, not as a second shift contrast.
+
+This leaves the shift contrast resting on MUTAG alone. The other
+ground-truth arms cannot stand in: SynthMotifs, BA-2Motifs and ShapeGGen are
+not molecules, so a Bemis--Murcko scaffold is undefined for them and their
+``scaffold'' split comes back as an arbitrary deterministic partition
+(\S\ref{sec:limits}). A single-dataset contrast with a proxy ground truth
+is the honest scope of the result, and we state it as such.
 
 \paragraph{Two caveats} First, our own faithfulness metric fails alongside the
 field-standard ones on the MUTAG shift arm. We therefore do not claim that
@@ -667,6 +687,45 @@ with the grid complete it does not hold. What shift damages is the
 faithfulness, which is why a faithfulness metric gives no warning that anything
 has changed.
 
+\subsection{Does the model actually read the rationale?}
+\label{sec:rationale}
+
+\ifHasFaberPartition
+The standing objection to every result above is Faber et al.'s~\cite{faber}:
+scoring an attribution against a labelled substructure is misleading if the
+trained model does not use that substructure, in which case a low GT AUROC is a
+fact about the model rather than about the explanation. The objection is
+correct, and it is testable rather than merely arguable. For each molecule we
+occlude the ground-truth substructure and record whether the prediction
+collapses; if it does, the model demonstrably reads that substructure, and its
+attribution can be judged against it on the model's own behaviour.
+
+The objection applies to more molecules than it does not.
+\nFaberIgnores{} of the audited molecules carry a rationale the model does not
+rely on, against \nFaberUses{} that it does, and the split is visible in the
+scores: mean GT AUROC is $\faberGtUses{}$ where the model reads the rationale
+and $\faberGtIgnores{}$ where it does not. A framework that ignored this
+distinction would be scoring the model under the guise of scoring the
+explanation, on roughly three molecules in five.
+
+The number that settles it is what remains. Among the \nFaberUses{} molecules
+whose prediction demonstrably depends on the labelled substructure,
+\nFaberAntiDespiteUse{} --- a fraction of $\faberFracAntiDespiteUse{}$ ---
+receive an attribution \emph{anti-aligned} with it: the substructure the model
+provably uses is ranked among the atoms the attribution deems least relevant.
+On those molecules no appeal to an alternative rationale is available. The
+attribution misdescribes a model by that model's own behaviour, and
+faithfulness metrics computed on the same molecules do not flag it. We
+therefore treat the Faber objection as a partition to report rather than a
+defeater: it removes a majority of molecules from the correctness argument, and
+what survives it is still a large, unambiguous population of wrong
+explanations.
+\else
+This run produced no molecules with both a rationale-reliance measurement and a
+ground-truth score, so the Faber partition is not computable here and no claim
+is made about it.
+\fi
+
 \subsection{Where attributions fail: regimes and calibration}
 
 \begin{figure*}[t]
@@ -691,11 +750,12 @@ stable than the gradient ones.}
 faithfulness and \textbf{(b)} ground-truth localisation by
 confidence/correctness regime; $n$ is printed per bar because ground truth
 exists for only a minority of molecules. Localisation on confident-\emph{error}
-molecules falls below chance ($\regCEGt{}$, $n=\nRegCEGt{}$) while occlusion
-faithfulness on the same molecules is unremarkable. \textbf{(c)}
-Calibration linkage computed per cell (solid $=p<0.05$): the median cell is
-positive, but pooling all molecules into one correlation reverses the sign, a
-Simpson's paradox and a caution against reporting the pooled number.}
+molecules degrades ($\regCCGt{}$ to $\regCEGt{}$, $n=\nRegCEGt{}$) while
+occlusion faithfulness on the same molecules \emph{improves} ($\regCCOcc{}$ to
+$\regCEOcc{}$). \textbf{(c)} Calibration linkage computed per cell
+(solid $=p<0.05$): the median cell is clearly positive, but pooling all
+molecules into one correlation attenuates it to near zero, a Simpson's paradox
+and a caution against reporting the pooled number.}
 \label{fig:regime}
 \end{figure*}
 
@@ -707,16 +767,20 @@ previous drafts could only define are now measurable
 by regime gives the audit's most directly actionable result. Ground-truth
 localisation is highest on confident-correct molecules ($\regCCGt{}$,
 $n=\nRegCCGt{}$), drops to $\regBLGt{}$ on borderline ones
-($n=\nRegBLGt{}$), and falls \emph{below chance}, to $\regCEGt{}$, on
-\emph{confident-error} molecules ($n=\nRegCEGt{}$). When the model is
-confidently wrong, its attribution points away from the substructure that
-matters rather than towards it. That is the regime a deployment cares most
-about and the one in which an explanation is most likely to be believed.
-Occlusion faithfulness gives no warning: it is $\regCEOcc{}$ on those same
-confident-error molecules, no worse than the $\regCCOcc{}$ of the
-confident-correct ones. The confident-error ground-truth estimate rests on
-$\nRegCEGt{}$ molecules and is reported with that $n$ throughout; it is
-suggestive rather than precise.
+($n=\nRegBLGt{}$), and is lowest, at $\regCEGt{}$, on \emph{confident-error}
+molecules ($n=\nRegCEGt{}$). It stays above chance throughout, so the
+attribution does not invert wholesale; it degrades exactly where a deployment
+can least afford it, in the regime where an explanation is most likely to be
+believed.
+
+The two cheap proxies both point the wrong way there. Occlusion faithfulness on
+confident-error molecules is $\regCEOcc{}$, markedly \emph{better} than the
+$\regCCOcc{}$ of confident-correct ones, and cross-checkpoint stability is
+$\regCEStab{}$ against $\regCCStab{}$ --- also no worse. A practitioner
+screening explanations by faithfulness or stability would rank the least
+correct group at or above the most correct one. The confident-error estimate
+rests on $\nRegCEGt{}$ molecules and is reported with that $n$ throughout; it
+is suggestive rather than precise.
 
 \paragraph{Calibration linkage} The framework's hypothesis is that
 better-calibrated predictions carry more trustworthy attributions. Computed per
@@ -724,9 +788,12 @@ cell it is supported on balance (median $\rho=\medCalibRho{}$ across
 $\nCalibCells{}$ classification cells, $\nCalibSigPos{}$ significantly positive
 against $\nCalibSigNeg{}$ significantly negative), but the effect is
 cell-specific rather than universal. Pooling every molecule into a single
-correlation instead yields $\pooledCalibRho{}$: the opposite sign. The pooled
+correlation instead yields $\pooledCalibRho{}$, roughly a quarter of the
+per-cell median and indistinguishable from no relationship at all. The pooled
 number is an artefact of mixing cells with different confidence distributions,
-and we report it only to warn against it.
+and we report it only to warn against it: an evaluation that reports one
+aggregate correlation would conclude the linkage does not exist, when per cell
+it does.
 
 \subsection{Cross-task reliability}
 \label{sec:crosstask}
@@ -896,11 +963,23 @@ families that carry the argument have $n=\mutShiftNMol{}$ audited molecules per
 arm. MUTAG, the molecular one, uses a chemically motivated nitro/aromatic-nitro
 SMARTS proxy rather than annotator labels: it encodes an assumption about which
 substructure ought to matter, and the trained model may use a different,
-equally valid rationale~\cite{faber}. \synDataset{}, where the labels are
-exact, is a structural non-molecular graph task. The inversion replicates
-across both, which is the strongest available evidence, but neither arm is
-simultaneously molecular and exactly labelled. No public dataset is, which is
-the gap this paper is about.
+equally valid rationale~\cite{faber}. We answer that objection empirically
+rather than by assertion (\S\ref{sec:rationale}), but it remains the case that
+the shift contrast rests on this one dataset, at $n=\mutShiftNMol{}$ audited
+molecules per arm, with a proxy ground truth.
+
+The arms that might have corroborated it cannot. SynthMotifs, BA-2Motifs and
+ShapeGGen have exact node labels but are not molecules, so a Bemis--Murcko
+scaffold is undefined for them: our splitter reports every graph in its own
+scaffold bucket, which makes their ``scaffold'' split an arbitrary
+deterministic partition rather than a chemical shift, and we exclude them from
+the contrast rather than let a degenerate partition stand in for one.
+\molDataset{} is molecular \emph{and} exactly labelled --- by construction,
+since the label is presence of a substructure --- but saturates near GT AUROC
+$1.0$, leaving no headroom in which degradation could be observed. No public
+dataset is simultaneously molecular, exactly labelled and hard, which is the
+gap this paper is about; a reader should treat the regime contrast as a
+single-dataset result until such a dataset exists.
 
 \ifHasDegenerateCells
 \paragraph{Degenerate ground-truth cells} $\nDegenerateGtCells{}$ cells return

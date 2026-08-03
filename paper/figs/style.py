@@ -26,6 +26,7 @@ ATTRIBUTOR_MARKER = {
     "GuidedBackprop": "D",
     "GNNExplainer": "P",
     "PGExplainer": "X",
+    "SubgraphX": "v",
 }
 ATTRIBUTOR_COLOR = {
     "IntegratedGradients": "#0072B2",
@@ -34,6 +35,7 @@ ATTRIBUTOR_COLOR = {
     "GuidedBackprop": "#CC79A7",
     "GNNExplainer": "#E69F00",
     "PGExplainer": "#56B4E9",
+    "SubgraphX": "#000000",
 }
 BACKBONE_COLOR = {
     "GINE": "#0072B2",
@@ -49,6 +51,7 @@ SHORT = {
     "GuidedBackprop": "GuidedBP",
     "GNNExplainer": "GNNExpl",
     "PGExplainer": "PGExpl",
+    "SubgraphX": "SubgraphX",
 }
 
 

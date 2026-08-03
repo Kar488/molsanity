@@ -72,3 +72,56 @@ def test_faithfulness_vs_truth_flags_mismatch(tmp_path):
     assert fp["faithfulness_pick"] == "A"          # faithfulness picks the wrong one
     assert fp["mismatch"] is True
     assert res["rank_correlation"]["fidelity_plus"]["rho"] < 0  # anti-aligned
+
+
+def test_conclusions_are_computed_not_asserted():
+    """The 'What this shows' section used to be a fixed paragraph claiming
+    in-distribution 'ρ near 1, no mismatch' and shift mismatch at 'p < 0.001'.
+    Neither was read back from the run. On 3 August the report had no
+    in-distribution panel at all and the paragraph still described the contrast;
+    the run's own in-distribution ρ was +0.20 with mismatches on every metric.
+    CLAUDE.md hard rule 1 forbids a report asserting a number it did not compute.
+    """
+    from molsanity.benchmark.faithfulness_vs_truth import _conclusions
+
+    def res(split, rhos, mismatches):
+        return {
+            "dataset": "MUTAG", "backbone": "GINE", "split": split,
+            "selections": [
+                {"faithfulness_metric": m, "mismatch": mm}
+                for m, mm in zip(("occ_spearman", "fidelity_plus"), mismatches)
+            ],
+            "rank_correlation": {
+                m: {"rho": r} for m, r in zip(("occ_spearman", "fidelity_plus"), rhos)
+            },
+        }
+
+    # Dissociating run: correlation drops from in-distribution to shift.
+    text = "\n".join(_conclusions([res("random", [0.9, 0.8], [False, False]),
+                                   res("scaffold", [-0.6, -0.7], [True, True])]))
+    assert "+0.85" in text and "-0.65" in text, text
+    assert "dissociate" in text
+
+    # Non-dissociating run: the report must NOT claim the finding anyway.
+    text = "\n".join(_conclusions([res("random", [-0.6, -0.7], [True, True]),
+                                   res("scaffold", [0.9, 0.8], [False, False])]))
+    assert "does not support the dissociation claim" in text, text
+
+    # Single regime: no contrast may be claimed.
+    text = "\n".join(_conclusions([res("scaffold", [-0.6, -0.7], [True, True])]))
+    assert "no" in text and "contrast is claimed" in text, text
+    assert "dissociate" not in text
+
+    # Nothing computed: nothing claimed.
+    text = "\n".join(_conclusions([]))
+    assert "nothing is claimed" in text.lower()
+
+
+def test_default_regime_pair_is_one_dataset_across_both_splits():
+    """The contrast must isolate scaffold shift, not confound it with a change
+    of dataset, and it must not be satisfiable by a partial match: accepting one
+    of two preferred cells produced a single-regime report under two-regime prose."""
+    from molsanity.benchmark.faithfulness_vs_truth import DEFAULT_CELLS
+
+    assert len({(d, b) for d, b, _, _ in DEFAULT_CELLS}) == 1
+    assert {sp for _, _, sp, _ in DEFAULT_CELLS} == {"random", "scaffold"}

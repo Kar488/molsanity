@@ -3,8 +3,46 @@
 Honest, running list of caveats, scope limits, and known weaknesses. Kept
 current alongside RESULTS.md.
 
+## Corrections to previously published numbers
+
+- **The scaffold split was not a scaffold split, except on MUTAG (found
+  2026-08-03; all shift results before this date are withdrawn).**
+  `splits._murcko_scaffold_smiles` reconstructed every graph through
+  `graph_to_mol`, which decodes atom features using MUTAG's 7-way atom one-hot.
+  MoleculeNet and TDC graphs use a 9-dim vector whose first entry is the atomic
+  number, so `argmax` picked index 0 for almost every atom and each molecule was
+  rebuilt as an all-carbon skeleton. The Murcko scaffolds of those skeletons are
+  near-unique, so every molecule fell into its own bucket and the partition
+  became a deterministic index split with no scaffold grouping at all. Measured
+  fraction of test molecules sharing a *true* Bemis-Murcko scaffold with a
+  training molecule: **ClinTox 50.3%, BBBP 56.1%, BACE 30.3%** — a correct
+  scaffold split leaks none, by construction. Consequences:
+  - Every "under scaffold shift" number computed before 2026-08-03 on a dataset
+    other than MUTAG is invalid and is not reported. 99 cell-runs are being
+    recomputed.
+  - MUTAG is unaffected in kind (it ships no SMILES, so the one-hot path is the
+    correct one for it), though the fix changes its grouping slightly, 52 -> 47.
+  - The random-split arm, the motif battery, `motif_top1_share` and the
+    ground-truth masks never used this code path and are unaffected.
+  - Fixed by routing through `mol_from_data`, which parses the graph's own
+    SMILES when it has one. Regression tests in `tests/test_splits.py` fail
+    against the old implementation.
+  - The lesson worth keeping: the split reported `2038 scaffolds` over ~2039
+    BBBP molecules and nothing flagged it, because a near-1:1 ratio reads as
+    "diverse chemistry" rather than "no grouping happened". RDKit on BBBP's own
+    SMILES gives 1025. `scaffold_split` now records `frac_grouped` and
+    `degenerate` on the `Split` and warns when a partition is not a shift regime.
+
 ## Scope
 
+- **Three of the ground-truth datasets cannot support a shift contrast at all.**
+  BA-2Motifs, SynthMotifs and ShapeGGen are not molecules, so a Bemis-Murcko
+  scaffold is undefined for them; post-fix, `scaffold_split` reports
+  `frac_grouped = 0.000, degenerate = True` on all three — every graph in its own
+  bucket. Their "scaffold" partition is deterministic and reproducible but is not
+  a chemical shift, and they are excluded from the shift analysis and reported as
+  random-split evidence only. The shift contrast rests on the molecular arms:
+  MUTAG (proxy ground truth) and MolMotif (exact ground truth by construction).
 - **CPU-only development environment.** All defaults are CPU-tractable. The
   overnight full matrix assumes a single modern GPU; without one, use `--budget`
   to run a reduced-but-honest subset (clearly labelled in reports).

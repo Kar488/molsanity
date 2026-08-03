@@ -922,6 +922,74 @@ row in any table, and enter no aggregate. We report the earlier diagnosis
 alongside the correction because a coverage gap attributed to the environment
 turned out to be a gap in how hard we looked.
 
+\subsection{What to do when there is no ground truth}
+\label{sec:abstention}
+
+\ifHasAbstention
+Every result above depends on rationale labels, which is exactly what a working
+medicinal chemist does not have. If the audit only says ``your attributions may
+be wrong and you cannot check'', it has diagnosed a problem and left the reader
+where it found them. The weaker but usable question is not \emph{which
+attributor should I trust} but \emph{on which molecules should I decline to
+trust this one} --- a selective-prediction framing, transplanted from
+prediction to explanation. We rank $\nAbstainSignals{}$ candidate signals, all
+computable at inference time without any labels, by the gain in mean
+ground-truth localisation between full coverage and half coverage
+(Figure~\ref{fig:abstention}).
+
+The best is \abstainBest{} ($+\abstainBestLift{}$ over
+$\nAbstainRecords{}$ molecules with ground truth). Ranking by it and keeping
+the most confident \abstainCoverage{}
+\ifHasAbstainOp
+cuts the share of retained molecules whose attribution is \emph{below chance}
+from $\abstainFullBelow{}$ to $\abstainBelow{}$, with mean localisation
+$\abstainKeptGt{}$ over the $\nAbstainKept{}$ retained
+($n=\nAbstainKept{}$).
+\fi
+We state the rule against the below-chance share rather than the mean
+deliberately: pooled mean localisation is already tolerable at full coverage,
+so a rule stated against it would look successful while leaving the failures
+untouched. The tail is what a deployment gets hurt by, and the tail is what
+this moves.
+
+The ranking's negative result is as useful as its positive one.
+$\nAbstainNeg{}$ of the $\nAbstainSignals{}$ signals has \emph{negative} lift:
+\abstainWorst{} ($\abstainWorstLift{}$). Abstaining on molecules whose
+attribution mass is spread across many motifs --- keeping those that
+concentrate on a single chemically coherent one --- makes the retained set
+\emph{worse}. That is the intuition a chemist is most likely to apply by eye,
+and on this data it is anti-predictive. An audit that reported only the working
+signal would have left that trap in place.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/fig_abstention.pdf}
+\caption{\textbf{Coverage--reliability curves for abstention signals, over the
+$\nAbstainRecords{}$ audited molecules that carry ground truth.} Every signal is
+computable at inference time without rationale labels. Moving left to right is
+abstaining on more molecules. \textbf{(a)} Mean ground-truth localisation of
+the retained set; the dotted line is chance. \textbf{(b)} The fraction of the
+retained set whose attribution is \emph{below} chance --- the quantity a
+deployment is hurt by, and the one the pooled mean in (a) hides. The best
+signal (\abstainBest{}) is highlighted; \abstainWorst{} is dashed because its
+lift is negative, so abstaining by it makes the retained set worse.}
+\label{fig:abstention}
+\end{figure}
+
+\paragraph{What this rule does not license} These curves are fitted where
+ground truth exists. Applying them to a dataset where it does not assumes the
+signal--reliability relationship transfers, and the central finding of this
+paper is that one such relationship --- faithfulness to correctness --- does
+not survive a change of split. We therefore offer the rule as a calibrated
+starting point that a group can re-fit on its own labelled subset, not as a
+constant of nature. Stating that constraint is not hedging: it is the same
+standard we hold the faithfulness metrics to.
+\else
+This run produced no records carrying both an abstention signal and a
+ground-truth score, so the coverage--reliability analysis is not computable
+here and no rule is proposed.
+\fi
+
 \section{Discussion}
 
 \paragraph{What the audit buys} The single most useful thing MolSanity produces

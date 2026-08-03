@@ -212,6 +212,45 @@ def macros():
         add("nFaberAntiDespiteUse", f"{len(anti):,}")
         add("faberFracAntiDespiteUse", num(len(anti) / len(uses)))
 
+    # --- abstention: what a practitioner can do with no ground truth ---------
+    # Reuses the package implementation rather than reimplementing the curves,
+    # so the paper and ABSTENTION.md cannot disagree. Every signal ranked here
+    # is computable at inference time, without any rationale labels.
+    ranked = []
+    try:
+        import sys
+        root = str(Path(__file__).resolve().parents[2])
+        if root not in sys.path:
+            sys.path.insert(0, root)
+        from molsanity.audit.abstention import rank_signals, risk_operating_point
+
+        ranked = rank_signals([r for recs in RECS.values() for r in recs])
+    except Exception as exc:  # noqa: BLE001
+        print(f"  abstention macros unavailable ({type(exc).__name__}: {exc})")
+    add_flag("HasAbstention", bool(ranked))
+    if ranked:
+        best, worst = ranked[0], ranked[-1]
+        SIGNAL_LABEL = {"confidence": "predicted confidence",
+                        "rationale_reliance": "rationale reliance",
+                        "occ_spearman": "occlusion faithfulness",
+                        "stability": "cross-checkpoint stability",
+                        "motif_top1_share": "motif top-1 share"}
+        add("nAbstainSignals", len(ranked))
+        add("abstainBest", SIGNAL_LABEL.get(best["signal"], best["signal"]))
+        add("abstainBestLift", num(best["lift"]))
+        add("abstainWorst", SIGNAL_LABEL.get(worst["signal"], worst["signal"]))
+        add("abstainWorstLift", num(worst["lift"]))
+        add("nAbstainNeg", sum(1 for r in ranked if r["lift"] <= 0))
+        add("abstainFullBelow", num(best["frac_below_chance_full"]))
+        add("nAbstainRecords", f"{best['n']:,}")
+        op = risk_operating_point(best["curve"], max_below_chance=0.10)
+        add_flag("HasAbstainOp", op is not None)
+        if op is not None:
+            add("abstainCoverage", f"{100 * op['coverage']:.0f}\\%")
+            add("abstainBelow", num(op["frac_below_chance"]))
+            add("abstainKeptGt", num(op["mean_target"]))
+            add("nAbstainKept", f"{op['n_kept']:,}")
+
     # --- the within-dataset shift contrasts (only the split changes) --------
     tags = {"IntegratedGradients": "IG", "Saliency": "Sal",
             "InputXGradient": "IxG", "GuidedBackprop": "GBP",

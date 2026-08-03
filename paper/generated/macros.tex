@@ -38,6 +38,22 @@
 \newcommand{\faberGtIgnores}{0.706}
 \newcommand{\nFaberAntiDespiteUse}{722}
 \newcommand{\faberFracAntiDespiteUse}{0.158}
+\newif\ifHasAbstention
+\HasAbstentiontrue
+\newcommand{\nAbstainSignals}{5}
+\newcommand{\abstainBest}{predicted confidence}
+\newcommand{\abstainBestLift}{0.073}
+\newcommand{\abstainWorst}{motif top-1 share}
+\newcommand{\abstainWorstLift}{\ensuremath{-0.113}}
+\newcommand{\nAbstainNeg}{1}
+\newcommand{\abstainFullBelow}{0.210}
+\newcommand{\nAbstainRecords}{10,822}
+\newif\ifHasAbstainOp
+\HasAbstainOptrue
+\newcommand{\abstainCoverage}{10\%}
+\newcommand{\abstainBelow}{0.092}
+\newcommand{\abstainKeptGt}{0.840}
+\newcommand{\nAbstainKept}{1,082}
 \newcommand{\nArms}{2}
 \newcommand{\nSelectionTests}{12}
 \newcommand{\mutDataset}{MUTAG}

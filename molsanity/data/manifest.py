@@ -117,6 +117,31 @@ MANIFEST: dict[str, DatasetSpec] = {
                "exact-but-non-molecular (SynthMotifs, BA-2Motifs). Easy by "
                "design: a probe of the audit, not a hard benchmark."),
     ),
+    "MolMotifHard": DatasetSpec(
+        name="MolMotifHard",
+        tier=1,
+        task="graph-classification",
+        source="MoleculeNet Tox21 molecules, relabelled by carboxylic-acid presence",
+        licence="MoleculeNet (open)",
+        loader="molmotif",
+        has_ground_truth=True,
+        extras={"source_dataset": "Tox21", "motif": "carboxylic_acid",
+                "max_graphs": 1000, "radius": 1, "seed": 0},
+        notes=("MolMotif with the saturation removed. The default MolMotif arm "
+               "labels on halogen-aromatic presence, which a GNN separates "
+               "almost perfectly (GT AUROC 0.99-1.00) because a halogen is a "
+               "RARE ELEMENT: the model can detect the atom rather than the "
+               "arrangement. That ceiling is why MolMotif cannot adjudicate the "
+               "regime contrast -- ranking attributors around 0.99 is noise. A "
+               "carboxylic acid is built only from carbon and oxygen, which are "
+               "everywhere in drug-like molecules, so no single-element "
+               "shortcut exists and the model must learn the arrangement. "
+               "Tox21 is the source because the motif is too rare in BBBP for a "
+               "balanced task at n=1000 (410 molecules there, 1000 here). "
+               "Ground truth is still EXACT by construction: the substructure "
+               "defines the label. This is the arm that can corroborate or "
+               "refute the shift contrast MUTAG currently carries alone."),
+    ),
     # ---- Tier 2: real molecular property prediction -------------------------
     "ESOL": DatasetSpec(
         name="ESOL", tier=2, task="graph-regression",

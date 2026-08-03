@@ -166,3 +166,35 @@ def test_molmotif_is_registered_as_exact_ground_truth():
     assert has_ground_truth("MolMotif")
     assert MANIFEST["MolMotif"].tier == 1
     assert MANIFEST["MolMotif"].has_ground_truth
+
+
+def test_molmotif_variants_all_carry_ground_truth():
+    """A MolMotif variant that is not registered for ground truth trains and
+    audits normally but scores zero molecules, which reads as 'no signal'
+    rather than 'not wired up'. MolMotifHard cost one experiment that way.
+    """
+    from molsanity.data.groundtruth import has_ground_truth
+    from molsanity.data.manifest import MANIFEST
+
+    variants = [n for n in MANIFEST if n.startswith("MolMotif")]
+    assert len(variants) >= 2, variants
+    for name in variants:
+        assert has_ground_truth(name), f"{name} is in the manifest but has no GT"
+        assert MANIFEST[name].has_ground_truth, f"{name} spec disagrees with the registry"
+
+
+def test_molmotif_hard_is_configured_to_avoid_the_ceiling():
+    """MolMotifHard exists only to remove MolMotif's saturation. If its motif
+    or source drifts back to something a rare-element shortcut solves, the arm
+    silently stops being able to adjudicate the shift contrast."""
+    from molsanity.data.manifest import MANIFEST
+
+    extras = MANIFEST["MolMotifHard"].extras
+    assert extras["motif"] == "carboxylic_acid", extras
+    # Carbon and oxygen only: no single rare element identifies the motif.
+    from molsanity.data.molmotif import MOTIF_SMARTS
+
+    smarts = MOTIF_SMARTS[extras["motif"]]
+    assert not any(e in smarts for e in ("F", "Cl", "Br", "I", "S", "N")), smarts
+    # BBBP yields only 410 balanced molecules for this motif; Tox21 yields 1000.
+    assert extras["source_dataset"] == "Tox21", extras

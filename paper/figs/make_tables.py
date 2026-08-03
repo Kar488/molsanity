@@ -33,15 +33,25 @@ MAN = D.load_manifest()
 
 SHORT = {"IntegratedGradients": "IG", "Saliency": "Saliency",
          "InputXGradient": "Input$\\times$Grad", "GuidedBackprop": "GuidedBP",
-         "GNNExplainer": "GNNExpl.", "PGExplainer": "PGExpl."}
+         "GNNExplainer": "GNNExpl.", "PGExplainer": "PGExpl.",
+         "SubgraphX": "SubgraphX"}
 ESC = {"&": "\\&", "%": "\\%", "_": "\\_", "#": "\\#"}
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
-              "GuidedBackprop", "GNNExplainer", "PGExplainer"]
+              "GuidedBackprop", "GNNExplainer", "PGExplainer", "SubgraphX"]
 # Cell families with a node-level ground truth, the full attributor set, and
-# BOTH splits — i.e. within-dataset in-distribution vs. scaffold-shift
-# contrasts, where only the split changes. MUTAG is the molecular one (proxy
-# ground truth) and leads; SynthMotifs carries exact ground truth.
-ARMS = [("MUTAG", "GINE", "mut"), ("SynthMotifs", "GINE", "syn")]
+# BOTH splits — within-dataset in-distribution vs. scaffold-shift contrasts,
+# where only the split changes.
+#
+# MUTAG leads and is the ONLY arm that can carry a shift claim: it is the only
+# ground-truth family that is both molecular and unsaturated. SynthMotifs was
+# the second arm until 2026-08-03; it is not molecular, so it has no
+# Bemis-Murcko scaffold and its "scaffold" split comes back
+# frac_grouped = 0.000, degenerate = True — an arbitrary deterministic
+# partition, not a chemical shift. Same for BA-2Motifs and ShapeGGen.
+# MolMotif is the molecular exactly-labelled arm, but it saturates at
+# GT AUROC ~0.99, where ranking attributors is noise around a ceiling; it is
+# reported as a probe that the audit works, not as a second shift contrast.
+ARMS = [("MUTAG", "GINE", "mut"), ("MolMotif", "GINE", "mol")]
 ARM = ARMS[0][:2]
 
 
@@ -173,10 +183,40 @@ def macros():
     add("nNoGtCells", sum(1 for r in list(CLS) + list(REG)
                           if r.get("gt_auroc") is None))
 
+    # --- the Faber partition: does the model actually read the rationale? ----
+    # Faber et al. object that a low GT AUROC may be a fact about the model, not
+    # the attribution, when the model does not use the labelled substructure.
+    # That is testable per molecule: occlude the ground truth and see whether
+    # the prediction collapses. Same rule as molsanity.audit.rationale, applied
+    # to the committed records so the paper and the report cannot drift.
+    uses, ignores = [], []
+    for recs in RECS.values():
+        for r in recs:
+            rel, gt = r.get("rationale_reliance"), r.get("gt_auroc")
+            if rel is None or gt is None:
+                continue
+            try:
+                rel, gt = float(rel), float(gt)
+            except (TypeError, ValueError):
+                continue
+            if rel != rel or gt != gt:
+                continue
+            (uses if rel > 0.5 else ignores).append(gt)
+    add_flag("HasFaberPartition", bool(uses) and bool(ignores))
+    if uses and ignores:
+        anti = [g for g in uses if g < 0.5]
+        add("nFaberUses", f"{len(uses):,}")
+        add("nFaberIgnores", f"{len(ignores):,}")
+        add("faberGtUses", num(st.mean(uses)))
+        add("faberGtIgnores", num(st.mean(ignores)))
+        add("nFaberAntiDespiteUse", f"{len(anti):,}")
+        add("faberFracAntiDespiteUse", num(len(anti) / len(uses)))
+
     # --- the within-dataset shift contrasts (only the split changes) --------
     tags = {"IntegratedGradients": "IG", "Saliency": "Sal",
             "InputXGradient": "IxG", "GuidedBackprop": "GBP",
-            "GNNExplainer": "GNNE", "PGExplainer": "PGE"}
+            "GNNExplainer": "GNNE", "PGExplainer": "PGE",
+            "SubgraphX": "SGX"}
     add("nArms", len(ARMS))
 
     # Benjamini-Hochberg over the whole family of selection tests, so the prose

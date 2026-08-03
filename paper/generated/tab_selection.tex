@@ -9,21 +9,21 @@
 \toprule
 \textbf{cell} & \textbf{regime} & \textbf{ranking metric} & \textbf{its top pick} & \textbf{pick GT} & \textbf{GT-best} & \textbf{GT-best} & \textbf{mismatch} & \textbf{Wilcoxon $p$} & \textbf{$q$} & \textbf{$\rho$(faith,GT)} \\
 \midrule
-MUTAG$\cdot$GINE, $n$=58 & in-distribution & occlusion $\rho$ & GuidedBP & 0.037 & GNNExpl. & 0.838 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.086 \\
- &  & Fidelity+ & GuidedBP & 0.037 & GNNExpl. & 0.838 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.657 \\
- &  & characterisation & GNNExpl. & 0.838 & GNNExpl. & 0.838 & no & --- & --- & 0.600 \\
+MUTAG$\cdot$GINE, $n$=58 & in-distribution & occlusion $\rho$ & GuidedBP & 0.037 & GNNExpl. & 0.858 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.143 \\
+ &  & Fidelity+ & IG & 0.496 & GNNExpl. & 0.858 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.357 \\
+ &  & characterisation & SubgraphX & 0.348 & GNNExpl. & 0.858 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.821 \\
 \addlinespace[2pt]
-MUTAG$\cdot$GINE, $n$=53 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.146 & PGExpl. & 0.981 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.714 \\
- &  & Fidelity+ & GuidedBP & 0.146 & PGExpl. & 0.981 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.543 \\
- &  & characterisation & GuidedBP & 0.146 & PGExpl. & 0.981 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.714 \\
+MUTAG$\cdot$GINE, $n$=53 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.013 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.643 \\
+ &  & Fidelity+ & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.107 \\
+ &  & characterisation & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.036 \\
 \addlinespace[2pt]
-SynthMotifs$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & IG & 0.998 & IG & 0.998 & no & --- & --- & 1.000 \\
- &  & Fidelity+ & Saliency & 0.960 & IG & 0.998 & \textbf{yes} & 0.250 & 0.250 & 0.486 \\
- &  & characterisation & GuidedBP & 0.996 & IG & 0.998 & \textbf{yes} & --- & --- & 0.657 \\
+MolMotif$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & GNNExpl. & 0.630 & Input$\times$Grad & 0.999 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.571 \\
+ &  & Fidelity+ & GuidedBP & 0.998 & Input$\times$Grad & 0.999 & \textbf{yes} & 0.091 & 0.091 & 0.750 \\
+ &  & characterisation & SubgraphX & 0.556 & Input$\times$Grad & 0.999 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.107 \\
 \addlinespace[2pt]
-SynthMotifs$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.982 & Saliency & 0.983 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.829 \\
- &  & Fidelity+ & GuidedBP & 0.982 & Saliency & 0.983 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.543 \\
- &  & characterisation & GuidedBP & 0.982 & Saliency & 0.983 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.771 \\
+MolMotif$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & IG & 0.939 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.286 \\
+ &  & Fidelity+ & IG & 0.939 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.321 \\
+ &  & characterisation & IG & 0.939 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.286 \\
 \bottomrule
 \end{tabular}}
 \end{table*}

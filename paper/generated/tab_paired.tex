@@ -10,39 +10,51 @@
 \midrule
 \multicolumn{5}{l}{\itshape MUTAG, GINE, random split} \\
 \addlinespace[1pt]
-IG vs.\ Saliency & 6 & 0.300 & 1.000 & 1.000 \\
-IG vs.\ Input$\times$Grad & 6 & 0.300 & 1.000 & 1.000 \\
-IG vs.\ GuidedBP & 6 & 0.300 & 1.000 & 1.000 \\
-IG vs.\ GNNExpl. & 6 & 0.100 & 1.000 & 1.000 \\
-IG vs.\ PGExpl. & 6 & 0.574 & 0.688 & 1.000 \\
-Saliency vs.\ Input$\times$Grad & 58 & 0.000 & 0.866 & 1.000 \\
-Saliency vs.\ GuidedBP & 58 & 0.000 & 0.004 & 0.013 \\
-Saliency vs.\ GNNExpl. & 58 & 0.000 & 0.422 & 0.714 \\
-Saliency vs.\ PGExpl. & 57 & 0.193 & $<$0.001 & 0.002 \\
-Input$\times$Grad vs.\ GuidedBP & 58 & 0.000 & 0.006 & 0.016 \\
-Input$\times$Grad vs.\ GNNExpl. & 58 & 0.000 & 0.428 & 0.714 \\
-Input$\times$Grad vs.\ PGExpl. & 57 & 0.213 & $<$0.001 & 0.002 \\
-GuidedBP vs.\ GNNExpl. & 58 & 0.000 & 0.278 & 0.597 \\
+IG vs.\ Saliency & 58 & 0.000 & 0.885 & 0.885 \\
+IG vs.\ Input$\times$Grad & 58 & 0.000 & 0.862 & 0.885 \\
+IG vs.\ GuidedBP & 58 & 0.000 & 0.046 & 0.108 \\
+IG vs.\ GNNExpl. & 58 & 0.000 & 0.704 & 0.861 \\
+IG vs.\ PGExpl. & 57 & 0.149 & 0.006 & 0.019 \\
+IG vs.\ SubgraphX & 57 & 0.000 & 0.692 & 0.861 \\
+Saliency vs.\ Input$\times$Grad & 58 & 0.000 & 0.779 & 0.861 \\
+Saliency vs.\ GuidedBP & 58 & 0.000 & 0.005 & 0.018 \\
+Saliency vs.\ GNNExpl. & 58 & 0.000 & 0.597 & 0.861 \\
+Saliency vs.\ PGExpl. & 57 & 0.193 & $<$0.001 & 0.001 \\
+Saliency vs.\ SubgraphX & 57 & 0.000 & 0.689 & 0.861 \\
+Input$\times$Grad vs.\ GuidedBP & 58 & 0.000 & 0.005 & 0.018 \\
+Input$\times$Grad vs.\ GNNExpl. & 58 & 0.000 & 0.608 & 0.861 \\
+Input$\times$Grad vs.\ PGExpl. & 57 & 0.213 & $<$0.001 & 0.001 \\
+Input$\times$Grad vs.\ SubgraphX & 57 & $-$0.015 & 0.711 & 0.861 \\
+GuidedBP vs.\ GNNExpl. & 58 & 0.046 & 0.148 & 0.294 \\
 GuidedBP vs.\ PGExpl. & 57 & 0.316 & $<$0.001 & $<$0.001 \\
-GNNExpl. vs.\ PGExpl. & 57 & 0.133 & 0.003 & 0.012 \\
+GuidedBP vs.\ SubgraphX & 57 & 0.028 & 0.154 & 0.294 \\
+GNNExpl. vs.\ PGExpl. & 57 & 0.070 & 0.007 & 0.019 \\
+GNNExpl. vs.\ SubgraphX & 57 & 0.000 & 0.774 & 0.861 \\
+PGExpl. vs.\ SubgraphX & 56 & $-$0.167 & $<$0.001 & 0.001 \\
 \addlinespace[3pt]
 \multicolumn{5}{l}{\itshape MUTAG, GINE, scaffold split} \\
 \addlinespace[1pt]
-IG vs.\ Saliency & 20 & $-$0.436 & 0.217 & 0.251 \\
-IG vs.\ Input$\times$Grad & 20 & $-$0.486 & 0.217 & 0.251 \\
-IG vs.\ GuidedBP & 20 & $-$0.418 & 0.197 & 0.251 \\
-IG vs.\ GNNExpl. & 20 & $-$0.018 & 0.913 & 0.913 \\
-IG vs.\ PGExpl. & 20 & 0.018 & 0.397 & 0.426 \\
-Saliency vs.\ Input$\times$Grad & 53 & 0.000 & 0.180 & 0.251 \\
-Saliency vs.\ GuidedBP & 53 & 0.000 & 0.017 & 0.032 \\
-Saliency vs.\ GNNExpl. & 53 & 0.100 & $<$0.001 & $<$0.001 \\
-Saliency vs.\ PGExpl. & 53 & 0.345 & $<$0.001 & $<$0.001 \\
-Input$\times$Grad vs.\ GuidedBP & 53 & 0.000 & 0.050 & 0.083 \\
-Input$\times$Grad vs.\ GNNExpl. & 53 & 0.100 & $<$0.001 & $<$0.001 \\
-Input$\times$Grad vs.\ PGExpl. & 53 & 0.345 & $<$0.001 & $<$0.001 \\
-GuidedBP vs.\ GNNExpl. & 53 & 0.100 & $<$0.001 & $<$0.001 \\
-GuidedBP vs.\ PGExpl. & 53 & 0.352 & $<$0.001 & $<$0.001 \\
-GNNExpl. vs.\ PGExpl. & 53 & 0.149 & $<$0.001 & 0.002 \\
+IG vs.\ Saliency & 53 & 0.000 & 0.098 & 0.171 \\
+IG vs.\ Input$\times$Grad & 53 & $-$0.200 & 0.002 & 0.005 \\
+IG vs.\ GuidedBP & 53 & $-$0.343 & $<$0.001 & $<$0.001 \\
+IG vs.\ GNNExpl. & 53 & 0.000 & 0.270 & 0.378 \\
+IG vs.\ PGExpl. & 52 & 0.000 & 0.743 & 0.743 \\
+IG vs.\ SubgraphX & 53 & 0.000 & 0.398 & 0.522 \\
+Saliency vs.\ Input$\times$Grad & 53 & 0.000 & 0.031 & 0.066 \\
+Saliency vs.\ GuidedBP & 53 & $-$0.107 & $<$0.001 & $<$0.001 \\
+Saliency vs.\ GNNExpl. & 53 & 0.000 & 0.672 & 0.743 \\
+Saliency vs.\ PGExpl. & 52 & 0.057 & 0.066 & 0.125 \\
+Saliency vs.\ SubgraphX & 53 & 0.033 & 0.626 & 0.730 \\
+Input$\times$Grad vs.\ GuidedBP & 53 & 0.000 & $<$0.001 & 0.001 \\
+Input$\times$Grad vs.\ GNNExpl. & 53 & 0.000 & 0.019 & 0.044 \\
+Input$\times$Grad vs.\ PGExpl. & 52 & 0.200 & $<$0.001 & 0.002 \\
+Input$\times$Grad vs.\ SubgraphX & 53 & 0.023 & 0.130 & 0.195 \\
+GuidedBP vs.\ GNNExpl. & 53 & 0.200 & $<$0.001 & $<$0.001 \\
+GuidedBP vs.\ PGExpl. & 52 & 0.265 & $<$0.001 & $<$0.001 \\
+GuidedBP vs.\ SubgraphX & 53 & 0.200 & $<$0.001 & $<$0.001 \\
+GNNExpl. vs.\ PGExpl. & 52 & 0.022 & 0.118 & 0.191 \\
+GNNExpl. vs.\ SubgraphX & 53 & 0.000 & 0.739 & 0.743 \\
+PGExpl. vs.\ SubgraphX & 52 & 0.000 & 0.447 & 0.552 \\
 \bottomrule
 \end{tabular}
 \end{table}

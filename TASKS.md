@@ -7,66 +7,70 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 
 ## PAPER EDITS PENDING — the running list
 
-Everything found during the 2 August sweep that changes what the manuscript may
-claim. Read this before `make -C paper`. Ordered by how much damage it does if
-missed.
+Everything found during the sweeps that changes what the manuscript may claim.
+Read this before `make -C paper`. Ordered by how much damage it does if missed.
 
-### Claims that must change
+### Claims that changed with the corrected split — DONE 2026-08-03
 
-- [!] **THE SCAFFOLD SPLIT WAS BROKEN FOR EVERY DATASET EXCEPT MUTAG.** Found
-      2026-08-03 while checking the SynthMotifs item below; it is the same bug,
-      much wider. `splits._murcko_scaffold_smiles` always went through
-      `graph_to_mol`, which decodes atom features with **MUTAG's 7-way one-hot
-      vocabulary**. MoleculeNet/TDC graphs carry a 9-dim vector whose first
-      entry is the *atomic number*, so `argmax` returned 0 for nearly every
-      atom and every molecule was rebuilt as an all-carbon skeleton. Their
-      Murcko scaffolds came out near-unique, each molecule landed in its own
-      bucket, and the "scaffold split" degenerated into a deterministic index
-      partition. Measured leakage of *true* Bemis-Murcko scaffolds from train
-      into test: **ClinTox 50.3%, BBBP 56.1%, BACE 30.3%** (a real scaffold
-      split leaks 0% by construction). `mol_from_data` — which parses the
-      graph's own SMILES — already existed and is what `motifs.decompose` uses;
-      `splits.py` simply never called it.
-      - Fixed in `splits.py`; leakage now 0.0% on all three. Regression tests in
-        `tests/test_splits.py`, which fail against the old code.
-      - **99 scaffold cell-runs (33 cells x 3 seeds) are invalid and must be
-        re-run**: BACE, BBBP, ClinTox, SIDER, Tox21, DILI, hERG, ESOL, FreeSolv,
-        Lipophilicity, MolMotif. `SCAFFOLD_SPLIT_VERSION = 2` invalidates their
-        `.done` markers automatically and leaves the 204 random-split cell-runs
-        cached. Only 3 of the 99 are SubgraphX.
-      - MUTAG's scaffold split was always computed correctly (it has no SMILES,
-        so the one-hot path is the right one), but its partition shifts slightly
-        under the fix (52 -> 47 groups), so its 33 scaffold cell-runs re-run too.
-      - **Nothing else is affected.** The motif battery, `motif_top1_share`, the
-        GT masks and every random-split number go through `mol_from_data` or
-        never touch RDKit. The random arm is untouched.
-      - **No shift claim in the paper may cite a non-MUTAG dataset until the
-        re-run lands.** That includes the abstract.
-- [x] **The SynthMotifs "scaffold" split may not be a shift at all.** Confirmed,
-      and it is structural rather than a bug: SynthMotifs graphs are not
-      molecules, so they have no Bemis-Murcko scaffold at all. Post-fix
-      `scaffold_split` reports `frac_grouped = 0.000, degenerate = True` — every
-      graph in its own bucket. Same for BA-2Motifs and ShapeGGen. `Split` now
-      carries `degenerate` and the splitter logs a warning. **Drop SynthMotifs,
-      BA-2Motifs and ShapeGGen from the shift contrast entirely**; they are
-      random-split evidence only. The abstract's "appears on a synthetic set
-      with exact node labels" must go — MolMotif (real molecules, exact labels)
-      is the replacement, once re-run.
-      (Note on the evidence that led here: the 2 August log's `2038 scaffolds`
-      over ~2039 BBBP molecules looked like real molecules simply being diverse.
-      RDKit on BBBP's own SMILES gives **1025** scaffolds over 2039. The near-1:1
-      ratio was the bug, not the chemistry.)
-- [ ] **ShapeGGen has no scaffold arm.** All 21 of its scaffold cell-runs failed
-      (`graph_to_mol` assumes MUTAG's 7-element atom vocabulary; ShapeGGen's
-      features are not MUTAG one-hots). The deeper point is that a Bemis-Murcko
-      split is undefined for a dataset containing no molecules. ShapeGGen
-      therefore contributes random-split cells only and **cannot participate in
-      the shift contrast**, which is the paper's central axis. State it; do not
-      let it vanish into a cell count.
-- [ ] **Re-decide the headline.** MUTAG PGExplainer was GT-best at 0.981 on one
-      seed but mean 0.670, sd 0.546, range 0.039-0.988 across three. That is not
-      a finding. MolMotif is the stronger anchor: molecular *and* exactly
-      labelled. Read `SEED_VARIANCE.md` before writing any attributor ranking.
+The 3 August re-run inverted or weakened four claims the manuscript made. All
+four are now rewritten from the regenerated macros and cross-checked against
+`results/BENCHMARK_GT.json` and `results/RATIONALE_USE.md`.
+
+- [x] **"Faithfulness and correctness invert under shift" was too strong.**
+      Faithfulness rankings mismatch the ground truth *in-distribution too*
+      (3 of 3 metrics). The claim is now a collapse in rank correlation
+      (occlusion +0.143 -> -0.643; mean over metrics +0.20 -> -0.24), stated as
+      such in the abstract and the contribution list.
+- [x] **"The attributor ordering does not survive the split" was backwards.**
+      It largely does: rho = 0.821 on MUTAG, 0.964 on MolMotif. The *backbone*
+      ordering is what does not survive (rho = 0.100). Rewritten to separate
+      what shift breaks from what it leaves alone, and the MolFaith positioning
+      now turns on "stability of a proxy is not validity of a proxy".
+- [x] **"Ground-truth localisation falls below chance on confidently-wrong
+      predictions" was false.** It is 0.612, above chance, down from 0.787 on
+      confident-correct. The stronger honest version replaced it: localisation
+      degrades exactly there, while occlusion faithfulness *improves*
+      (0.170 -> 0.443) and stability does not worsen (0.787 -> 0.825). Both
+      cheap proxies point away from the failure.
+- [x] **"The calibration link reverses sign when pooled" was false.** It
+      attenuates, +0.160 per-cell median to +0.037 pooled. Still a Simpson
+      trap, no longer a sign flip.
+
+### Scope corrections — DONE 2026-08-03
+
+- [x] **SynthMotifs, BA-2Motifs and ShapeGGen are out of the shift contrast.**
+      Not molecules, so no Bemis-Murcko scaffold; the splitter reports
+      `frac_grouped = 0.000, degenerate = True`. `ARMS` in `make_tables.py` no
+      longer includes SynthMotifs, and the molgrid caption says explicitly that
+      SynthMotifs is a structural illustration only.
+- [x] **MolMotif replaces it as the second arm, and cannot adjudicate.**
+      Molecular and exactly labelled, but saturated: top attributors at GT AUROC
+      0.99-1.00, so ranking among them is noise around a ceiling, and its
+      faithfulness-truth correlation is negative in *both* regimes. Reported as
+      a probe that the audit works, not as a second shift contrast.
+- [x] **The shift contrast rests on MUTAG alone**, n=53 per arm, proxy ground
+      truth. Stated in the abstract and Limitations, not buried.
+- [x] **SubgraphX was missing from every paper-side attributor map** (SHORT,
+      ATTR_ORDER, tags, ATTRIBUTOR_COLOR, ATTRIBUTOR_MARKER), so `make tables`
+      crashed once it entered the selection test. Added, with `#000000` (the
+      eighth Okabe-Ito colour) and marker `v`.
+- [x] **The Faber objection now has a section** (`sec:rationale`) rather than
+      only a citation. 6,257 molecules carry a rationale the model does not use
+      against 4,565 that it does; of the latter, **722** (0.158) still receive an
+      anti-aligned attribution. Macros recompute the partition from the records
+      with the same rule as `molsanity/audit/rationale.py`, so the paper and the
+      report cannot drift.
+
+### Still open
+
+- [ ] **ShapeGGen's scaffold cells now run rather than crash**, producing a
+      degenerate partition flagged as such. The ledger counts them; make sure no
+      table implies they contribute to the shift axis.
+- [ ] **Re-decide whether the flagship table should be single-seed.**
+      `BENCHMARK_GT.md` reports seed 0. The per-seed check holds — occlusion
+      rho is negative on 3/3 seeds under shift, +0.36 +/- 0.19 -> -0.66 +/- 0.09
+      — and the abstract quotes that spread, but the table itself does not.
+      Either add a seed column or state the single-seed scope in the caption.
 
 ### Reproducibility statement
 

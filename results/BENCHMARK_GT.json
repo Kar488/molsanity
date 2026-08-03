@@ -2,6 +2,149 @@
   {
     "dataset": "MUTAG",
     "backbone": "GINE",
+    "split": "random",
+    "attributors": [
+      "GNNExplainer",
+      "GuidedBackprop",
+      "InputXGradient",
+      "IntegratedGradients",
+      "PGExplainer",
+      "Saliency",
+      "SubgraphX"
+    ],
+    "gt_best": "GNNExplainer",
+    "per_attributor": {
+      "GNNExplainer": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.8578171940748005,
+        "gt_auroc_ci": [
+          0.7909962575879157,
+          0.9212285016791862
+        ],
+        "occ_spearman_mean": -0.17009804378374632,
+        "fidelity_plus_mean": 0.31046940228850595,
+        "characterization_mean": 0.3377323819790592
+      },
+      "GuidedBackprop": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.03692739346897562,
+        "gt_auroc_ci": [
+          0.01809713285784533,
+          0.06609061935031761
+        ],
+        "occ_spearman_mean": -0.08910455674779236,
+        "fidelity_plus_mean": 0.5396800630561741,
+        "characterization_mean": 0.17812029542413824
+      },
+      "InputXGradient": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.013035591483867345,
+        "gt_auroc_ci": [
+          0.005130450647692026,
+          0.023170566063885022
+        ],
+        "occ_spearman_mean": -0.20030283859434939,
+        "fidelity_plus_mean": 0.49127030378791936,
+        "characterization_mean": 0.16023059613405025
+      },
+      "IntegratedGradients": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.4956688191982309,
+        "gt_auroc_ci": [
+          0.4690243666492399,
+          0.5230596670955444
+        ],
+        "occ_spearman_mean": -0.19588169126195346,
+        "fidelity_plus_mean": 0.5505392843244699,
+        "characterization_mean": 0.34707161389384983
+      },
+      "PGExplainer": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.250733136876646,
+        "gt_auroc_ci": [
+          0.22259913023715636,
+          0.2784013952367781
+        ],
+        "occ_spearman_mean": -0.35089906242140007,
+        "fidelity_plus_mean": 0.3794072264521907,
+        "characterization_mean": 0.22486375645468346
+      },
+      "Saliency": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.0017959770114942526,
+        "gt_auroc_ci": [
+          0.0,
+          0.005387931034482759
+        ],
+        "occ_spearman_mean": -0.19549796221595836,
+        "fidelity_plus_mean": 0.49422689436361444,
+        "characterization_mean": 0.1633708283938417
+      },
+      "SubgraphX": {
+        "n_mol": 58,
+        "gt_auroc_mean": 0.3478595989878952,
+        "gt_auroc_ci": [
+          0.31558217976876063,
+          0.37827404097339434
+        ],
+        "occ_spearman_mean": -0.15415446071564354,
+        "fidelity_plus_mean": 0.3418712475364293,
+        "characterization_mean": 0.4495319985945798
+      }
+    },
+    "selections": [
+      {
+        "faithfulness_metric": "occ_spearman",
+        "faithfulness_pick": "GuidedBackprop",
+        "faithfulness_pick_gt_auroc": 0.03692739346897562,
+        "gt_best": "GNNExplainer",
+        "gt_best_gt_auroc": 0.8578171940748005,
+        "mismatch": true,
+        "paired_gt_gap_median": 0.9782913165266106,
+        "paired_gt_pvalue": 2.2430032275754144e-11,
+        "n_paired": 58
+      },
+      {
+        "faithfulness_metric": "fidelity_plus",
+        "faithfulness_pick": "IntegratedGradients",
+        "faithfulness_pick_gt_auroc": 0.4956688191982309,
+        "gt_best": "GNNExplainer",
+        "gt_best_gt_auroc": 0.8578171940748005,
+        "mismatch": true,
+        "paired_gt_gap_median": 0.5,
+        "paired_gt_pvalue": 1.4130392736797183e-08,
+        "n_paired": 58
+      },
+      {
+        "faithfulness_metric": "characterization",
+        "faithfulness_pick": "SubgraphX",
+        "faithfulness_pick_gt_auroc": 0.3478595989878952,
+        "gt_best": "GNNExplainer",
+        "gt_best_gt_auroc": 0.8578171940748005,
+        "mismatch": true,
+        "paired_gt_gap_median": 0.5714285714285714,
+        "paired_gt_pvalue": 3.455159335598286e-11,
+        "n_paired": 58
+      }
+    ],
+    "rank_correlation": {
+      "occ_spearman": {
+        "rho": 0.14285714285714288,
+        "pvalue": 0.7599453002180927
+      },
+      "fidelity_plus": {
+        "rho": -0.3571428571428572,
+        "pvalue": 0.431611352038328
+      },
+      "characterization": {
+        "rho": 0.8214285714285715,
+        "pvalue": 0.0234488083456915
+      }
+    }
+  },
+  {
+    "dataset": "MUTAG",
+    "backbone": "GINE",
     "split": "scaffold",
     "attributors": [
       "GNNExplainer",
@@ -130,7 +273,7 @@
     "rank_correlation": {
       "occ_spearman": {
         "rho": -0.642857142857143,
-        "pvalue": 0.11939237342741094
+        "pvalue": 0.11939237342741109
       },
       "fidelity_plus": {
         "rho": -0.10714285714285716,

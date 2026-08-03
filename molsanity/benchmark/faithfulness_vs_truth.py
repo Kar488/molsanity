@@ -142,8 +142,15 @@ def _fmt(v, nd=3):
 # regime-label). These are *preferences*, not requirements — see
 # ``eligible_cells``, which falls back to whatever the run actually audited so
 # the report is never silently empty.
+# Both splits of the *same* dataset and backbone, so the contrast isolates
+# scaffold shift rather than confounding it with a change of dataset. MUTAG is
+# the flagship because it is the only ground-truth arm that is both molecular
+# (so a Bemis-Murcko split is a real chemical shift -- BA-2Motifs, SynthMotifs
+# and ShapeGGen are not molecules and their scaffold split is degenerate) and
+# unsaturated (MolMotif sits at GT AUROC ~0.99, where ranking attributors is
+# noise around a ceiling).
 DEFAULT_CELLS = [
-    ("SynthMotifsXL", "GINE", "random", "in-distribution (exact GT, n≈120)"),
+    ("MUTAG", "GINE", "random", "in-distribution (motif-proxy GT)"),
     ("MUTAG", "GINE", "scaffold", "scaffold shift (motif-proxy GT)"),
 ]
 
@@ -177,11 +184,18 @@ def eligible_cells(root: Path = AUDIT_ROOT, min_attributors: int = 2) -> list[tu
 
 
 def resolve_cells(cells=None, root: Path = AUDIT_ROOT) -> list[tuple]:
-    """Preferred cells that this run produced, else whatever it did produce."""
+    """Preferred cells that this run produced, else whatever it did produce.
+
+    The preferred set is taken only when it survives *whole*. Accepting a
+    partial match used to yield a single-regime report while the surrounding
+    prose contrasted two: the 3 August run had no ``SynthMotifsXL``, so the
+    in-distribution panel silently vanished and the conclusions described a
+    comparison that had not been computed.
+    """
     available = {(d, b, sp) for d, b, sp, _ in eligible_cells(root)}
-    wanted = [c for c in (cells or DEFAULT_CELLS) if (c[0], c[1], c[2]) in available]
-    if wanted:
-        return wanted
+    preferred = list(cells or DEFAULT_CELLS)
+    if preferred and all((c[0], c[1], c[2]) in available for c in preferred):
+        return preferred
     return eligible_cells(root)
 
 
@@ -227,6 +241,79 @@ def _section(res: dict, regime: str) -> list[str]:
     return lines
 
 
+def _conclusions(results: list[dict]) -> list[str]:
+    """Write 'What this shows' from what was actually computed.
+
+    This section used to be a fixed paragraph asserting that in-distribution
+    'ρ near 1, no mismatch' and that shift mismatches at 'p < 0.001'. Those
+    numbers were never read back from the run. On 3 August the report carried
+    no in-distribution panel at all and the paragraph still described the
+    contrast; the run's own in-distribution ρ was +0.36 with mismatches on two
+    of three seeds. A generated report may not assert a number it did not
+    compute (CLAUDE.md hard rule 1), so every claim below is derived here.
+    """
+    usable = [r for r in results if "error" not in r and r.get("selections")]
+    lines = ["## What this shows", ""]
+    if not usable:
+        return lines + ["_No regime in this run yielded a selection test; "
+                        "nothing is claimed._", ""]
+
+    def summarise_one(res: dict) -> str:
+        sels = res["selections"]
+        rc = res.get("rank_correlation", {})
+        rhos = [rc.get(s["faithfulness_metric"], {}).get("rho") for s in sels]
+        rhos = [x for x in rhos if x is not None and x == x]
+        n_mis = sum(1 for s in sels if s["mismatch"])
+        rho_txt = (f"ρ ranges {min(rhos):+.2f} to {max(rhos):+.2f}"
+                   if len(rhos) > 1 else
+                   (f"ρ = {rhos[0]:+.2f}" if rhos else "ρ undefined"))
+        agree = ("selects the ground-truth-best attributor on every metric"
+                 if n_mis == 0 else
+                 f"picks the wrong attributor on {n_mis} of {len(sels)} metrics")
+        return (f"- **{res['dataset']} · {res['backbone']} · {res['split']} split**: "
+                f"ranking by faithfulness {agree} ({rho_txt}).")
+
+    for res in usable:
+        lines.append(summarise_one(res))
+    lines.append("")
+
+    by_split = {r["split"]: r for r in usable}
+    if {"random", "scaffold"} <= set(by_split):
+        def mean_rho(res):
+            rc = res.get("rank_correlation", {})
+            xs = [rc.get(s["faithfulness_metric"], {}).get("rho")
+                  for s in res["selections"]]
+            xs = [x for x in xs if x is not None and x == x]
+            return sum(xs) / len(xs) if xs else float("nan")
+        r_in, r_sh = mean_rho(by_split["random"]), mean_rho(by_split["scaffold"])
+        if r_in == r_in and r_sh == r_sh:
+            lines += [
+                f"Mean rank correlation falls from {r_in:+.2f} in-distribution to "
+                f"{r_sh:+.2f} under scaffold shift ({r_sh - r_in:+.2f}). "
+                + ("Faithfulness and correctness dissociate under shift, so a "
+                   "faithfulness-only benchmark can recommend the wrong method in "
+                   "exactly the regime that matters for drug discovery."
+                   if r_sh < r_in else
+                   "The two regimes do not separate in the expected direction here; "
+                   "this run does not support the dissociation claim."),
+                "",
+            ]
+    else:
+        missing = {"random", "scaffold"} - set(by_split)
+        lines += [
+            f"Only the **{'/'.join(sorted(by_split))}** regime was analysed "
+            f"(no {'/'.join(sorted(missing))} panel in this run), so no "
+            "in-distribution-versus-shift contrast is claimed here.",
+            "",
+        ]
+    lines += [
+        "_Single-seed figures. Read `SEED_VARIANCE.md` before treating any "
+        "attributor ranking above as an effect._",
+        "",
+    ]
+    return lines
+
+
 def write_report(cells=None, path: str | Path = "BENCHMARK_GT.md",
                  seed: int = 0, root: Path = AUDIT_ROOT) -> dict:
     cells = resolve_cells(cells, root=root)
@@ -256,22 +343,7 @@ def write_report(cells=None, path: str | Path = "BENCHMARK_GT.md",
         results.append(res)
         lines += _section(res, regime)
 
-    lines += [
-        "## What this shows",
-        "",
-        "- **In-distribution** (the model applied to molecules like its training set),",
-        "  faithfulness and correctness **agree**: ranking by any faithfulness metric",
-        "  recovers the ground-truth-best attributor (ρ near 1, no mismatch). A",
-        "  faithfulness-only benchmark is adequate *here*.",
-        "- **Under scaffold shift**, they **dissociate**: the field-standard",
-        "  Fidelity+ / characterization scores select an attributor the exact/proxy",
-        "  ground truth shows is wrong (mismatch, paired Wilcoxon p < 0.001), and the",
-        "  faithfulness↔correctness rank correlation collapses. A faithfulness-only",
-        "  benchmark **recommends the wrong method in exactly the regime that matters",
-        "  for drug discovery** — which is what MolSanity's ground-truth + shift audit",
-        "  is built to catch.",
-        "",
-    ]
+    lines += _conclusions(results)
     Path(path).write_text("\n".join(lines) + "\n")
     Path(path).with_suffix(".json").write_text(
         json.dumps(results, indent=2, default=float) + "\n")

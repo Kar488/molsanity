@@ -11,6 +11,30 @@
 correlation between the faithfulness metric and GT AUROC across attributors
 (≈1 → faithfulness tracks correctness; ≤0 → it does not).
 
+### MUTAG · GINE · random split — in-distribution (motif-proxy GT)
+
+7 attributors on the same ~58 molecules.
+
+| attributor | GT AUROC | 95% CI | occ_spearman | Fidelity+ | characterization |
+| --- | --- | --- | --- | --- | --- |
+| GNNExplainer ⭐ | 0.858 | (0.791, 0.921) | -0.170 | 0.310 | 0.338 |
+| IntegratedGradients | 0.496 | (0.469, 0.523) | -0.196 | 0.551 | 0.347 |
+| SubgraphX | 0.348 | (0.316, 0.378) | -0.154 | 0.342 | 0.450 |
+| PGExplainer | 0.251 | (0.223, 0.278) | -0.351 | 0.379 | 0.225 |
+| GuidedBackprop | 0.037 | (0.018, 0.066) | -0.089 | 0.540 | 0.178 |
+| InputXGradient | 0.013 | (0.005, 0.023) | -0.200 | 0.491 | 0.160 |
+| Saliency | 0.002 | (0.000, 0.005) | -0.195 | 0.494 | 0.163 |
+
+⭐ = attributor the exact/proxy ground truth ranks best.
+
+_Faithfulness-only selection test_ — would a framework ranking by each metric pick the GT-best attributor?
+
+| faithfulness metric | its top pick | pick GT AUROC | GT-best | GT-best AUROC | mismatch? | paired Wilcoxon p | rank corr ρ(faith,GT) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| occ_spearman | GuidedBackprop | 0.037 | GNNExplainer | 0.858 | **yes** | 0.0000 | 0.143 |
+| fidelity_plus | IntegratedGradients | 0.496 | GNNExplainer | 0.858 | **yes** | 0.0000 | -0.357 |
+| characterization | SubgraphX | 0.348 | GNNExplainer | 0.858 | **yes** | 0.0000 | 0.821 |
+
 ### MUTAG · GINE · scaffold split — scaffold shift (motif-proxy GT)
 
 7 attributors on the same ~53 molecules.
@@ -37,15 +61,10 @@ _Faithfulness-only selection test_ — would a framework ranking by each metric 
 
 ## What this shows
 
-- **In-distribution** (the model applied to molecules like its training set),
-  faithfulness and correctness **agree**: ranking by any faithfulness metric
-  recovers the ground-truth-best attributor (ρ near 1, no mismatch). A
-  faithfulness-only benchmark is adequate *here*.
-- **Under scaffold shift**, they **dissociate**: the field-standard
-  Fidelity+ / characterization scores select an attributor the exact/proxy
-  ground truth shows is wrong (mismatch, paired Wilcoxon p < 0.001), and the
-  faithfulness↔correctness rank correlation collapses. A faithfulness-only
-  benchmark **recommends the wrong method in exactly the regime that matters
-  for drug discovery** — which is what MolSanity's ground-truth + shift audit
-  is built to catch.
+- **MUTAG · GINE · random split**: ranking by faithfulness picks the wrong attributor on 3 of 3 metrics (ρ ranges -0.36 to +0.82).
+- **MUTAG · GINE · scaffold split**: ranking by faithfulness picks the wrong attributor on 3 of 3 metrics (ρ ranges -0.64 to +0.04).
+
+Mean rank correlation falls from +0.20 in-distribution to -0.24 under scaffold shift (-0.44). Faithfulness and correctness dissociate under shift, so a faithfulness-only benchmark can recommend the wrong method in exactly the regime that matters for drug discovery.
+
+_Single-seed figures. Read `SEED_VARIANCE.md` before treating any attributor ranking above as an effect._
 

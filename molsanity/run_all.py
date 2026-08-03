@@ -114,6 +114,33 @@ def hashable_budget(budget: dict | None) -> dict:
             if k not in EXECUTION_ONLY_KEYS}
 
 
+# Bumped whenever the scaffold-split *implementation* changes the partition it
+# produces. The stage hash covers config, not code, so without this a corrected
+# split silently reuses cells computed under the old one. Scoped to scaffold
+# cells so the random arm stays cached.
+#   v2 (2026-08-03): scaffolds are read from each graph's own SMILES via
+#   ``mol_from_data``. v1 always went through ``graph_to_mol``, decoding every
+#   dataset with MUTAG's atom vocabulary, which made MoleculeNet scaffolds
+#   near-unique and leaked 30-56% of true scaffolds from train into test.
+SCAFFOLD_SPLIT_VERSION = 2
+
+
+def stage_config(cell: dict, split_kind: str, cfg: dict, seed: int) -> dict:
+    """The dict whose hash decides whether a cell's ``.done`` marker is valid.
+
+    The single definition of that rule. The Colab preflight used to rebuild it
+    by hand and drifted from this one, reporting 195 valid cell-runs as "config
+    changed" — the most alarming thing a resume can say, and it was false. Both
+    callers now go through here so they cannot disagree again.
+    """
+    eff = effective_budget(cfg.get("budget"), cell["attributor"])
+    out = {"cell": cell, "split": split_kind, "budget": hashable_budget(eff),
+           "model": cfg["model"], "train": cfg["train"], "seed": seed}
+    if split_kind == "scaffold":
+        out["split_version"] = SCAFFOLD_SPLIT_VERSION
+    return out
+
+
 def run_cell(cell: dict, cfg: dict, split_kind: str, log, ts: str) -> dict:
     """Run one audit cell end to end. Returns a dict with agg + train + row."""
     import torch
@@ -425,9 +452,7 @@ def main(argv=None):
                 cell_id = f"{base_id}__seed{seed}" if multi_seed else base_id
                 eff = effective_budget(cfg.get("budget"), cell["attributor"])
                 cfg_seed = {**cfg_seed, "budget": eff}
-                stage_cfg = {"cell": cell, "split": split_kind,
-                             "budget": hashable_budget(eff),
-                             "model": cfg["model"], "train": cfg["train"], "seed": seed}
+                stage_cfg = stage_config(cell, split_kind, cfg, seed)
                 try:
                     res = stage(
                         f"cell_{cell_id}", stage_cfg,

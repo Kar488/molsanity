@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..utils import get_logger
-from .chem import graph_to_mol, mol_to_smiles
+from .chem import mol_from_data
 
 log = get_logger()
 
@@ -25,25 +25,42 @@ class Split:
     val: list[int]
     test: list[int]
     kind: str
+    # Scaffold-split diagnostics (zero/None for other split kinds). ``degenerate``
+    # means almost every molecule sits in its own scaffold bucket, so the split is
+    # deterministic but is NOT a chemical shift regime.
+    n_scaffolds: int = 0
+    n_scaffoldless: int = 0
+    frac_grouped: float = 0.0
+    degenerate: bool = False
 
     def as_dict(self) -> dict:
-        return {"kind": self.kind, "train": self.train, "val": self.val, "test": self.test}
+        return {
+            "kind": self.kind, "train": self.train, "val": self.val, "test": self.test,
+            "n_scaffolds": self.n_scaffolds, "n_scaffoldless": self.n_scaffoldless,
+            "frac_grouped": self.frac_grouped, "degenerate": self.degenerate,
+        }
 
 
 def _murcko_scaffold_smiles(data) -> str:
-    """Bemis-Murcko scaffold SMILES for a reconstructed molecule.
+    """Bemis-Murcko scaffold SMILES for one graph.
+
+    Uses ``mol_from_data``, which parses the graph's own SMILES when it carries
+    one and only falls back to MUTAG-style one-hot reconstruction otherwise.
+    Going through ``graph_to_mol`` unconditionally (as this did until 2026-08-03)
+    decodes every dataset with MUTAG's atom vocabulary, which turns MoleculeNet
+    molecules into all-carbon skeletons and makes their scaffolds nearly unique —
+    i.e. no grouping, so no scaffold shift. See ``test_splits.py``.
 
     Empty string is a valid bucket (acyclic / scaffold-less molecules group
     together deterministically).
     """
     from rdkit.Chem.Scaffolds import MurckoScaffold
 
-    mol, _ = graph_to_mol(data)
-    smi = mol_to_smiles(mol)
-    if not smi:
+    mol, source = mol_from_data(data)
+    if mol is None or source == "none":
         return ""
     try:
-        scaf = MurckoScaffold.MurckoScaffoldSmiles(smiles=smi, includeChirality=False)
+        scaf = MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)
         return scaf or ""
     except Exception:
         return ""
@@ -65,16 +82,27 @@ def scaffold_split(
     scaffold leakage) — otherwise imbalanced datasets yield single-class folds.
     """
     scaffold_to_idx: dict[str, list[int]] = defaultdict(list)
+    n_scaffoldless = 0
     for i in range(len(dataset)):
         scaf = _murcko_scaffold_smiles(dataset[i])
         # Molecules with no Murcko scaffold (acyclic) get unique buckets so they
         # distribute across splits instead of collapsing into one giant group
         # that would starve the test set.
+        if not scaf:
+            n_scaffoldless += 1
         key = scaf if scaf else f"__acyclic_{i}"
         scaffold_to_idx[key].append(i)
 
     # Deterministic ordering: by group size desc, then scaffold string.
     groups = sorted(scaffold_to_idx.values(), key=lambda g: (-len(g), min(g)))
+
+    # Honesty check. A split over buckets that are almost all singletons is an
+    # arbitrary deterministic partition, not a chemical shift regime; anything
+    # measured "under scaffold shift" on such a dataset must not be reported as
+    # such. Recorded on the Split so callers/artifacts can carry the caveat.
+    n_mols = len(dataset)
+    grouped = sum(len(g) for g in groups if len(g) > 1)
+    degenerate = n_mols > 0 and (grouped / n_mols) < 0.10
 
     n = len(dataset)
     n_train, n_val = int(frac_train * n), int(frac_val * n)
@@ -101,10 +129,23 @@ def scaffold_split(
         train, val, test = _ensure_class_coverage(train, val, test, groups, labels)
 
     log.info(
-        "Scaffold split: %d scaffolds -> train %d / val %d / test %d",
-        len(groups), len(train), len(val), len(test),
+        "Scaffold split: %d scaffolds over %d molecules (%d scaffold-less, "
+        "%.1f%% of molecules in multi-member groups) -> train %d / val %d / test %d",
+        len(groups), n_mols, n_scaffoldless, 100.0 * grouped / max(1, n_mols),
+        len(train), len(val), len(test),
     )
-    return Split(sorted(train), sorted(val), sorted(test), kind="scaffold")
+    if degenerate:
+        log.warning(
+            "Scaffold split is DEGENERATE: only %.1f%% of molecules share a "
+            "scaffold with another molecule, so this partition is deterministic "
+            "but not a chemical shift regime. Do not report it as scaffold shift.",
+            100.0 * grouped / max(1, n_mols),
+        )
+    return Split(
+        sorted(train), sorted(val), sorted(test), kind="scaffold",
+        n_scaffolds=len(groups), n_scaffoldless=n_scaffoldless,
+        frac_grouped=grouped / max(1, n_mols), degenerate=degenerate,
+    )
 
 
 def _ensure_class_coverage(train, val, test, groups, labels):

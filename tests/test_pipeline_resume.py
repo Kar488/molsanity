@@ -1,4 +1,6 @@
 """Resumability + reporting tests (no heavy deps)."""
+import pytest
+
 from molsanity.pipeline import RunLedger, stage
 from molsanity.reporting import _parse_existing_rows, results_row, update_results_md
 
@@ -53,3 +55,49 @@ def test_ledger_counts():
     led.record({"dataset": "BBBP"}, "skipped", "blocked")
     assert led.counts()["done"] == 1
     assert led.counts()["skipped"] == 1
+
+
+def test_scaffold_split_version_invalidates_only_the_scaffold_arm():
+    """Correcting the scaffold split must re-run scaffold cells and *only* those.
+
+    The stage hash covers config, not code. Without an explicit version the
+    2026-08-03 split fix would have silently reused every cell computed under
+    the broken partition; bumping it indiscriminately would have thrown away the
+    204 valid random-split cell-runs alongside them.
+    """
+    from molsanity.run_all import SCAFFOLD_SPLIT_VERSION, stage_config
+    from molsanity.utils import hash_config
+
+    cell = {"dataset": "BBBP", "backbone": "GINE", "attributor": "IntegratedGradients"}
+    cfg = {"model": {"hidden": 64}, "train": {"epochs": 5}, "budget": {"ig_steps": 50}}
+
+    scaffold = stage_config(cell, "scaffold", cfg, seed=0)
+    random_ = stage_config(cell, "random", cfg, seed=0)
+    assert scaffold["split_version"] == SCAFFOLD_SPLIT_VERSION
+    assert "split_version" not in random_, "a random split has no scaffold version"
+
+    # A version bump changes the scaffold hash and leaves the random one alone.
+    bumped = dict(scaffold, split_version=SCAFFOLD_SPLIT_VERSION + 1)
+    assert hash_config(bumped) != hash_config(scaffold)
+    assert hash_config(stage_config(cell, "random", cfg, seed=0)) == hash_config(random_)
+
+
+def test_stage_config_is_the_only_definition_of_the_stage_hash():
+    """The Colab preflight rebuilt this rule by hand and drifted from it twice.
+    It now imports ``stage_config``; nothing else may reconstruct the dict."""
+    import json
+    from pathlib import Path
+
+    nb = Path("notebooks/molsanity_full_run_colab.ipynb")
+    if not nb.exists():
+        pytest.skip("notebook not present")
+    sources = [
+        "".join(c["source"]) for c in json.loads(nb.read_text())["cells"]
+        if c["cell_type"] == "code"
+    ]
+    preflight = [s for s in sources if "hash_config" in s and ".done" in s]
+    assert preflight, "no resume-preflight cell found in the notebook"
+    for src in preflight:
+        assert "stage_config" in src, "preflight must import run_all.stage_config"
+        assert "'model': cfg['model']" not in src, (
+            "preflight is rebuilding the stage hash by hand again")

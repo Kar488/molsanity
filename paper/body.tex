@@ -453,6 +453,34 @@ of which \nGtCells{} carry a node-level ground truth.
 
 \section{Results}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/fig_lead.pdf}
+\caption{\textbf{The result and its scope, together.} Each point is one
+(dataset, backbone, attributor) cell of the $\nPooledArms{}$ molecular
+ground-truth arms, averaged over $\nPooledSeeds{}$ seeds; $n=\nPooledCells{}$
+cells. \textbf{(a)} In distribution, occlusion faithfulness carries essentially
+no information about ground-truth localisation. \textbf{(b)} Under a
+Bemis--Murcko scaffold split the two become negatively related: ranking
+attributors by faithfulness ranks them roughly \emph{against} the truth. The
+horizontal line is chance localisation, the vertical line zero faithfulness.
+\textbf{(c)} How much of (b) any single arm carries. Filled markers are
+significant at $p<0.05$; open markers are not. Removing MUTAG leaves
+$\looMutRho{}$ --- the effect is not merely weakened but absent --- so this is
+a pooled result that one dataset carries and two others are consistent with,
+not an independent three-way replication. We put that panel here rather than in
+the limitations so the claim and its scope are read at the same time.}
+\label{fig:lead}
+\end{figure*}
+
+Figure~\ref{fig:lead} states the paper's central result and, beside it, how far
+that result generalises. The rest of this section is the evidence behind those
+three panels: the selection test that turns the correlation into a concrete
+wrong recommendation (\S\ref{sec:selection}), the regimes in which attributions
+fail (\S\ref{sec:abstention} and after), and the arms and axes on which the
+audit found nothing, which we report at the same length as the ones where it
+did.
+
 \input{generated/tab_regression}
 \input{generated/tab_paired}
 \input{generated/tab_selection}

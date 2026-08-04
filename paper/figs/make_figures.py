@@ -624,8 +624,110 @@ def fig_abstention(out: Path):
     save(fig, out)
 
 
+def fig_lead(out: Path):
+    """The claim and its scope in one view, before any qualification.
+
+    Form follows the two jobs. Panels (a) and (b) are a RELATIONSHIP question --
+    does faithfulness track correctness -- so they are scatters of the two axes
+    against each other, one per regime. Panel (c) is a MAGNITUDE question over
+    four fits -- how much of the pooled effect survives dropping each arm -- so
+    it is a dot plot, not a third scatter.
+
+    Putting (c) beside (a) and (b) is the whole point: a reader meets the effect
+    and the fact that one dataset carries it at the same moment, rather than
+    finding the second three pages later among the caveats.
+
+    Layout choices come from looking at the first render, not from assuming. The
+    correlation sits in each panel TITLE because every in-panel position for it
+    collided with data, and the legend is one figure-level row above the
+    scatters because both panels are occupied corner to corner.
+    """
+    MOL = ("MUTAG", "MolMotif", "MolMotifHard")
+    # Fixed hue order per arm, never cycled. The three-hue set passes all six
+    # checks of the palette validator (worst adjacent CVD dE 11.0, deutan), and
+    # marker shape carries identity too, so it is never colour alone.
+    ARM_COLOR = {"MUTAG": "#D55E00", "MolMotifHard": "#0072B2", "MolMotif": "#009E73"}
+    ARM_MARKER = {"MUTAG": "o", "MolMotifHard": "s", "MolMotif": "^"}
+
+    cells = {}
+    for r in CLS:
+        if r["dataset"] not in MOL:
+            continue
+        g, o = r.get("gt_auroc"), r.get("occ_spearman")
+        if g is None or o is None:
+            continue
+        cells.setdefault((r["dataset"], r["backbone"], r["attributor"]), {})[r["split"]] = (g, o)
+    paired = {k: v for k, v in cells.items() if {"random", "scaffold"} <= set(v)}
+    if len(paired) < 8:
+        print("  SKIP fig_lead (too few paired molecular cells)")
+        return
+    ks = sorted(paired)
+
+    fig, axes = plt.subplots(
+        1, 3, figsize=(7.1, 2.9), constrained_layout=True,
+        gridspec_kw={"width_ratios": [1, 1, 1.35]})
+
+    handles = []
+    for ax, split, title in zip(axes[:2], ("random", "scaffold"),
+                                ("In distribution", "Under scaffold shift")):
+        for ds in MOL:
+            sub = [k for k in ks if k[0] == ds]
+            if not sub:
+                continue
+            h, = ax.plot([paired[k][split][1] for k in sub],
+                         [paired[k][split][0] for k in sub],
+                         ARM_MARKER[ds], ms=4.6, mfc=ARM_COLOR[ds], mec="white",
+                         mew=0.6, ls="none", label=ds, zorder=3)
+            if split == "random":
+                handles.append(h)
+        rho, pv = D.spearman([paired[k][split][1] for k in ks],
+                             [paired[k][split][0] for k in ks])
+        ax.axhline(0.5, color=MUTED, lw=0.7, ls=":", zorder=1)
+        ax.axvline(0.0, color=MUTED, lw=0.7, ls=":", zorder=1)
+        ax.set_xlim(-0.9, 1.0)
+        ax.set_ylim(-0.05, 1.08)
+        ax.set_xlabel("occlusion faithfulness  $\\rho$")
+        ax.set_title(f"{title}\n$\\rho$ = {rho:+.3f},  $p$ = {pv:.3f}",
+                     fontsize=7.8, color=INK, pad=5)
+        despine(ax)
+    axes[0].set_ylabel("ground-truth localisation\n(GT AUROC)")
+    axes[1].set_yticklabels([])
+
+    # (c) leave-one-out: the scope of the claim, beside the claim.
+    ax = axes[2]
+    fits = [("all three arms", ks, INK)]
+    for ds in MOL:
+        fits.append((f"without {ds}", [k for k in ks if k[0] != ds], ARM_COLOR[ds]))
+    for y, (label, keys, colour) in enumerate(fits):
+        if len(keys) < 8:
+            continue
+        rho, pv = D.spearman([paired[k]["scaffold"][1] for k in keys],
+                             [paired[k]["scaffold"][0] for k in keys])
+        sig = pv < 0.05
+        ax.plot([rho], [y], "o", ms=7.4 if sig else 6.6,
+                mfc=colour if sig else "white", mec=colour, mew=1.5, zorder=3)
+        ax.text(rho, y - 0.3, f"{rho:+.2f}" + ("*" if sig else ""),
+                va="bottom", ha="center", fontsize=6.9, color=INK)
+    ax.axvline(0, color=MUTED, lw=0.7, ls=":", zorder=1)
+    ax.set_yticks(range(len(fits)))
+    ax.set_yticklabels([f[0] for f in fits], fontsize=7.0)
+    ax.set_ylim(len(fits) - 0.5, -0.75)
+    ax.set_xlim(-0.72, 0.22)
+    ax.set_xlabel("scaffold-split $\\rho$   ($*$ $p<0.05$)")
+    ax.set_title("How much any one arm carries", fontsize=7.8, color=INK, pad=5)
+    despine(ax)
+
+    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.055, 0.955),
+               ncol=3, frameon=False, fontsize=6.8, handletextpad=0.3,
+               columnspacing=1.2)
+    for ax, lbl in zip(axes, "abc"):
+        panel_label(ax, lbl)
+    save(fig, out)
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
+    fig_lead(HERE / "fig_lead.pdf")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
     fig_dissociation(HERE / "fig_dissociation.pdf")
     fig_heatmaps(HERE / "fig_heatmaps.pdf")

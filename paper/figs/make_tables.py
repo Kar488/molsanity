@@ -636,6 +636,19 @@ def macros():
 
 # ------------------------------------------------------------- tier-1 table
 def tab_tier1():
+    """Every ground-truth cell, split across floats rather than shrunk to fit.
+
+    This was one ``table*`` wrapped in ``adjustbox{max width=\\textwidth,
+    max totalheight=0.80\\textheight}``. At 100 rows the HEIGHT constraint is
+    the binding one, and adjustbox scales uniformly -- so clamping the height
+    also shrank the width, producing a half-column-wide block of ~5pt type with
+    empty margins either side. A reference table nobody can read is not a
+    reference table.
+
+    Now split on dataset boundaries into floats that each fit a page at
+    \\footnotesize, using the same approach as ``tab_molecular``. Width still
+    fills the text block; height is never scaled.
+    """
     rows = [r for r in CLS if r["gt_auroc"] is not None]
     rows.sort(key=lambda r: (r["dataset"], r["split"], r["backbone"], r["attributor"]))
     blocks: dict[tuple, list] = {}
@@ -647,50 +660,84 @@ def tab_tier1():
                                          r["occ_spearman"])))
                 for v in blocks.values() if len(v) > 1}
 
-    L = ["\\begin{table*}[t]", "\\centering",
-         "\\caption{\\textbf{Every committed cell in which attribution "
-         "\\emph{correctness} is measurable.} Ground truth is exact for the "
-         "synthetic sets and a chemically motivated nitro-motif proxy for "
-         "MUTAG. GT AUROC $=0.5$ is chance; below $0.5$ the attribution is "
-         "anti-aligned with the true motif. Occlusion $\\rho$ is the "
-         "attribution--occlusion rank agreement (higher $=$ more faithful to "
-         "the model). Rows marked \\textsuperscript{c} are \\emph{carried}: "
-         "they survive in the results matrix from an earlier reduced-budget "
-         "CPU run because the corresponding cell failed in the latest run "
-         "(Table~\\ref{tab:ledger}); every other row was produced by the run "
-         "in Table~\\ref{tab:ledger}. Bold marks the best GT AUROC and the best "
-         "occlusion $\\rho$ within each dataset$\\times$split block (emphasis "
-         "only; values are unaltered).}",
-         "\\label{tab:tier1}",
-         "\\small",
-         "\\renewcommand{\\arraystretch}{1.25}",
-         # Width-only scaling overshot the page by ~1pt; clamp the height too,
-         # leaving room for the five-line caption above it.
-         "\\adjustbox{max width=\\textwidth,"
-         "max totalheight=0.80\\textheight}{%",
-         "\\begin{tabular}{lllcrrrrrrrrr}",
-         "\\toprule",
-         "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "
-         "\\textbf{split} & \\textbf{$n$} & \\textbf{acc} & \\textbf{AUC} & "
-         "\\textbf{GT AUROC} & \\textbf{GT AUPRC} & \\textbf{occ.\\ $\\rho$} & "
-         "\\textbf{Fid+} & \\textbf{Fid--} & \\textbf{stab.} \\\\",
-         "\\midrule"]
-    prev = None
-    for r in rows:
-        b = bench_of(r)
-        if prev is not None and (r["dataset"], r["split"]) != prev:
-            L.append("\\addlinespace[2pt]")
-        prev = (r["dataset"], r["split"])
-        L.append(" & ".join([
-            tex(r["dataset"]) + prov_mark(r), r["backbone"],
-            SHORT.get(r["attributor"], r["attributor"]), r["split"],
-            f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
-            bold(n(r["gt_auroc"]), id(r) in best_gt), n(r["gt_auprc"]),
-            bold(n(r["occ_spearman"]), id(r) in best_occ),
-            n(r["fid+"]), n(r["fid-"]), n(b.get("stability")),
-        ]) + " \\\\")
-    L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
-    write("tab_tier1.tex", "\n".join(L) + "\n")
+    # Pack whole datasets into parts of at most MAX_ROWS; a dataset is never
+    # split across floats, so no block of comparable rows is separated.
+    MAX_ROWS = 46
+    datasets = sorted({r["dataset"] for r in rows})
+    parts, cur, cur_n = [], [], 0
+    for ds in datasets:
+        k = sum(1 for r in rows if r["dataset"] == ds)
+        if cur and cur_n + k > MAX_ROWS:
+            parts.append(cur)
+            cur, cur_n = [], 0
+        cur.append(ds)
+        cur_n += k
+    if cur:
+        parts.append(cur)
+
+    n_carried = sum(1 for r in rows if r.get("provenance") == "carried")
+    carried_note = (
+        " Rows marked \\textsuperscript{c} are \\emph{carried}: they survive in "
+        "the results matrix from an earlier reduced-budget run because the "
+        "corresponding cell failed in the latest one (Table~\\ref{tab:ledger}); "
+        "every other row was produced by the run in Table~\\ref{tab:ledger}."
+        if n_carried else
+        " Every row was produced by the single run in Table~\\ref{tab:ledger}; "
+        "none are carried over from an earlier one.")
+
+    head = ("\\textbf{Every committed cell in which attribution "
+            "\\emph{correctness} is measurable.} Ground truth is exact for the "
+            "synthetic sets and for \\molDataset{}/\\hardDataset{} (the label "
+            "\\emph{is} the substructure), and a chemically motivated "
+            "nitro-motif proxy for MUTAG. GT AUROC $=0.5$ is chance; below "
+            "$0.5$ the attribution is anti-aligned with the true motif. "
+            "Occlusion $\\rho$ is the attribution--occlusion rank agreement "
+            "(higher $=$ more faithful to the model)." + carried_note +
+            " Bold marks the best GT AUROC and the best occlusion $\\rho$ "
+            "within each dataset$\\times$split block (emphasis only; values "
+            "are unaltered).")
+
+    for pi, part in enumerate(parts):
+        sub = [r for r in rows if r["dataset"] in part]
+        cap = head if pi == 0 else (
+            f"\\textbf{{Ground-truth cells, continued ({pi + 1} of "
+            f"{len(parts)}).}} Columns and conventions as in "
+            "Table~\\ref{tab:tier1}.")
+        L = ["\\begin{table*}[t]", "\\centering",
+             "\\caption{" + cap + "}"]
+        if pi == 0:
+            L.append("\\label{tab:tier1}")
+        else:
+            L.append(f"\\label{{tab:tier1part{pi + 1}}}")
+        L += ["\\footnotesize",
+              "\\renewcommand{\\arraystretch}{1.15}",
+              # Width only. Never clamp height here: see the docstring.
+              "\\adjustbox{max width=\\textwidth}{%",
+              "\\begin{tabular}{lllcrrrrrrrrr}",
+              "\\toprule",
+              "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "
+              "\\textbf{split} & \\textbf{$n$} & \\textbf{acc} & \\textbf{AUC} & "
+              "\\textbf{GT AUROC} & \\textbf{GT AUPRC} & \\textbf{occ.\\ $\\rho$} & "
+              "\\textbf{Fid+} & \\textbf{Fid--} & \\textbf{stab.} \\\\",
+              "\\midrule"]
+        prev = None
+        for r in sub:
+            b = bench_of(r)
+            if prev is not None and (r["dataset"], r["split"]) != prev:
+                L.append("\\addlinespace[2pt]")
+            prev = (r["dataset"], r["split"])
+            L.append(" & ".join([
+                tex(r["dataset"]) + prov_mark(r), r["backbone"],
+                SHORT.get(r["attributor"], r["attributor"]), r["split"],
+                f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
+                bold(n(r["gt_auroc"]), id(r) in best_gt), n(r["gt_auprc"]),
+                bold(n(r["occ_spearman"]), id(r) in best_occ),
+                n(r["fid+"]), n(r["fid-"]), n(b.get("stability")),
+            ]) + " \\\\")
+        L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
+        name = "tab_tier1.tex" if len(parts) == 1 else f"tab_tier1_{pi + 1}.tex"
+        write(name, "\n".join(L) + "\n")
+    return len(parts)
 
 
 # --------------------------------------------------------------- run ledger

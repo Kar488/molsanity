@@ -48,18 +48,44 @@ assert not str(repo).startswith('/content/drive'), (
 os.chdir(repo)
 
 # --- 3. results/ must be the run's, not the repo's stale copy --------------
+# rsync, not rmtree+copytree. The first version copied all ~1683 files every
+# time; over the Drive FUSE mount that ran past 12 minutes with no output, and
+# ~1500 of those files were already byte-identical in the fresh clone. rsync
+# skips them on size+mtime and copies only what the run actually added.
+#
+# Two passes, small things first, so the science is on GitHub in under a minute
+# and the 400 MB of checkpoints follow rather than block.
 local = repo / 'results'
-if DRIVE_RESULTS.is_dir():
-    n_drive = sum(1 for _ in DRIVE_RESULTS.rglob('*') if _.is_file())
-    n_local = sum(1 for _ in local.rglob('*') if _.is_file()) if local.is_dir() else 0
-    print(f'Drive mirror: {n_drive} files   local results/: {n_local} files')
-    if n_drive > n_local:
-        print('restoring results/ from the Drive mirror')
-        if local.is_dir():
-            shutil.rmtree(local)
-        shutil.copytree(DRIVE_RESULTS, local)
-else:
+local.mkdir(parents=True, exist_ok=True)
+
+if not DRIVE_RESULTS.is_dir():
     print('WARNING: no Drive mirror found; pushing whatever results/ is on disk')
+else:
+    def rsync(extra, label):
+        print(f'  syncing {label} ...', flush=True)
+        r = subprocess.run(
+            ['rsync', '-a', '--no-perms', '--no-owner', '--no-group',
+             '--stats', *extra, f'{DRIVE_RESULTS}/', f'{local}/'],
+            capture_output=True, text=True)
+        if r.returncode != 0:
+            print('    rsync failed, falling back to a plain copy:',
+                  (r.stderr or '').strip()[:200])
+            for src in DRIVE_RESULTS.rglob('*'):
+                if not src.is_file():
+                    continue
+                dst = local / src.relative_to(DRIVE_RESULTS)
+                if dst.exists() and dst.stat().st_size == src.stat().st_size:
+                    continue
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dst)
+            return
+        for line in (r.stdout or '').splitlines():
+            if 'Number of regular files transferred' in line or 'Total transferred' in line:
+                print('   ', line.strip())
+
+    # Reports, audit records, figures, logs: small, and the only part the
+    # analysis needs. Checkpoints are provenance and can lag by a minute.
+    rsync(['--exclude', 'artifacts/checkpoints/'], 'reports, audit records, figures')
 
 # --- 4. Token, from Secrets only ------------------------------------------
 GH_TOKEN = None
@@ -110,5 +136,16 @@ try:
     r = git('push', 'origin', f'HEAD:{BRANCH}', check=False)
     print(scrub(r.stdout + r.stderr))
     print('PUSHED' if r.returncode == 0 else 'PUSH FAILED -- see above')
+    # Checkpoints last: heavy, and nothing downstream is blocked on them.
+    if DRIVE_RESULTS.is_dir() and r.returncode == 0:
+        print('\nsyncing checkpoints (this is the slow part; the science is'
+              ' already pushed) ...', flush=True)
+        rsync([], 'checkpoints')
+        git('add', '-A', 'results')
+        if git('diff', '--cached', '--quiet', check=False).returncode:
+            git('commit', '-m', 'Checkpoints from the Colab sweep')
+            r2 = git('push', 'origin', f'HEAD:{BRANCH}', check=False)
+            print(scrub(r2.stdout + r2.stderr))
+            print('CHECKPOINTS PUSHED' if r2.returncode == 0 else 'checkpoint push failed')
 finally:
     git('remote', 'set-url', 'origin', origin)  # never leave the token in .git/config

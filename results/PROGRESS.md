@@ -1,10 +1,10 @@
 # PROGRESS.md — MolSanity rolling progress
 
-_Last run: `full.yaml` @ 20260803_190204._
+_Last run: `full.yaml` @ 20260804_024925._
 
 ## Cell tally
 
-- done: **408**  · failed: **0**  · skipped/blocked: **0**
+- done: **474**  · failed: **0**  · skipped/blocked: **0**
 
 ## Cells (dataset × backbone × attributor)
 
@@ -208,6 +208,72 @@ _Last run: `full.yaml` @ 20260803_190204._
 | MolMotif | AttentiveFP | IntegratedGradients | done | acc=0.98 gt_auroc=0.9868429032353114 n=200 (capped) [cached] |
 | MolMotif | AttentiveFP | IntegratedGradients | done | acc=0.91 gt_auroc=0.9279166281920552 n=200 (capped) [cached] |
 | MolMotif | AttentiveFP | IntegratedGradients | done | acc=0.97 gt_auroc=0.9862300114597343 n=200 (capped) [cached] |
+| MolMotifHard | GINE | IntegratedGradients | done | acc=0.97 gt_auroc=0.9882567151830456 n=200 (capped) [cached] |
+| MolMotifHard | GINE | IntegratedGradients | done | acc=0.89 gt_auroc=0.9926875093569516 n=200 (capped) [cached] |
+| MolMotifHard | GINE | IntegratedGradients | done | acc=0.82 gt_auroc=0.9998105342932929 n=200 (capped) [cached] |
+| MolMotifHard | GINE | IntegratedGradients | done | acc=0.89 gt_auroc=0.9826099460539403 n=200 (capped) [cached] |
+| MolMotifHard | GINE | IntegratedGradients | done | acc=0.97 gt_auroc=0.988674154792576 n=200 (capped) [cached] |
+| MolMotifHard | GINE | IntegratedGradients | done | acc=0.95 gt_auroc=0.9816650437213497 n=200 (capped) [cached] |
+| MolMotifHard | GINE | Saliency | done | acc=0.97 gt_auroc=0.9992398931959371 n=200 (capped) [cached] |
+| MolMotifHard | GINE | Saliency | done | acc=0.89 gt_auroc=0.9993383916981872 n=200 (capped) [cached] |
+| MolMotifHard | GINE | Saliency | done | acc=0.82 gt_auroc=0.9995810174381603 n=200 (capped) [cached] |
+| MolMotifHard | GINE | Saliency | done | acc=0.89 gt_auroc=0.9999451754385965 n=200 (capped) [cached] |
+| MolMotifHard | GINE | Saliency | done | acc=0.97 gt_auroc=0.9987573099415205 n=200 (capped) [cached] |
+| MolMotifHard | GINE | Saliency | done | acc=0.95 gt_auroc=0.9940608647020284 n=200 (capped) [cached] |
+| MolMotifHard | GINE | InputXGradient | done | acc=0.97 gt_auroc=0.986452806682023 n=200 (capped) [cached] |
+| MolMotifHard | GINE | InputXGradient | done | acc=0.89 gt_auroc=0.9982839440967519 n=200 (capped) [cached] |
+| MolMotifHard | GINE | InputXGradient | done | acc=0.82 gt_auroc=0.9995686546179157 n=200 (capped) [cached] |
+| MolMotifHard | GINE | InputXGradient | done | acc=0.89 gt_auroc=0.9998198621553885 n=200 (capped) [cached] |
+| MolMotifHard | GINE | InputXGradient | done | acc=0.97 gt_auroc=1.0 n=200 (capped) [cached] |
+| MolMotifHard | GINE | InputXGradient | done | acc=0.95 gt_auroc=0.9884513469050107 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GuidedBackprop | done | acc=0.97 gt_auroc=0.9559260029573744 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GuidedBackprop | done | acc=0.89 gt_auroc=0.8456070983925981 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GuidedBackprop | done | acc=0.82 gt_auroc=0.8235841204112005 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GuidedBackprop | done | acc=0.89 gt_auroc=0.8559043913722311 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GuidedBackprop | done | acc=0.97 gt_auroc=0.9779059579248082 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GuidedBackprop | done | acc=0.95 gt_auroc=0.9225887224305866 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GNNExplainer | done | acc=0.97 gt_auroc=0.34923354814776797 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GNNExplainer | done | acc=0.89 gt_auroc=0.6080934070504095 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GNNExplainer | done | acc=0.82 gt_auroc=0.30269625980334136 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GNNExplainer | done | acc=0.89 gt_auroc=0.2875174114285327 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GNNExplainer | done | acc=0.97 gt_auroc=0.3797157696620219 n=200 (capped) [cached] |
+| MolMotifHard | GINE | GNNExplainer | done | acc=0.95 gt_auroc=0.5711507788639638 n=200 (capped) [cached] |
+| MolMotifHard | GINE | PGExplainer | done | acc=0.97 gt_auroc=0.2559069563317036 n=200 (capped) [cached] |
+| MolMotifHard | GINE | PGExplainer | done | acc=0.89 gt_auroc=0.30791250177709184 n=200 (capped) [cached] |
+| MolMotifHard | GINE | PGExplainer | done | acc=0.82 gt_auroc=0.5648912192733716 n=200 (capped) [cached] |
+| MolMotifHard | GINE | PGExplainer | done | acc=0.89 gt_auroc=0.581669676739298 n=200 (capped) [cached] |
+| MolMotifHard | GINE | PGExplainer | done | acc=0.97 gt_auroc=0.46161214345130663 n=200 (capped) [cached] |
+| MolMotifHard | GINE | PGExplainer | done | acc=0.95 gt_auroc=0.49317471077714475 n=200 (capped) [cached] |
+| MolMotifHard | GINE | SubgraphX | done | acc=0.97 gt_auroc=0.4357853908561232 n=200 (capped) |
+| MolMotifHard | GINE | SubgraphX | done | acc=0.89 gt_auroc=0.5365574538065653 n=200 (capped) |
+| MolMotifHard | GINE | SubgraphX | done | acc=0.82 gt_auroc=0.44317061966589766 n=200 (capped) |
+| MolMotifHard | GINE | SubgraphX | done | acc=0.89 gt_auroc=0.3624728793326058 n=200 (capped) |
+| MolMotifHard | GINE | SubgraphX | done | acc=0.97 gt_auroc=0.44194322264471236 n=200 (capped) |
+| MolMotifHard | GINE | SubgraphX | done | acc=0.95 gt_auroc=0.4207801437829535 n=200 (capped) |
+| MolMotifHard | GCN | IntegratedGradients | done | acc=0.89 gt_auroc=0.910099792601565 n=200 (capped) |
+| MolMotifHard | GCN | IntegratedGradients | done | acc=0.87 gt_auroc=0.7155950795348857 n=200 (capped) |
+| MolMotifHard | GCN | IntegratedGradients | done | acc=0.78 gt_auroc=0.9723231275366908 n=200 (capped) |
+| MolMotifHard | GCN | IntegratedGradients | done | acc=0.91 gt_auroc=0.8503340759497364 n=200 (capped) |
+| MolMotifHard | GCN | IntegratedGradients | done | acc=0.77 gt_auroc=0.9456413768475541 n=200 (capped) |
+| MolMotifHard | GCN | IntegratedGradients | done | acc=0.97 gt_auroc=0.9084014342848091 n=200 (capped) |
+| MolMotifHard | GAT | IntegratedGradients | done | acc=0.96 gt_auroc=0.9081808445474281 n=200 (capped) |
+| MolMotifHard | GAT | IntegratedGradients | done | acc=0.95 gt_auroc=0.732434802512263 n=200 (capped) |
+| MolMotifHard | GAT | IntegratedGradients | done | acc=0.96 gt_auroc=0.781639759296402 n=200 (capped) |
+| MolMotifHard | GAT | IntegratedGradients | done | acc=0.98 gt_auroc=0.9287071735238328 n=200 (capped) |
+| MolMotifHard | GAT | IntegratedGradients | done | acc=0.92 gt_auroc=0.6633164534493319 n=200 (capped) |
+| MolMotifHard | GAT | IntegratedGradients | done | acc=0.99 gt_auroc=0.7878621890463006 n=200 (capped) |
+| MolMotifHard | MPNN | IntegratedGradients | done | acc=0.98 gt_auroc=0.976133801654066 n=200 (capped) |
+| MolMotifHard | MPNN | IntegratedGradients | done | acc=0.98 gt_auroc=0.9377983658446041 n=200 (capped) |
+| MolMotifHard | MPNN | IntegratedGradients | done | acc=0.99 gt_auroc=0.9823198195069943 n=200 (capped) |
+| MolMotifHard | MPNN | IntegratedGradients | done | acc=0.97 gt_auroc=0.9231895134305398 n=200 (capped) |
+| MolMotifHard | MPNN | IntegratedGradients | done | acc=0.98 gt_auroc=0.9678255956108992 n=200 (capped) |
+| MolMotifHard | MPNN | IntegratedGradients | done | acc=0.77 gt_auroc=0.9693179023534414 n=200 (capped) |
+| MolMotifHard | AttentiveFP | IntegratedGradients | done | acc=0.99 gt_auroc=0.9091646582190515 n=200 (capped) |
+| MolMotifHard | AttentiveFP | IntegratedGradients | done | acc=0.98 gt_auroc=0.9174566898057384 n=200 (capped) |
+| MolMotifHard | AttentiveFP | IntegratedGradients | done | acc=0.95 gt_auroc=0.8739042665607619 n=200 (capped) |
+| MolMotifHard | AttentiveFP | IntegratedGradients | done | acc=0.96 gt_auroc=0.9550967454970305 n=200 (capped) |
+| MolMotifHard | AttentiveFP | IntegratedGradients | done | acc=0.98 gt_auroc=0.8776671343352404 n=200 (capped) |
+| MolMotifHard | AttentiveFP | IntegratedGradients | done | acc=0.97 gt_auroc=0.8011116369685078 n=200 (capped) |
 | ShapeGGen | GINE | IntegratedGradients | done | acc=0.70 gt_auroc=0.768602481469148 n=50 (capped) [cached] |
 | ShapeGGen | GINE | IntegratedGradients | done | acc=0.26 gt_auroc=0.703657040336207 n=50 (capped) [cached] |
 | ShapeGGen | GINE | IntegratedGradients | done | acc=0.78 gt_auroc=0.707840003052503 n=50 (capped) [cached] |

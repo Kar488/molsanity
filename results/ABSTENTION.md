@@ -6,17 +6,17 @@ The audit cannot tell a practitioner which attributor to pick without ground tru
 
 | signal | n | GT AUROC @100% | @50% | lift | below chance @100% | @50% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| confidence | 10822 | 0.750 | 0.823 | +0.073 | 0.210 | 0.138 |
-| rationale_reliance | 10822 | 0.750 | 0.811 | +0.061 | 0.210 | 0.158 |
-| occ_spearman | 10814 | 0.750 | 0.800 | +0.049 | 0.210 | 0.155 |
-| stability | 10487 | 0.760 | 0.771 | +0.011 | 0.194 | 0.173 |
-| motif_top1_share | 10822 | 0.750 | 0.637 | -0.113 | 0.210 | 0.353 |
+| confidence | 13033 | 0.758 | 0.817 | +0.058 | 0.203 | 0.139 |
+| rationale_reliance | 13033 | 0.758 | 0.813 | +0.055 | 0.203 | 0.150 |
+| occ_spearman | 12631 | 0.758 | 0.801 | +0.043 | 0.205 | 0.154 |
+| stability | 12109 | 0.770 | 0.782 | +0.012 | 0.183 | 0.164 |
+| motif_top1_share | 13033 | 0.758 | 0.669 | -0.090 | 0.203 | 0.318 |
 
 ## Recommended rule
 
 Rank molecules by **confidence** and abstain on the tail.
-Keeping the top **10%** holds the share of retained molecules whose attribution is *below chance* to **9.2%** (from 21.0% at full coverage), with mean GT AUROC 0.840 over n=1082. Threshold: confidence $\geq$ 1.000.
-Mean GT AUROC already exceeds 0.70 at full coverage (0.750), so a rule stated against the mean would be vacuous. The pooled mean hides the tail; the below-chance share does not.
+Keeping the top **10%** holds the share of retained molecules whose attribution is *below chance* to **9.8%** (from 20.3% at full coverage), with mean GT AUROC 0.829 over n=1303. Threshold: confidence $\geq$ 1.000.
+Mean GT AUROC already exceeds 0.70 at full coverage (0.758), so a rule stated against the mean would be vacuous. The pooled mean hides the tail; the below-chance share does not.
 
 ---
 

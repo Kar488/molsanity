@@ -1,6 +1,6 @@
 # SEED_VARIANCE.md — how much of each effect is seed noise?
 
-Across-seed mean and standard deviation over 3 seeds, per cell, for 136 cells run under more than one seed. Read the standard deviation against the effect sizes quoted in RESULTS.md: an effect smaller than the spread here is not evidence.
+Across-seed mean and standard deviation over 3 seeds, per cell, for 158 cells run under more than one seed. Read the standard deviation against the effect sizes quoted in RESULTS.md: an effect smaller than the spread here is not evidence.
 
 ## GT AUROC
 
@@ -62,6 +62,28 @@ Across-seed mean and standard deviation over 3 seeds, per cell, for 136 cells ru
 | MolMotif | GINE | SubgraphX | scaffold | 0.468 | 0.078 | 0.387 | 0.543 |
 | MolMotif | MPNN | IntegratedGradients | random | 0.873 | 0.090 | 0.783 | 0.962 |
 | MolMotif | MPNN | IntegratedGradients | scaffold | 0.871 | 0.095 | 0.791 | 0.976 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | random | 0.878 | 0.077 | 0.801 | 0.955 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | scaffold | 0.900 | 0.023 | 0.874 | 0.917 |
+| MolMotifHard | GAT | IntegratedGradients | random | 0.793 | 0.133 | 0.663 | 0.929 |
+| MolMotifHard | GAT | IntegratedGradients | scaffold | 0.807 | 0.091 | 0.732 | 0.908 |
+| MolMotifHard | GCN | IntegratedGradients | random | 0.901 | 0.048 | 0.850 | 0.946 |
+| MolMotifHard | GCN | IntegratedGradients | scaffold | 0.866 | 0.134 | 0.716 | 0.972 |
+| MolMotifHard | GINE | GNNExplainer | random | 0.413 | 0.145 | 0.288 | 0.571 |
+| MolMotifHard | GINE | GNNExplainer | scaffold | 0.420 | 0.165 | 0.303 | 0.608 |
+| MolMotifHard | GINE | GuidedBackprop | random | 0.919 | 0.061 | 0.856 | 0.978 |
+| MolMotifHard | GINE | GuidedBackprop | scaffold | 0.875 | 0.071 | 0.824 | 0.956 |
+| MolMotifHard | GINE | InputXGradient | random | 0.996 | 0.007 | 0.988 | 1.000 |
+| MolMotifHard | GINE | InputXGradient | scaffold | 0.995 | 0.007 | 0.986 | 1.000 |
+| MolMotifHard | GINE | IntegratedGradients | random | 0.984 | 0.004 | 0.982 | 0.989 |
+| MolMotifHard | GINE | IntegratedGradients | scaffold | 0.994 | 0.006 | 0.988 | 1.000 |
+| MolMotifHard | GINE | PGExplainer | random | 0.512 | 0.062 | 0.462 | 0.582 |
+| MolMotifHard | GINE | PGExplainer | scaffold | 0.376 | 0.165 | 0.256 | 0.565 |
+| MolMotifHard | GINE | Saliency | random | 0.998 | 0.003 | 0.994 | 1.000 |
+| MolMotifHard | GINE | Saliency | scaffold | 0.999 | 0.000 | 0.999 | 1.000 |
+| MolMotifHard | GINE | SubgraphX | random | 0.408 | 0.041 | 0.362 | 0.442 |
+| MolMotifHard | GINE | SubgraphX | scaffold | 0.472 | 0.056 | 0.436 | 0.537 |
+| MolMotifHard | MPNN | IntegratedGradients | random | 0.953 | 0.026 | 0.923 | 0.969 |
+| MolMotifHard | MPNN | IntegratedGradients | scaffold | 0.965 | 0.024 | 0.938 | 0.982 |
 | ShapeGGen | GINE | GNNExplainer | random | 0.549 | 0.064 | 0.483 | 0.610 |
 | ShapeGGen | GINE | GNNExplainer | scaffold | 0.574 | 0.133 | 0.496 | 0.728 |
 | ShapeGGen | GINE | GuidedBackprop | random | 0.773 | 0.019 | 0.754 | 0.791 |
@@ -99,7 +121,7 @@ Across-seed mean and standard deviation over 3 seeds, per cell, for 136 cells ru
 | SynthMotifs | MPNN | IntegratedGradients | random | 0.872 | 0.052 | 0.812 | 0.903 |
 | SynthMotifs | MPNN | IntegratedGradients | scaffold | 0.845 | 0.015 | 0.829 | 0.860 |
 
-Median across-seed sd: **0.042**  ·  worst cell: **0.450**
+Median across-seed sd: **0.046**  ·  worst cell: **0.450**
 
 ## occlusion rho
 
@@ -197,6 +219,28 @@ Median across-seed sd: **0.042**  ·  worst cell: **0.450**
 | MolMotif | GINE | SubgraphX | scaffold | -0.006 | 0.069 | -0.073 | 0.065 |
 | MolMotif | MPNN | IntegratedGradients | random | -0.125 | 0.114 | -0.256 | -0.057 |
 | MolMotif | MPNN | IntegratedGradients | scaffold | 0.055 | 0.059 | -0.012 | 0.095 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | random | 0.476 | 0.016 | 0.457 | 0.486 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | scaffold | 0.316 | 0.204 | 0.198 | 0.551 |
+| MolMotifHard | GAT | IntegratedGradients | random | 0.042 | 0.026 | 0.021 | 0.070 |
+| MolMotifHard | GAT | IntegratedGradients | scaffold | -0.044 | 0.078 | -0.127 | 0.027 |
+| MolMotifHard | GCN | IntegratedGradients | random | 0.040 | 0.306 | -0.296 | 0.305 |
+| MolMotifHard | GCN | IntegratedGradients | scaffold | 0.026 | 0.351 | -0.377 | 0.269 |
+| MolMotifHard | GINE | GNNExplainer | random | -0.075 | 0.184 | -0.276 | 0.086 |
+| MolMotifHard | GINE | GNNExplainer | scaffold | -0.167 | 0.108 | -0.289 | -0.082 |
+| MolMotifHard | GINE | GuidedBackprop | random | -0.050 | 0.114 | -0.181 | 0.025 |
+| MolMotifHard | GINE | GuidedBackprop | scaffold | -0.136 | 0.187 | -0.350 | -0.010 |
+| MolMotifHard | GINE | InputXGradient | random | -0.068 | 0.055 | -0.116 | -0.008 |
+| MolMotifHard | GINE | InputXGradient | scaffold | -0.173 | 0.183 | -0.383 | -0.056 |
+| MolMotifHard | GINE | IntegratedGradients | random | -0.073 | 0.127 | -0.205 | 0.048 |
+| MolMotifHard | GINE | IntegratedGradients | scaffold | -0.202 | 0.222 | -0.448 | -0.019 |
+| MolMotifHard | GINE | PGExplainer | random | -0.050 | 0.112 | -0.118 | 0.078 |
+| MolMotifHard | GINE | PGExplainer | scaffold | -0.086 | 0.134 | -0.230 | 0.035 |
+| MolMotifHard | GINE | Saliency | random | -0.064 | 0.051 | -0.107 | -0.007 |
+| MolMotifHard | GINE | Saliency | scaffold | -0.164 | 0.211 | -0.408 | -0.041 |
+| MolMotifHard | GINE | SubgraphX | random | -0.041 | 0.227 | -0.280 | 0.171 |
+| MolMotifHard | GINE | SubgraphX | scaffold | -0.130 | 0.166 | -0.300 | 0.033 |
+| MolMotifHard | MPNN | IntegratedGradients | random | 0.310 | 0.242 | 0.038 | 0.500 |
+| MolMotifHard | MPNN | IntegratedGradients | scaffold | 0.578 | 0.050 | 0.536 | 0.633 |
 | SIDER | GCN | IntegratedGradients | random | 0.159 | 0.320 | -0.110 | 0.514 |
 | SIDER | GCN | IntegratedGradients | scaffold | 0.365 | 0.122 | 0.231 | 0.468 |
 | SIDER | GINE | IntegratedGradients | random | 0.277 | 0.349 | -0.122 | 0.526 |
@@ -340,6 +384,28 @@ Median across-seed sd: **0.146**  ·  worst cell: **0.960**
 | MolMotif | GINE | SubgraphX | scaffold | 0.362 | 0.047 | 0.311 | 0.404 |
 | MolMotif | MPNN | IntegratedGradients | random | 0.378 | 0.080 | 0.293 | 0.451 |
 | MolMotif | MPNN | IntegratedGradients | scaffold | 0.399 | 0.007 | 0.393 | 0.407 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | random | 0.411 | 0.048 | 0.379 | 0.466 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | scaffold | 0.388 | 0.009 | 0.381 | 0.399 |
+| MolMotifHard | GAT | IntegratedGradients | random | 0.466 | 0.035 | 0.439 | 0.506 |
+| MolMotifHard | GAT | IntegratedGradients | scaffold | 0.381 | 0.020 | 0.369 | 0.405 |
+| MolMotifHard | GCN | IntegratedGradients | random | 0.359 | 0.162 | 0.173 | 0.469 |
+| MolMotifHard | GCN | IntegratedGradients | scaffold | 0.261 | 0.161 | 0.120 | 0.436 |
+| MolMotifHard | GINE | GNNExplainer | random | 0.141 | 0.058 | 0.080 | 0.196 |
+| MolMotifHard | GINE | GNNExplainer | scaffold | 0.179 | 0.066 | 0.139 | 0.256 |
+| MolMotifHard | GINE | GuidedBackprop | random | 0.204 | 0.096 | 0.134 | 0.313 |
+| MolMotifHard | GINE | GuidedBackprop | scaffold | 0.285 | 0.087 | 0.234 | 0.385 |
+| MolMotifHard | GINE | InputXGradient | random | 0.227 | 0.052 | 0.183 | 0.284 |
+| MolMotifHard | GINE | InputXGradient | scaffold | 0.273 | 0.103 | 0.213 | 0.392 |
+| MolMotifHard | GINE | IntegratedGradients | random | 0.218 | 0.059 | 0.168 | 0.284 |
+| MolMotifHard | GINE | IntegratedGradients | scaffold | 0.309 | 0.084 | 0.243 | 0.403 |
+| MolMotifHard | GINE | PGExplainer | random | 0.162 | 0.039 | 0.134 | 0.207 |
+| MolMotifHard | GINE | PGExplainer | scaffold | 0.087 | 0.028 | 0.067 | 0.119 |
+| MolMotifHard | GINE | Saliency | random | 0.216 | 0.070 | 0.157 | 0.293 |
+| MolMotifHard | GINE | Saliency | scaffold | 0.278 | 0.089 | 0.206 | 0.378 |
+| MolMotifHard | GINE | SubgraphX | random | 0.201 | 0.033 | 0.163 | 0.222 |
+| MolMotifHard | GINE | SubgraphX | scaffold | 0.238 | 0.103 | 0.127 | 0.330 |
+| MolMotifHard | MPNN | IntegratedGradients | random | 0.289 | 0.124 | 0.158 | 0.405 |
+| MolMotifHard | MPNN | IntegratedGradients | scaffold | 0.480 | 0.064 | 0.431 | 0.553 |
 | SIDER | GCN | IntegratedGradients | random | 0.100 | 0.040 | 0.070 | 0.145 |
 | SIDER | GCN | IntegratedGradients | scaffold | 0.181 | 0.052 | 0.121 | 0.211 |
 | SIDER | GINE | IntegratedGradients | random | 0.174 | 0.152 | 0.030 | 0.333 |
@@ -385,7 +451,7 @@ Median across-seed sd: **0.146**  ·  worst cell: **0.960**
 | hERG | GINE | IntegratedGradients | random | 0.384 | 0.504 | -0.188 | 0.765 |
 | hERG | GINE | IntegratedGradients | scaffold | 0.730 | 0.108 | 0.661 | 0.854 |
 
-Median across-seed sd: **0.080**  ·  worst cell: **2.109**
+Median across-seed sd: **0.078**  ·  worst cell: **2.109**
 
 ## accuracy
 
@@ -471,6 +537,28 @@ Median across-seed sd: **0.080**  ·  worst cell: **2.109**
 | MolMotif | GINE | SubgraphX | scaffold | 0.973 | 0.013 | 0.960 | 0.985 |
 | MolMotif | MPNN | IntegratedGradients | random | 1.000 | 0.000 | 1.000 | 1.000 |
 | MolMotif | MPNN | IntegratedGradients | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | random | 0.972 | 0.010 | 0.960 | 0.980 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | scaffold | 0.975 | 0.018 | 0.955 | 0.990 |
+| MolMotifHard | GAT | IntegratedGradients | random | 0.962 | 0.041 | 0.915 | 0.990 |
+| MolMotifHard | GAT | IntegratedGradients | scaffold | 0.958 | 0.008 | 0.950 | 0.965 |
+| MolMotifHard | GCN | IntegratedGradients | random | 0.885 | 0.105 | 0.770 | 0.975 |
+| MolMotifHard | GCN | IntegratedGradients | scaffold | 0.845 | 0.061 | 0.775 | 0.890 |
+| MolMotifHard | GINE | GNNExplainer | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | GNNExplainer | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | GINE | GuidedBackprop | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | GuidedBackprop | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | GINE | InputXGradient | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | InputXGradient | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | GINE | IntegratedGradients | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | IntegratedGradients | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | GINE | PGExplainer | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | PGExplainer | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | GINE | Saliency | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | Saliency | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | GINE | SubgraphX | random | 0.935 | 0.044 | 0.885 | 0.970 |
+| MolMotifHard | GINE | SubgraphX | scaffold | 0.892 | 0.075 | 0.820 | 0.970 |
+| MolMotifHard | MPNN | IntegratedGradients | random | 0.908 | 0.120 | 0.770 | 0.980 |
+| MolMotifHard | MPNN | IntegratedGradients | scaffold | 0.987 | 0.008 | 0.980 | 0.995 |
 | SIDER | GCN | IntegratedGradients | random | 0.643 | 0.028 | 0.625 | 0.675 |
 | SIDER | GCN | IntegratedGradients | scaffold | 0.575 | 0.018 | 0.560 | 0.595 |
 | SIDER | GINE | IntegratedGradients | random | 0.642 | 0.025 | 0.615 | 0.665 |
@@ -516,7 +604,7 @@ Median across-seed sd: **0.080**  ·  worst cell: **2.109**
 | hERG | GINE | IntegratedGradients | random | 0.655 | 0.195 | 0.431 | 0.792 |
 | hERG | GINE | IntegratedGradients | scaffold | 0.472 | 0.057 | 0.421 | 0.533 |
 
-Median across-seed sd: **0.043**  ·  worst cell: **0.335**
+Median across-seed sd: **0.044**  ·  worst cell: **0.335**
 
 ## ROC-AUC
 
@@ -602,6 +690,28 @@ Median across-seed sd: **0.043**  ·  worst cell: **0.335**
 | MolMotif | GINE | SubgraphX | scaffold | 1.000 | 0.000 | 0.999 | 1.000 |
 | MolMotif | MPNN | IntegratedGradients | random | 1.000 | 0.000 | 1.000 | 1.000 |
 | MolMotif | MPNN | IntegratedGradients | scaffold | 1.000 | 0.000 | 0.999 | 1.000 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | random | 0.981 | 0.011 | 0.968 | 0.989 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | scaffold | 0.994 | 0.003 | 0.991 | 0.998 |
+| MolMotifHard | GAT | IntegratedGradients | random | 0.992 | 0.009 | 0.982 | 1.000 |
+| MolMotifHard | GAT | IntegratedGradients | scaffold | 0.997 | 0.004 | 0.992 | 1.000 |
+| MolMotifHard | GCN | IntegratedGradients | random | 0.988 | 0.012 | 0.976 | 0.999 |
+| MolMotifHard | GCN | IntegratedGradients | scaffold | 0.995 | 0.004 | 0.990 | 0.999 |
+| MolMotifHard | GINE | GNNExplainer | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | GNNExplainer | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | GINE | GuidedBackprop | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | GuidedBackprop | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | GINE | InputXGradient | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | InputXGradient | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | GINE | IntegratedGradients | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | IntegratedGradients | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | GINE | PGExplainer | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | PGExplainer | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | GINE | Saliency | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | Saliency | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | GINE | SubgraphX | random | 0.998 | 0.002 | 0.996 | 1.000 |
+| MolMotifHard | GINE | SubgraphX | scaffold | 0.997 | 0.002 | 0.995 | 1.000 |
+| MolMotifHard | MPNN | IntegratedGradients | random | 0.996 | 0.004 | 0.991 | 0.999 |
+| MolMotifHard | MPNN | IntegratedGradients | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
 | SIDER | GCN | IntegratedGradients | random | 0.660 | 0.021 | 0.636 | 0.677 |
 | SIDER | GCN | IntegratedGradients | scaffold | 0.668 | 0.008 | 0.660 | 0.675 |
 | SIDER | GINE | IntegratedGradients | random | 0.671 | 0.038 | 0.628 | 0.703 |
@@ -647,7 +757,7 @@ Median across-seed sd: **0.043**  ·  worst cell: **0.335**
 | hERG | GINE | IntegratedGradients | random | 0.821 | 0.005 | 0.815 | 0.824 |
 | hERG | GINE | IntegratedGradients | scaffold | 0.653 | 0.035 | 0.628 | 0.693 |
 
-Median across-seed sd: **0.013**  ·  worst cell: **0.169**
+Median across-seed sd: **0.006**  ·  worst cell: **0.169**
 
 ## RMSE
 

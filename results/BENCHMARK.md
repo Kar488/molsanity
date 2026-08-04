@@ -113,6 +113,28 @@
 | MolMotif | GINE | SubgraphX | scaffold | 200 | 0.476 | 0.065 | — | 0.947 | 0.311 | 0.308 | 0.353 | 0.248 | — |
 | MolMotif | MPNN | IntegratedGradients | random | 200 | 0.962 | -0.057 | 0.946 | 0.860 | 0.451 | 0.457 | 0.772 | 0.030 | 0.121 |
 | MolMotif | MPNN | IntegratedGradients | scaffold | 200 | 0.976 | 0.095 | 0.922 | 0.899 | 0.407 | 0.330 | 0.775 | 0.103 | 0.024 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | random | 200 | 0.801 | 0.486 | 0.932 | 0.675 | 0.466 | 0.103 | 0.764 | 0.511 | 0.094 |
+| MolMotifHard | AttentiveFP | IntegratedGradients | scaffold | 200 | 0.874 | 0.199 | 0.893 | 0.741 | 0.385 | 0.116 | 0.764 | 0.446 | 0.080 |
+| MolMotifHard | GAT | IntegratedGradients | random | 200 | 0.788 | 0.021 | 0.966 | 0.673 | 0.506 | 0.506 | 0.760 | 0.033 | 0.414 |
+| MolMotifHard | GAT | IntegratedGradients | scaffold | 200 | 0.782 | -0.034 | 0.921 | 0.743 | 0.405 | 0.405 | 0.765 | 0.052 | 0.430 |
+| MolMotifHard | GCN | IntegratedGradients | random | 200 | 0.908 | 0.110 | 0.700 | 0.684 | 0.436 | 0.481 | 0.764 | 0.086 | 0.481 |
+| MolMotifHard | GCN | IntegratedGradients | scaffold | 200 | 0.972 | -0.377 | 0.637 | 0.732 | 0.120 | 0.120 | 0.762 | 0.070 | 0.230 |
+| MolMotifHard | GINE | GNNExplainer | random | 200 | 0.571 | 0.086 | 0.942 | 0.737 | 0.196 | 0.266 | 0.771 | 0.154 | 0.063 |
+| MolMotifHard | GINE | GNNExplainer | scaffold | 200 | 0.303 | -0.289 | 0.960 | 0.810 | 0.139 | 0.154 | 0.775 | 0.098 | 0.231 |
+| MolMotifHard | GINE | GuidedBackprop | random | 200 | 0.923 | -0.181 | 0.884 | 0.790 | 0.164 | 0.250 | 0.758 | 0.107 | 0.084 |
+| MolMotifHard | GINE | GuidedBackprop | scaffold | 200 | 0.824 | -0.350 | 0.794 | 0.812 | 0.235 | 0.138 | 0.767 | 0.185 | 0.179 |
+| MolMotifHard | GINE | InputXGradient | random | 200 | 0.988 | -0.081 | 0.925 | 0.802 | 0.216 | 0.225 | 0.762 | 0.138 | 0.211 |
+| MolMotifHard | GINE | InputXGradient | scaffold | 200 | 1.000 | -0.383 | 0.873 | 0.788 | 0.213 | 0.159 | 0.764 | 0.183 | 0.416 |
+| MolMotifHard | GINE | IntegratedGradients | random | 200 | 0.982 | -0.064 | 0.914 | 0.722 | 0.168 | 0.290 | 0.764 | 0.099 | 0.174 |
+| MolMotifHard | GINE | IntegratedGradients | scaffold | 200 | 1.000 | -0.448 | 0.909 | 0.773 | 0.279 | 0.169 | 0.763 | 0.238 | 0.206 |
+| MolMotifHard | GINE | PGExplainer | random | 200 | 0.493 | -0.118 | 0.830 | 0.827 | 0.146 | 0.210 | 0.719 | 0.113 | — |
+| MolMotifHard | GINE | PGExplainer | scaffold | 200 | 0.565 | -0.230 | 0.705 | 0.764 | 0.067 | 0.154 | 0.584 | 0.094 | — |
+| MolMotifHard | GINE | Saliency | random | 200 | 0.994 | -0.077 | 0.911 | 0.794 | 0.200 | 0.208 | 0.765 | 0.127 | 0.398 |
+| MolMotifHard | GINE | Saliency | scaffold | 200 | 1.000 | -0.408 | 0.847 | 0.791 | 0.249 | 0.157 | 0.765 | 0.202 | 0.300 |
+| MolMotifHard | GINE | SubgraphX | random | 200 | 0.421 | 0.171 | — | 0.919 | 0.222 | 0.117 | 0.307 | 0.256 | — |
+| MolMotifHard | GINE | SubgraphX | scaffold | 200 | 0.443 | -0.300 | — | 0.937 | 0.127 | 0.183 | 0.347 | 0.141 | — |
+| MolMotifHard | MPNN | IntegratedGradients | random | 200 | 0.969 | 0.392 | 0.933 | 0.753 | 0.158 | 0.301 | 0.766 | 0.191 | 0.278 |
+| MolMotifHard | MPNN | IntegratedGradients | scaffold | 200 | 0.982 | 0.633 | 0.886 | 0.839 | 0.553 | 0.064 | 0.765 | 0.532 | 0.235 |
 | SIDER | GCN | IntegratedGradients | random | 200 | — | -0.110 | 0.750 | 0.746 | 0.084 | 0.022 | 0.751 | 0.154 | 0.054 |
 | SIDER | GCN | IntegratedGradients | scaffold | 200 | — | 0.231 | 0.879 | 0.754 | 0.121 | 0.248 | 0.762 | 0.179 | 0.033 |
 | SIDER | GINE | IntegratedGradients | random | 200 | — | 0.427 | 0.869 | 0.764 | 0.333 | 0.389 | 0.754 | 0.243 | 0.449 |
@@ -343,6 +365,58 @@
 | PGExplainer | Saliency | 194 | 0.000 | 0.537 |
 | PGExplainer | SubgraphX | 192 | 0.000 | 0.455 |
 | Saliency | SubgraphX | 195 | 0.000 | 0.819 |
+
+**MolMotifHard · GINE · random split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | GuidedBackprop | 172 | 0.000 | 0.000 |
+| GNNExplainer | InputXGradient | 172 | 0.000 | 0.006 |
+| GNNExplainer | IntegratedGradients | 172 | 0.000 | 0.020 |
+| GNNExplainer | PGExplainer | 162 | 0.033 | 0.006 |
+| GNNExplainer | Saliency | 172 | 0.000 | 0.013 |
+| GNNExplainer | SubgraphX | 170 | -0.032 | 0.014 |
+| GuidedBackprop | InputXGradient | 172 | 0.000 | 0.016 |
+| GuidedBackprop | IntegratedGradients | 172 | 0.000 | 0.016 |
+| GuidedBackprop | PGExplainer | 162 | 0.000 | 0.942 |
+| GuidedBackprop | Saliency | 172 | 0.000 | 0.009 |
+| GuidedBackprop | SubgraphX | 170 | -0.188 | 0.000 |
+| InputXGradient | IntegratedGradients | 172 | 0.000 | 0.587 |
+| InputXGradient | PGExplainer | 162 | 0.000 | 0.117 |
+| InputXGradient | Saliency | 172 | 0.000 | 0.255 |
+| InputXGradient | SubgraphX | 170 | -0.097 | 0.001 |
+| IntegratedGradients | PGExplainer | 162 | 0.000 | 0.051 |
+| IntegratedGradients | Saliency | 172 | 0.000 | 0.893 |
+| IntegratedGradients | SubgraphX | 170 | -0.016 | 0.002 |
+| PGExplainer | Saliency | 162 | 0.000 | 0.089 |
+| PGExplainer | SubgraphX | 162 | -0.155 | 0.000 |
+| Saliency | SubgraphX | 170 | -0.078 | 0.001 |
+
+**MolMotifHard · GINE · scaffold split** (metric: occ_spearman)
+
+| method A | method B | n | median Δ(A−B) | p-value |
+| --- | --- | --- | --- | --- |
+| GNNExplainer | GuidedBackprop | 161 | 0.000 | 0.029 |
+| GNNExplainer | InputXGradient | 161 | 0.071 | 0.006 |
+| GNNExplainer | IntegratedGradients | 161 | 0.100 | 0.000 |
+| GNNExplainer | PGExplainer | 132 | 0.000 | 0.299 |
+| GNNExplainer | Saliency | 161 | 0.095 | 0.001 |
+| GNNExplainer | SubgraphX | 158 | 0.015 | 0.411 |
+| GuidedBackprop | InputXGradient | 161 | 0.000 | 0.384 |
+| GuidedBackprop | IntegratedGradients | 161 | 0.000 | 0.002 |
+| GuidedBackprop | PGExplainer | 132 | -0.015 | 0.092 |
+| GuidedBackprop | Saliency | 161 | 0.000 | 0.099 |
+| GuidedBackprop | SubgraphX | 158 | -0.044 | 0.114 |
+| InputXGradient | IntegratedGradients | 161 | 0.000 | 0.008 |
+| InputXGradient | PGExplainer | 132 | -0.088 | 0.006 |
+| InputXGradient | Saliency | 161 | 0.000 | 0.178 |
+| InputXGradient | SubgraphX | 158 | -0.097 | 0.022 |
+| IntegratedGradients | PGExplainer | 132 | -0.103 | 0.000 |
+| IntegratedGradients | Saliency | 161 | 0.000 | 0.041 |
+| IntegratedGradients | SubgraphX | 158 | -0.120 | 0.000 |
+| PGExplainer | Saliency | 132 | 0.079 | 0.001 |
+| PGExplainer | SubgraphX | 130 | 0.018 | 0.076 |
+| Saliency | SubgraphX | 158 | -0.097 | 0.005 |
 
 **ShapeGGen · GINE · random split** (metric: occ_spearman)
 

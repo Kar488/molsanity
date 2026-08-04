@@ -641,20 +641,24 @@ $\nLooSurvive{}$ of the $\nLooTotal{}$ leave-one-out fits stays significant.
 MUTAG is load-bearing: without it the pooled effect is not merely weaker, it is
 absent. The two exactly-labelled arms contribute cells and, in
 \hardDataset{}'s case, a modest strengthening, but neither reaches significance
-alone at $n=11$. We therefore claim a pooled effect that one dataset carries
+alone at $n=\nArmCells{}$. We therefore claim a pooled effect that one dataset carries
 and two others are consistent with, not an independent three-way replication,
 and we would resist any reading of $\pooledShiftP{}$ that implies the latter.
 \fi
 
-Per arm, $\nArmsAgree{}$ of $\nArmsTotal{}$ move in that direction: MUTAG
-strongly ($+0.36$ to $-0.75$) and \hardDataset{} weakly ($-0.29$ to $-0.57$).
-\molDataset{} moves the other way ($-0.64$ to $-0.07$), and we report that
-rather than let the pool absorb it. The structural difference is visible in
-the ranking itself. On MUTAG no attributor exceeds GT AUROC $0.9$ and the seven
-are spread across the range; on both \molDataset{} arms four of seven sit above
-$0.9$, within a few hundredths of each other, so the rank correlation is
-carried by whether three poor attributors happen to order correctly against
-four that are effectively tied. A Spearman coefficient over such a
+Per arm, $\nArmsAgree{}$ of $\nArmsTotal{}$ move in that direction. MUTAG
+crosses zero ($+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$) and
+\hardDataset{} starts negative and becomes strongly so
+($\hardIndRhoOccspearman{}$ to $\hardShiftRhoOccspearman{}$).
+\molDataset{} moves the other way ($\molIndRhoOccspearman{}$ to
+$\molShiftRhoOccspearman{}$), and we report that rather than let the pool
+absorb it. The structural difference is visible in the ranking itself. On
+MUTAG $\mutShiftNAboveNine{}$ attributors exceed GT AUROC $0.9$ and the
+$\mutShiftNAttr{}$ are spread over $\mutShiftGtSpan{}$; on \molDataset{}
+under shift $\molShiftNAboveNine{}$ of $\mutShiftNAttr{}$ sit above $0.9$
+within a few hundredths of each other, so the rank correlation is carried by
+whether the remaining poor attributors happen to order correctly against a
+group that is effectively tied. A Spearman coefficient over such a
 distribution is not a sensitive instrument, and we would not draw a conclusion
 from any of the three arms on its own.
 
@@ -662,10 +666,11 @@ from any of the three arms on its own.
 presence, which a message-passing model can satisfy by detecting a rare
 \emph{element} rather than an arrangement; \hardDataset{} labels on a
 carboxylic acid, built from carbon and oxygen alone, so no single-element
-shortcut is available. It widens the usable range (GT AUROC spanning
-$0.38$--$1.00$ against $0.47$--$1.00$) without removing the bunching at the
-top, which is why it helps the pooled estimate without settling the question by
-itself.
+shortcut is available. It widens the usable range under shift (GT AUROC
+spanning $\hardShiftGtSpan{}$ against $\molShiftGtSpan{}$) and leaves
+$\hardShiftNAboveNine{}$ rather than $\molShiftNAboveNine{}$ attributors
+bunched above $0.9$, without removing the bunching altogether, which is why it
+helps the pooled estimate without settling the question by itself.
 
 The arms that could not participate at all are the non-molecular ones.
 SynthMotifs, BA-2Motifs and ShapeGGen have exact node labels but are not
@@ -1129,11 +1134,13 @@ the contrast rather than let a degenerate partition stand in for one.
 \molDataset{} and \hardDataset{} are molecular \emph{and} exactly labelled,
 by construction, since the label is presence of a substructure. Their
 limitation is not that they are saturated outright but that their attributor
-rankings are \emph{bimodal}: four of seven sit above GT AUROC $0.9$ within a
-few hundredths of one another, so a seven-point rank correlation on either arm
-is carried by a handful of comparisons among effectively tied methods. We
-built \hardDataset{} to widen that range and it does, but not enough to make
-either arm decisive alone. No public dataset is simultaneously molecular,
+rankings are \emph{bimodal}: under shift $\molShiftNAboveNine{}$ of
+$\mutShiftNAttr{}$ on \molDataset{} and $\hardShiftNAboveNine{}$ on
+\hardDataset{} sit above GT AUROC $0.9$ within a few hundredths of one
+another, so a $\mutShiftNAttr{}$-point rank correlation on either arm is
+carried by a handful of comparisons among effectively tied methods. We built
+\hardDataset{} to widen that range and it does, but not enough to make either
+arm decisive alone. No public dataset is simultaneously molecular,
 exactly labelled and \emph{graded} in difficulty; constructing one is the
 clearest next step for this line of work, and until it exists the pooled
 estimate across arms is a better instrument than any single one of them.

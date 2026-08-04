@@ -407,6 +407,13 @@ def macros():
             add(f"nLoo{tag}", n)
         add("nLooSurvive", sum(1 for _, pv, _ in loo.values() if pv < 0.05))
         add("nLooTotal", len(loo))
+        # Cells contributed by a single arm -- the n a per-arm correlation
+        # would actually be computed on, quoted when we say no arm is
+        # significant on its own.
+        per_arm = sorted({sum(1 for k in ks if k[0] == d)
+                          for d in {k[0] for k in ks}})
+        add("nArmCells", per_arm[0] if len(per_arm) == 1
+            else f"{per_arm[0]}--{per_arm[-1]}")
 
     # Benjamini-Hochberg over the whole family of selection tests, so the prose
     # can quote an FDR-controlled value rather than a raw one. Built here in the
@@ -468,6 +475,13 @@ def macros():
                     add(f"{pre}NPaired{t}", x["n_paired"])
             for k, v in sel["rank_correlation"].items():
                 add(f"{pre}Rho{k.replace('_', '').capitalize()}", num(v["rho"]))
+            # The bunching argument: an arm whose attributors are spread over
+            # the AUROC range gives Spearman something to rank; one where most
+            # of them sit within a few hundredths of 1.0 does not. Both the
+            # range and the count above 0.9 used to be typed into the prose.
+            gts = sorted(v["gt_auroc_mean"] for v in pa.values())
+            add(f"{pre}GtSpan", f"{num(gts[0])}--{num(gts[-1])}")
+            add(f"{pre}NAboveNine", sum(1 for g in gts if g > 0.9))
         # does the attributor GT ordering survive the change of split?
         A = {a: D.cell_mean(RECS[(ds, bb, a, "random")], "gt_auroc")
              for a in ATTR_ORDER if (ds, bb, a, "random") in RECS}

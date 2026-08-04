@@ -388,22 +388,32 @@ reimplemented.
 \section{Experimental setup}
 \label{sec:setup}
 
-\paragraph{Datasets} Tier-1 provides the ground-truth anchor:
-\textbf{SynthMotifs} and its larger twin \textbf{SynthMotifsXL}, generated
-offline (Barab\'asi--Albert base plus house/cycle motifs) with \emph{exact}
-node ground truth, and \textbf{MUTAG}~\cite{mutag,tudataset} with the nitro
-proxy. Tier-2 is MoleculeNet~\cite{moleculenet}: \textbf{BBBP} and \textbf{BACE}
+\paragraph{Datasets} Tier-1 provides the ground-truth anchor. Two arms are
+molecular with ground truth that is \emph{exact by construction}:
+\textbf{MolMotif} and \textbf{MolMotifHard} take real drug-like molecules
+(BBBP and Tox21 respectively) and relabel them by the presence of a chemical
+substructure --- an aromatic halogen and a carboxylic acid --- so the
+substructure \emph{defines} the label and its atoms are the node ground truth
+by definition rather than by assumption. MolMotifHard exists because MolMotif's
+halogen is a rare element the model can detect atom-wise, saturating the task;
+a carboxylic acid is built only from carbon and oxygen, so the model must learn
+the arrangement (\S\ref{sec:selection}). \textbf{MUTAG}~\cite{mutag,tudataset}
+is molecular with the nitro proxy. Three arms have exact node labels but are
+not molecules: \textbf{SynthMotifs} and its larger twin
+\textbf{SynthMotifsXL}, generated offline (Barab\'asi--Albert base plus
+house/cycle motifs); \textbf{BA-2Motifs}~\cite{pgexplainer}; and
+\textbf{ShapeGGen}~\cite{graphxai}, a node-classification benchmark entered
+here at the graph level by taking each labelled node's $k$-hop enclosing
+subgraph, with $k$ the message-passing depth. Tier-2 is
+MoleculeNet~\cite{moleculenet}: \textbf{BBBP} and \textbf{BACE}
 (classification), \textbf{ESOL}, \textbf{FreeSolv} and \textbf{Lipophilicity}
 (regression). Tier-3 covers chemistry-meets-medicine endpoints:
 \textbf{ClinTox}, \textbf{SIDER} and \textbf{Tox21} as single-task binary views
 of the MoleculeNet panels, and \textbf{DILI} (drug-induced liver injury) and
 \textbf{hERG} (cardiotoxicity) via the Therapeutics Data Commons~\cite{tdc}.
 TDC sets are featurised with the same PyG encoding as MoleculeNet so the
-backbones are drop-in. BA-2Motifs and ShapeGGen~\cite{graphxai} are attempted
-and gracefully skipped: the former's download returns HTTP 403 in this
-environment, the latter's install depends on the pre-2.5 PyG compiled
-extensions. Credential-gated resources are out of scope and never worked
-around.
+backbones are drop-in. Credential-gated resources are out of scope and never
+worked around.
 
 \paragraph{Backbones} GINE~\cite{gin,pretraingnn}, GCN~\cite{gcn},
 GAT~\cite{gat}, MPNN~\cite{mpnn} and AttentiveFP~\cite{attentivefp}, sharing a
@@ -411,12 +421,14 @@ pooling head, calibration and splits.
 
 \paragraph{Attributors} Integrated Gradients, Saliency, Guided Backpropagation
 and Input×Gradient through Captum~\cite{captum}; GNNExplainer and PGExplainer
-through PyTorch Geometric~\cite{pyg}. SubgraphX~\cite{subgraphx} requires DIG,
-which installs but cannot import in this environment (no
-\texttt{torch\_\-sparse} wheel at the pinned torch version), so it is left
-blocked rather than approximated. PGExplainer is classification-only by
-construction: its mask network trains against class logits, so it is absent
-from the regression cells.
+through PyTorch Geometric~\cite{pyg}; SubgraphX~\cite{subgraphx} through
+DIG~\cite{dig}. PGExplainer is classification-only by construction: its mask
+network trains against class logits, so it is absent from the regression
+cells. SubgraphX is scheduled on the ground-truth arms only --- the cells where
+correctness can be measured --- because its Monte-Carlo tree search costs
+roughly $\cellCostRatio{}\times$ an Integrated Gradients cell-run
+(\S\ref{sec:repro}); on those arms it is a full column at the same sample size
+as every other attributor, not a reduced-budget approximation.
 
 \paragraph{Splits} The primary split is a deterministic, class-aware
 Bemis--Murcko scaffold split~\cite{murcko}, the protocol used to evaluate
@@ -437,19 +449,13 @@ the per-combination outcome ledger are recorded with the released artifacts
 
 \input{generated/tab_ledger}
 
-\paragraph{Coverage} Of the \nAttempted{} planned combinations, \nDone{}
-completed and \nSkipped{} could not be attempted because a dependency
-(ShapeGGen) is unavailable in this environment (Table~\ref{tab:ledger}).
-
-A further \nCarried{} rows in the results matrix come from an earlier,
-reduced-budget run on different hardware: they cover attributor sweeps on the
-Tier-2/3 molecular sets that the primary configuration does not schedule, plus
-the SynthMotifsXL arm. These are genuine measurements, but they are not
-comparable in budget to the rest, so they are marked \textsuperscript{c}
-throughout, excluded from every aggregate computed over per-molecule records,
-and excluded entirely from the analysis in \nameref{sec:selection}. In total
-the matrix holds \nClsRows{} classification and \nRegRows{} regression rows,
-of which \nGtCells{} carry a node-level ground truth.
+\paragraph{Coverage} All \nAttempted{} planned combinations completed:
+\nDone{} done, none failed, none skipped (Table~\ref{tab:ledger}). Earlier
+sweeps of this study carried rows forward from a reduced-budget CPU run where a
+cell had failed; this one carries \nCarried{}, so every number in this paper
+comes from the single run reported here. Collapsing the \nPooledSeeds{} seeds,
+the matrix holds \nClsRows{} classification and \nRegRows{} regression rows, of
+which \nGtCells{} carry a node-level ground truth.
 
 \section{Results}
 
@@ -498,9 +504,10 @@ nothing, which we report at the same length as the ones where it did.
 \caption{\textbf{The two axes come apart, and for most cells only one of them
 exists.} \textbf{(a)} Every committed cell carrying a node-level ground truth
 ($n=\nGtCells{}$), plotted as occlusion faithfulness against ground-truth
-localisation; colour distinguishes exact synthetic ground truth from the MUTAG
-motif proxy, marker distinguishes attributor, and open markers are rows carried
-from an earlier run. The shaded band is GT AUROC $<0.5$: attributions there are
+localisation; colour separates the three kinds of ground truth --- exact on
+real molecules, exact on synthetic graphs, and the MUTAG motif proxy --- and
+marker distinguishes attributor. The shaded band is GT AUROC $<0.5$:
+attributions there are
 anti-aligned with the true motif. \nFaithfulButWrong{} cells sit in the
 lower-right region, positively faithful to the model and anti-aligned with
 the truth. \textbf{(b)} The remaining \nNoGtCells{} combinations, on real
@@ -565,18 +572,22 @@ both regimes, but only under shift does the occlusion measure select
 \mutShiftPickOccspearman{}, whose localisation ($\mutShiftPickGtOccspearman{}$)
 is anti-aligned with the motif; significant picks are marked~*, picks
 statistically indistinguishable from the best are marked~$\dagger$.
-\textbf{(b)} \molDataset{} (real molecules, exact node ground truth): the
-selection failure replicates, but the top attributors sit at GT AUROC
-$\ge\molShiftGBPGt{}$, so the ranking among them is noise around a ceiling and
-this arm cannot adjudicate the regime contrast. Rank correlations between each
+\textbf{(b)} \hardDataset{} (real molecules, exact node ground truth by
+construction): the selection failure replicates on an arm where the label is
+the substructure, and the faithfulness--truth rank correlation runs from
+$\hardIndRhoOccspearman{}$ in distribution to $\hardShiftRhoOccspearman{}$
+under shift. \textbf{(c)} \molDataset{}, the same construction on an easier
+motif: the top attributors sit at GT AUROC $\ge\molShiftGBPGt{}$, so the
+ranking among them is noise around a ceiling and this arm corroborates the
+audit without adjudicating the regime contrast. Rank correlations between each
 faithfulness metric and ground truth are given below each panel.}
 \label{fig:dissociation}
 \end{figure*}
 
 If faithfulness and correctness dissociate, then ranking attributors by a
 faithfulness metric, which is what an evaluation framework must do when no
-ground truth is available, can select the wrong method. Two cell families let us
-test this cleanly: each has a node-level ground truth, all
+ground truth is available, can select the wrong method. \nArms{} cell families
+let us test this cleanly: each is molecular, has a node-level ground truth, all
 $\mutShiftNAttr{}$ attributors audited on the same molecules, and both splits
 from this run, so the in-distribution and shift arms differ \emph{only} in the
 split (Table~\ref{tab:selection}, Figure~\ref{fig:dissociation}).
@@ -603,7 +614,7 @@ behaves differently. Occlusion $\rho$ and Fidelity+ both select
 correlation with truth is $+\mutIndRhoOccspearman{}$. The characterisation
 score is the exception, selecting \mutIndPickCharacterization{} at
 $\mutIndPickGtCharacterization{}$
-\ifHasmutIndPCharacterization($p\mutIndPCharacterization{}$)\fi
+\ifHasmutIndPCharacterization{} ($p\mutIndPCharacterization{}$)\fi{}
 with rank
 correlation $\mutIndRhoCharacterization{}$. The sign flip between the two arms
 is large ($+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$ for
@@ -693,11 +704,10 @@ under shift: agreement is what the null predicts.
 \caption{\textbf{Reliability is a property of the (attributor, dataset) pair,
 not of the attributor.} All committed GINE cells at the scaffold split.
 \textbf{(a)} Occlusion faithfulness over every audited dataset; blue $=$
-anti-faithful. \textbf{(b)} Ground-truth localisation, which exists for two
-datasets only. Panel~b is short because correctness is unmeasurable elsewhere,
-not because it scores badly there: no molecular dataset in the sweep
-publishes per-atom labels. Blank cells were not audited; a thin outline marks a
-value carried from an earlier run.}
+anti-faithful. \textbf{(b)} Ground-truth localisation, which exists only for
+the arms built to have it. Panel~b is short because correctness is unmeasurable
+elsewhere, not because it scores badly there: no real molecular property
+dataset in the sweep publishes per-atom labels. Blank cells were not audited.}
 \label{fig:heatmaps}
 \end{figure*}
 
@@ -976,6 +986,7 @@ Table~\ref{tab:paired} gives the paired attributor contrasts behind
 Section~\nameref{sec:selection}, computed from the per-molecule records.
 
 \subsection{Negative and degenerate results}
+\label{sec:negative}
 
 We record what did not work alongside what did.
 
@@ -1169,11 +1180,15 @@ proxy, not annotator labels. It encodes an assumption about which substructure
 ought to matter, and the trained model may use a different, equally valid
 rationale~\cite{faber}.
 
-\paragraph{Coverage of attributors} SubgraphX contributes no row to this run
-and PGExplainer failed in it, so every conclusion about the perturbation family
-rests on GNNExplainer alone in the current-run cells. SubgraphX is wrapped and
-tested but its cells postdate this sweep, so the gap stands for the numbers
-reported here.
+\paragraph{Coverage of attributors} The search family is represented by
+SubgraphX on the ground-truth arms only (\nCellSgx{} cell-runs), because its
+cost is roughly $\cellCostRatio{}\times$ a gradient attributor's
+(\S\ref{sec:repro}). Conclusions that pool over the whole matrix therefore
+weight the gradient family more heavily than a cost-blind design would, and any
+claim about search-based attribution outside the ground-truth arms is
+unsupported here. This is a real coverage limit, and it is the same selection
+pressure --- expensive attributors get benchmarked less --- that the audit is
+meant to make visible rather than inherit silently.
 
 \paragraph{Multiplicity} The selection tests carry Benjamini--Hochberg
 adjusted $q$ values over the family of $\nSelectionTests{}$ tests, and the
@@ -1198,6 +1213,69 @@ matrix, correctness cannot be measured at all with the labels the field
 currently has. The audit is what makes those failures visible; the pipeline,
 the figures and every number here regenerate from the committed artifacts as
 the grid fills in.
+
+\section{Reproducibility and compute}
+\label{sec:repro}
+
+\paragraph{What is pinned} Every result in this paper comes from one
+invocation of \texttt{\runConfig{}} at git revision \texttt{\runGitRev{}},
+seeds \runSeedList{}, on Python~\runPython{} with
+torch~\runTorch{}, PyTorch Geometric~\runPyG{}, RDKit~\runRDKit{},
+Captum~\runCaptum{}, NumPy~\runNumpy{} and scikit-learn~\runSklearn{}. The run
+manifest records all of these, the seed, the platform string and the CUDA
+device count (\runDevices{} device visible), and is committed alongside the
+results. Seeds are set for Python, NumPy and torch before every stage; splits
+are deterministic functions of the dataset and seed, not of iteration order.
+
+\paragraph{Resumability and caching} Each cell-run writes a marker keyed to a
+content hash of its own configuration --- cell, split, budget, model, training
+schedule and seed --- so re-invoking the sweep re-executes exactly the cells
+whose configuration changed and reuses the rest. The hash is also what makes a
+correction auditable: when we found and fixed a defect in the scaffold split
+(\S\ref{sec:negative}), bumping a split-version field in the hash invalidated
+the affected cells and left the random-split cells untouched, and the re-run
+changed $0$ of the random rows. Trained checkpoints are content-addressed on
+the same principle and, since the fix, on a digest of the realised train/val/test
+partition rather than on the split's name, so a checkpoint cannot silently
+outlive the partition it was trained for.
+
+\paragraph{Device policy} Training uses the GPU; the attribution loop is
+CPU-only, because the worker pool forks and a CUDA context does not survive
+\texttt{fork}. This is a deliberate constraint, and it has a reproducibility
+consequence worth stating: we verified that Integrated Gradients, Saliency,
+Guided Backpropagation and Input×Gradient are bit-identical on GPU and CPU,
+whereas GNNExplainer moves by $0.003$--$0.012$ because it fits a mask with Adam
+over $\sim$100 steps. A reader reproducing on a GPU should expect to match
+GNNExplainer to two decimals, not more. We also verified that the parallel
+audit loop reproduces the serial one field-by-field over complete per-molecule
+records, so cores may be traded for wall time freely.
+
+One defect here was real and is worth recording. DIG's SubgraphX draws from
+\texttt{np.random}, which \texttt{torch.manual\_seed} never resets, so its
+output depended on how many molecules had been attributed before it --- results
+that changed if a run resumed at a different point. Seeding per molecule from
+(run seed, graph id) makes each attribution a function of the molecule alone,
+which is both order-independent and resume-safe.
+
+\paragraph{Cost} \ifHasCompute{}The sweep was run as a sequence of resumed
+invocations, so the figures below are the final one --- \computeWall{} minutes
+of wall clock, re-executing \nComputeFresh{} cell-runs and reusing
+\nComputeCached{} from cache --- rather than a cold end-to-end total, which
+this run never paid and which we therefore do not quote. What generalises is
+the per-unit cost. Median training time for a (dataset, backbone, split, seed)
+checkpoint is \trainMedian{}~s. Attribution is where the cost lives, and it is
+not spread evenly: the median SubgraphX cell-run takes \cellSgxMin{}~minutes
+against \cellIgMin{} for Integrated Gradients, a factor of
+$\cellCostRatio{}$ at equal sample size.
+
+We report that ratio as a finding rather than as housekeeping. Compute cost is
+a selection pressure on which attributors get benchmarked at all, and it pushes
+the literature toward cheap ones; a benchmark that silently caps the expensive
+attributor's $n$ to fit a budget buys its coverage with exactly the small-sample
+weakness the field criticises. Our own first instinct was to do that. We kept
+SubgraphX at the full per-cell sample and reduced the number of cells instead,
+which makes the coverage limit explicit (\S\ref{sec:limits}) rather than hiding
+it inside a confidence interval.\fi{}
 
 \section{Data and code availability}
 \label{sec:availability}

@@ -6,6 +6,14 @@
 \newcommand{\runRDKit}{2026.03.5}
 \newcommand{\runCaptum}{0.9.0}
 \newcommand{\runGitRev}{d82c4ec}
+\newcommand{\runPython}{3.12.13}
+\newcommand{\runNumpy}{2.0.2}
+\newcommand{\runScipy}{1.16.3}
+\newcommand{\runSklearn}{1.6.1}
+\newcommand{\runCuda}{yes}
+\newcommand{\runDevices}{1}
+\newcommand{\nRunSeeds}{3}
+\newcommand{\runSeedList}{0, 1, 2}
 \newcommand{\nDone}{474}
 \newcommand{\nFailed}{0}
 \newcommand{\nSkipped}{0}
@@ -56,6 +64,17 @@
 \newcommand{\nAbstainKept}{1,303}
 \newcommand{\nArms}{3}
 \newcommand{\nPooledSeeds}{3}
+\newif\ifHasCompute
+\HasComputetrue
+\newcommand{\computeWall}{397}
+\newcommand{\nComputeCached}{444}
+\newcommand{\nComputeFresh}{30}
+\newcommand{\cellSgxMin}{55}
+\newcommand{\nCellSgx}{6}
+\newcommand{\cellIgMin}{4}
+\newcommand{\nCellIg}{24}
+\newcommand{\cellCostRatio}{15}
+\newcommand{\trainMedian}{41}
 \newif\ifHasPooledMolecular
 \HasPooledMoleculartrue
 \newcommand{\nPooledCells}{33}

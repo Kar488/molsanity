@@ -138,6 +138,17 @@ def macros():
     add("runRDKit", MAN["versions"]["rdkit"])
     add("runCaptum", MAN["versions"]["captum"])
     add("runGitRev", MAN["git_rev"][:7])
+    add("runPython", MAN["python"].split()[0])
+    add("runNumpy", MAN["versions"]["numpy"])
+    add("runScipy", MAN["versions"]["scipy"])
+    add("runSklearn", MAN["versions"]["sklearn"])
+    # The manifest records CUDA availability and device count, not the GPU
+    # model, so the paper says only what was actually logged.
+    add("runCuda", "yes" if MAN.get("cuda", {}).get("available") else "no")
+    add("runDevices", MAN.get("cuda", {}).get("device_count", 0))
+    _ns = max([r.get("n_seeds", 1) or 1 for r in list(CLS) + list(REG)] or [1])
+    add("nRunSeeds", _ns)
+    add("runSeedList", ", ".join(str(i) for i in range(_ns)))
 
     led = COV["ledger"]
     add("nDone", led["done"])
@@ -289,6 +300,57 @@ def macros():
     seeds = [r.get("n_seeds", 1) for r in CLS
              if r["dataset"] in MOLECULAR_GT and r.get("gt_auroc") is not None]
     add("nPooledSeeds", min(seeds) if seeds else 1)
+
+    # --- compute cost, parsed from the run log, never typed --------------------
+    # JCIM asks for reproduction cost. Timings are derived from the committed
+    # log's timestamps so they cannot drift from the run they describe.
+    import datetime as _dt
+    import glob as _glob
+    import re as _re
+    logs = sorted(_glob.glob(str(D.REPO / "results" / "logs" / "run_*.log")))
+    add_flag("HasCompute", bool(logs))
+    if logs:
+        lines = Path(logs[-1]).read_text().splitlines()
+        stamp = lambda l: _dt.datetime.strptime(l[:19], "%Y-%m-%d %H:%M:%S")
+        add("computeWall", f"{(stamp(lines[-1]) - stamp(lines[0])).total_seconds() / 60:.0f}")
+        n_done = sum(1 for l in lines if "] DONE" in l)
+        n_cached = sum(1 for l in lines if "[cached]" in l)
+        add("nComputeCached", n_cached)
+        add("nComputeFresh", n_done - n_cached)
+        # NB: never bind `m` here -- add() closes over the accumulator list of
+        # that name, and a loop variable called `m` silently replaces it with a
+        # regex match, so every later add() raises on a NoneType.
+        durs, last = [], None
+        for l in lines:
+            hit = _re.search(r"\[cell (\S+?)\] DONE", l)
+            if not hit:
+                continue
+            ts = stamp(l)
+            if last and "[cached]" not in l:
+                durs.append((hit.group(1).split("__")[2], (ts - last).total_seconds()))
+            last = ts
+        by = {}
+        for a, d in durs:
+            by.setdefault(a, []).append(d)
+        for attr, tag in (("SubgraphX", "Sgx"), ("IntegratedGradients", "Ig")):
+            v = sorted(by.get(attr, []))
+            if v:
+                add(f"cell{tag}Min", f"{v[len(v) // 2] / 60:.0f}")
+                add(f"nCell{tag}", len(v))
+        if by.get("SubgraphX") and by.get("IntegratedGradients"):
+            a = sorted(by["SubgraphX"])[len(by["SubgraphX"]) // 2]
+            b = sorted(by["IntegratedGradients"])[len(by["IntegratedGradients"]) // 2]
+            add("cellCostRatio", f"{a / b:.0f}")
+        trains, last = [], None
+        for l in lines:
+            dated = _re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", l)
+            if dated and _re.search(r"\[(cell|stage cell_)", l):
+                last = stamp(l)
+            if "Saved checkpoint" in l and "_early" not in l and dated and last:
+                trains.append((stamp(l) - last).total_seconds())
+        if trains:
+            trains.sort()
+            add("trainMedian", f"{trains[len(trains) // 2]:.0f}")
     paired = {k: v for k, v in per_cell.items() if {"random", "scaffold"} <= set(v)}
     add_flag("HasPooledMolecular", len(paired) >= 8)
     if len(paired) >= 8:
@@ -751,14 +813,19 @@ def tab_ledger():
     for k in COV["carried_cells"]:
         carried[k[0]] = carried.get(k[0], 0) + 1
 
+    carried_note = (
+        " \\emph{carried} counts cells whose row still appears in the results "
+        "matrix from an earlier reduced-budget CPU run because this run's "
+        "attempt failed. Those rows are marked \\textsuperscript{c} throughout "
+        "this paper and are never mixed into a this-run aggregate."
+        if COV["n_carried"] else
+        " The \\emph{carried} column counts rows surviving from an earlier "
+        "reduced-budget run because this run's attempt failed; it is zero, so "
+        "every row in this paper is from the sweep reported here.")
     L = ["\\begin{table}[t]", "\\centering",
          "\\caption{\\textbf{The run ledger.} Outcome of every cell the "
          "\\texttt{" + tex(MAN["config_name"]) + "} sweep attempted, as recorded "
-         "in \\texttt{results/PROGRESS.md}. \\emph{carried} counts cells whose "
-         "row still appears in the results matrix from an earlier "
-         "reduced-budget CPU run because this run's attempt failed. Those "
-         "rows are marked \\textsuperscript{c} throughout this paper and are "
-         "never mixed into a this-run aggregate.}",
+         "in \\texttt{results/PROGRESS.md}." + carried_note + "}",
          "\\label{tab:ledger}",
          "\\footnotesize",
          "\\renewcommand{\\arraystretch}{1.25}",
@@ -778,9 +845,16 @@ def tab_ledger():
           f"\\textbf{{{COV['n_carried']}}} \\\\",
           "\\bottomrule", "\\end{tabular}"]
     reasons = sorted(D.failure_reasons().items(), key=lambda kv: -len(kv[1]))
-    L.append("\\\\[4pt]\\raggedright\\footnotesize \\textbf{Failure reasons.} ")
-    L.append("; ".join(f"{len(v)}~$\\times$ ``{tex(k[:66])}\\dots''"
-                       for k, v in reasons) + ".")
+    # A clean sweep leaves no reasons to list; emitting the heading anyway
+    # printed a bare "Failure reasons. ." under the table.
+    if reasons:
+        L.append("\\\\[4pt]\\raggedright\\footnotesize "
+                 "\\textbf{Failure reasons.} ")
+        L.append("; ".join(f"{len(v)}~$\\times$ ``{tex(k[:66])}\\dots''"
+                           for k, v in reasons) + ".")
+    else:
+        L.append("\\\\[4pt]\\raggedright\\footnotesize "
+                 "No cell failed and none was skipped.")
     L.append("\\end{table}")
     write("tab_ledger.tex", "\n".join(L) + "\n")
 
@@ -789,8 +863,9 @@ def tab_ledger():
 def tab_selection():
     L = ["\\begin{table*}[t]", "\\centering",
          "\\caption{\\textbf{Does a faithfulness-only ranking pick the "
-         "ground-truth-best attributor?} Two cell families, each audited on both "
-         "splits with the same backbone and the same six attributors, so within "
+         "ground-truth-best attributor?} " + str(len(ARMS)) + " molecular cell "
+         "families, each audited on both splits with the same backbone and the "
+         "same " + str(len(ATTR_ORDER)) + " attributors, so within "
          "a family only the split changes and the contrast isolates distribution "
          "shift rather than confounding it with a change of dataset. Each row "
          "ranks the attributors by one faithfulness/fidelity metric and asks "
@@ -972,9 +1047,11 @@ def tab_molecular():
             "model-side reliability can be measured, which is the gap the "
             "Tier-1 cells are needed to close. \\emph{charact.} is the "
             "GraphFramEx characterisation score and \\emph{unfaith.} the "
-            "PyG/DIG unfaithfulness metric, computed on the same molecules; "
-            "both are blank for carried rows (\\textsuperscript{c}), whose "
-            "per-molecule records this run did not regenerate. Bold marks the "
+            "PyG/DIG unfaithfulness metric, computed on the same molecules"
+            + ("; both are blank for carried rows (\\textsuperscript{c}), whose "
+               "per-molecule records this run did not regenerate"
+               if any(r.get("provenance") == "carried" for r in rows) else "")
+            + ". Bold marks the "
             "highest occlusion $\\rho$ per dataset (emphasis only).}")
     for pi, part in enumerate(parts):
         sub = [r for r in rows if r["dataset"] in part]

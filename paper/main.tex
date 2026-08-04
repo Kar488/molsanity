@@ -110,14 +110,16 @@
 \hbadness=3000
 
 % ------------------------------------------------------------ headings ----
-\setcounter{secnumdepth}{0}
+% Sections and subsections are numbered: the body cross-references them with
+% \S\ref, which prints a bare "§" under secnumdepth 0.
+\setcounter{secnumdepth}{2}
 \newcommand{\secsquare}{%
   \textcolor{accent}{\rule[0.14em]{0.52em}{0.52em}}\hspace{0.42em}}
 \titleformat{\section}
-  {\normalfont\large\bfseries\color{headtint}}{}{0pt}{\secsquare}
+  {\normalfont\large\bfseries\color{headtint}}{\secsquare\thesection}{0.45em}{}
 \titlespacing*{\section}{0pt}{16pt plus 4pt minus 2pt}{5pt plus 1pt}
 \titleformat{\subsection}
-  {\normalfont\normalsize\bfseries\color{headtint}}{}{0pt}{}
+  {\normalfont\normalsize\bfseries\color{headtint}}{\thesubsection}{0.45em}{}
 \titlespacing*{\subsection}{0pt}{11pt plus 3pt minus 2pt}{3pt}
 \titleformat{\paragraph}[runin]
   {\normalfont\bfseries\color{headtint}}{}{0pt}{}[.]

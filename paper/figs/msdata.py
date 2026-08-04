@@ -42,7 +42,14 @@ def regime_of(dataset: str) -> str:
     return "classification"
 
 
-GT_EXACT = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs"}  # exact node GT by design
+# Exact node ground truth on non-molecular graphs: the motif is injected, so the
+# labels are exact, but there is no Bemis-Murcko scaffold and hence no chemical
+# shift contrast.
+GT_EXACT_SYNTH = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen"}
+# Exact node ground truth on real molecules: the label IS the presence of the
+# substructure, so its atoms are the ground truth by construction.
+GT_EXACT_MOL = {"MolMotif", "MolMotifHard"}
+GT_EXACT = GT_EXACT_SYNTH | GT_EXACT_MOL
 GT_PROXY = {"MUTAG"}                          # chemically motivated nitro proxy
 
 KEY_COLS = {"dataset", "backbone", "attributor", "split", "method A", "method B"}

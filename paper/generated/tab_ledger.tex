@@ -1,6 +1,6 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{The run ledger.} Outcome of every cell the \texttt{full.yaml} sweep attempted, as recorded in \texttt{results/PROGRESS.md}. \emph{carried} counts cells whose row still appears in the results matrix from an earlier reduced-budget CPU run because this run's attempt failed. Those rows are marked \textsuperscript{c} throughout this paper and are never mixed into a this-run aggregate.}
+\caption{\textbf{The run ledger.} Outcome of every cell the \texttt{full.yaml} sweep attempted, as recorded in \texttt{results/PROGRESS.md}. The \emph{carried} column counts rows surviving from an earlier reduced-budget run because this run's attempt failed; it is zero, so every row in this paper is from the sweep reported here.}
 \label{tab:ledger}
 \footnotesize
 \renewcommand{\arraystretch}{1.25}
@@ -28,6 +28,5 @@ hERG & 6 & 0 & 0 & 0 \\
 \textbf{total} & \textbf{474} & \textbf{0} & \textbf{0} & \textbf{0} \\
 \bottomrule
 \end{tabular}
-\\[4pt]\raggedright\footnotesize \textbf{Failure reasons.} 
-.
+\\[4pt]\raggedright\footnotesize No cell failed and none was skipped.
 \end{table}

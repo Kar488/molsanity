@@ -16,8 +16,9 @@ REGIME_COLOR = {
     "regression": "#009E73",      # molecular regression
 }
 GT_COLOR = {
-    "exact": "#0072B2",
-    "proxy": "#D55E00",
+    "exact-synth": "#0072B2",   # exact labels, non-molecular graphs
+    "exact-mol": "#CC79A7",     # exact labels, real molecules
+    "proxy": "#D55E00",         # chemically motivated proxy (MUTAG nitro)
 }
 ATTRIBUTOR_MARKER = {
     "IntegratedGradients": "o",

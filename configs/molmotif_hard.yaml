@@ -1,3 +1,11 @@
+# WARNING -- this config is for an isolated test of the new arm, NOT for a run
+# whose reports you intend to keep. SEED_VARIANCE.md is written from the rows of
+# the cells in THIS config, and cached cells outside it contribute none, so
+# running this alone overwrites a 136-cell seed-variance table with 11 cells.
+# For a run that feeds the paper, use configs/full.yaml: the 408 already-computed
+# cell-runs are skipped in seconds, still contribute their rows, and only the 66
+# new MolMotifHard cell-runs actually compute.
+#
 # MolMotifHard only — the arm that can corroborate or refute the shift contrast.
 #
 # The paper's regime result currently rests on MUTAG alone: n=53 per arm with a

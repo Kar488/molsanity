@@ -29,11 +29,14 @@ faithfulness and correctness. Pooled over all $\nPooledCells{}$ cells of the
 $\nPooledArms{}$ molecular ground-truth arms (each an across-seed mean of
 $\nPooledSeeds{}$ seeds), it moves from $+\pooledIndRho{}$ in distribution
 ($p=\pooledIndP{}$) to $\pooledShiftRho{}$ under shift
-($p=\pooledShiftP{}$). On MUTAG alone the same contrast is
-$+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$. We report that
-$\nArmsAgree{}$ of the $\nArmsTotal{}$ arms move in this direction and one
-does not, and say why in \S\ref{sec:selection} rather than pooling the
-disagreement out of sight. We are equally explicit that faithfulness rankings
+($p=\pooledShiftP{}$). We state plainly how much of that
+pooled figure any one arm carries: dropping MUTAG leaves $\looMutRho{}$
+($p=\looMutP{}$, $n=\nLooMut{}$ cells), so the effect is MUTAG together with
+corroboration rather than $\nArmsTotal{}$ arms independently agreeing. On
+MUTAG alone the contrast is $+\mutIndRhoOccspearman{}$ to
+$\mutShiftRhoOccspearman{}$; $\nArmsAgree{}$ of $\nArmsTotal{}$ arms move in
+that direction and one does not, and \S\ref{sec:selection} says why rather
+than pooling the disagreement out of sight. We are equally explicit that faithfulness rankings
 mismatch the ground truth in-distribution as well ($\mutIndNMismatch{}$ of
 $\mutShiftNMetrics{}$ metrics on MUTAG), so the finding is a collapse in rank
 correlation rather than agreement followed by disagreement. Faithfulness itself does not fall under shift --- across the

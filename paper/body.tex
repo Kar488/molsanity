@@ -589,6 +589,22 @@ under scaffold shift ($p=\pooledShiftP{}$), while faithfulness itself rises
 ($\pooledIndFaith{}$ to $\pooledShiftFaith{}$, $p=\pooledShiftFaithP{}$) and
 ground-truth localisation does not move ($p=\pooledShiftGtP{}$).
 
+\ifHasLeaveOneOut
+Before interpreting the pooled figure, the obvious question is how much of it
+one arm carries, so we answer it rather than wait to be asked. Removing each
+arm in turn and recomputing: without MUTAG the correlation is $\looMutRho{}$
+($p=\looMutP{}$, $n=\nLooMut{}$); without \molDataset{} it is $\looMolRho{}$
+($p=\looMolP{}$, $n=\nLooMol{}$); without \hardDataset{} it is
+$\looHardRho{}$ ($p=\looHardP{}$, $n=\nLooHard{}$). Only
+$\nLooSurvive{}$ of the $\nLooTotal{}$ leave-one-out fits stays significant.
+MUTAG is load-bearing: without it the pooled effect is not merely weaker, it is
+absent. The two exactly-labelled arms contribute cells and, in
+\hardDataset{}'s case, a modest strengthening, but neither reaches significance
+alone at $n=11$. We therefore claim a pooled effect that one dataset carries
+and two others are consistent with, not an independent three-way replication,
+and we would resist any reading of $\pooledShiftP{}$ that implies the latter.
+\fi
+
 Per arm, $\nArmsAgree{}$ of $\nArmsTotal{}$ move in that direction: MUTAG
 strongly ($+0.36$ to $-0.75$) and \hardDataset{} weakly ($-0.29$ to $-0.57$).
 \molDataset{} moves the other way ($-0.64$ to $-0.07$), and we report that

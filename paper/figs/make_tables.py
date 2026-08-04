@@ -323,6 +323,29 @@ def macros():
         add("nArmsAgree", agree)
         add("nArmsTotal", len({k[0] for k in ks}))
 
+        # Leave-one-arm-out. The pooled p is the number a reader will quote, so
+        # the paper must say how much of it any single arm carries -- the first
+        # check a sceptical reviewer runs, and running it ourselves is cheaper
+        # than being told. On the 2026-08-04 run it is unflattering: drop MUTAG
+        # and the effect is gone (rho -0.027, p 0.907). The pooled result is
+        # MUTAG plus corroboration, not three arms independently agreeing.
+        loo = {}
+        for drop in sorted({k[0] for k in ks}):
+            keep = [k for k in ks if k[0] != drop]
+            if len(keep) < 8:
+                continue
+            r, pv = D.spearman([paired[k]["scaffold"][1] for k in keep],
+                               [paired[k]["scaffold"][0] for k in keep])
+            loo[drop] = (r, pv, len(keep))
+        add_flag("HasLeaveOneOut", bool(loo))
+        for ds, (r, pv, n) in loo.items():
+            tag = {"MUTAG": "Mut", "MolMotif": "Mol", "MolMotifHard": "Hard"}.get(ds, ds)
+            add(f"loo{tag}Rho", num(r))
+            add(f"loo{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+            add(f"nLoo{tag}", n)
+        add("nLooSurvive", sum(1 for _, pv, _ in loo.values() if pv < 0.05))
+        add("nLooTotal", len(loo))
+
     # Benjamini-Hochberg over the whole family of selection tests, so the prose
     # can quote an FDR-controlled value rather than a raw one. Built here in the
     # same order tab_selection walks so the macro and the table agree.

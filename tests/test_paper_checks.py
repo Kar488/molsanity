@@ -105,3 +105,81 @@ def test_generated_macros_define_the_flags_the_prose_branches_on():
     used = set(re.findall(r"\\(ifHas[A-Za-z]+)", body))
     missing = sorted(f for f in used if f not in defined)
     assert not missing, f"prose branches on undefined flags: {missing}"
+
+
+def _macros() -> dict[str, str]:
+    import re
+
+    path = Path(__file__).resolve().parents[1] / "paper" / "generated" / "macros.tex"
+    if not path.exists():
+        pytest.skip("paper macros not generated")
+    return dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}", path.read_text()))
+
+
+def _num(s: str) -> float:
+    """Parse a macro value back to a number, undoing the LaTeX it carries."""
+    s = s.replace("\\ensuremath{-}", "-").replace("\\ensuremath{", "")
+    return float(s.rstrip("}").replace(",", "").replace("\\%", ""))
+
+
+def test_paper_numbers_match_the_committed_artifacts():
+    """A reviewer who clones the repo must find the paper's numbers in it.
+
+    Every figure the manuscript quotes comes from a macro generated out of
+    results/, so this cannot drift by hand-editing -- but it *can* drift if the
+    generator and the published reports fall out of step, which is exactly what
+    happened once already when BENCHMARK_GT.md kept a hard-coded conclusion
+    while the data moved underneath it. This pins the headline numbers to the
+    committed artifacts directly, not to the generator that produced them.
+    """
+    import glob
+    import json
+
+    root = Path(__file__).resolve().parents[1]
+    M = _macros()
+
+    gt_path = root / "results" / "BENCHMARK_GT.json"
+    if not gt_path.exists():
+        pytest.skip("no committed BENCHMARK_GT.json")
+    by = {(r["dataset"], r["split"]): r for r in json.loads(gt_path.read_text())
+          if "error" not in r}
+    if ("MUTAG", "scaffold") not in by or ("MUTAG", "random") not in by:
+        pytest.skip("committed run has no MUTAG regime pair")
+    shift, ind = by[("MUTAG", "scaffold")], by[("MUTAG", "random")]
+
+    assert _num(M["mutShiftRhoOccspearman"]) == pytest.approx(
+        shift["rank_correlation"]["occ_spearman"]["rho"], abs=5e-4)
+    assert _num(M["mutIndRhoOccspearman"]) == pytest.approx(
+        ind["rank_correlation"]["occ_spearman"]["rho"], abs=5e-4)
+    assert _num(M["mutShiftGtBestVal"]) == pytest.approx(
+        shift["per_attributor"][shift["gt_best"]]["gt_auroc_mean"], abs=5e-4)
+    assert M["mutShiftGtBest"].startswith(shift["gt_best"][:6])
+
+    # The record count the abstract quotes must be the number of records on disk.
+    n_disk = sum(len(json.loads(Path(f).read_text()))
+                 for f in glob.glob(str(root / "results/artifacts/audit/*/records.json")))
+    if n_disk:
+        assert int(_num(M["nRecords"])) == n_disk, (
+            f"abstract quotes {M['nRecords']} records, {n_disk} are committed")
+
+
+def test_no_claim_survives_without_the_data_that_supports_it():
+    """Data-conditional passages must be guarded by a flag, not by luck.
+
+    Every \\ifHas... used in the body must be emitted by the generator. A
+    passage guarded by a flag that no longer exists silently becomes
+    unconditional prose describing a finding that may not be there.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = (root / "body.tex").read_text() + (root / "abstract.tex").read_text()
+    used = set(re.findall(r"\\if(Has\w+)", body))
+    if not used:
+        pytest.skip("no conditional passages in the manuscript")
+    macros_path = root / "generated" / "macros.tex"
+    if not macros_path.exists():
+        pytest.skip("paper macros not generated")
+    declared = set(re.findall(r"\\newif\\if(Has\w+)", macros_path.read_text()))
+    missing = sorted(used - declared)
+    assert not missing, f"body uses undeclared conditionals: {missing}"

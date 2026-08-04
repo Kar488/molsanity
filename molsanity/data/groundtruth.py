@@ -138,16 +138,22 @@ def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
     if dataset_name == "BA-2Motifs":
         return ba2motifs_node_mask(data)
     if (dataset_name.startswith("SynthMotifs")
-            or dataset_name in {"ShapeGGen", "MolMotif"}):
-        # Both carry an exact per-node mask on the graph object as ``node_gt``.
+            or dataset_name.startswith("MolMotif")
+            or dataset_name == "ShapeGGen"):
+        # All carry an exact per-node mask on the graph object as ``node_gt``.
+        # Prefix matching rather than an exact set: a new MolMotif variant that
+        # is not registered here trains and audits normally but silently scores
+        # zero ground-truth molecules, which reads as "no signal" rather than
+        # "not wired up". That cost an experiment once already.
         return synth_motifs_node_mask(data)
     return None
 
 
 def has_ground_truth(dataset_name: str) -> bool:
-    # Any SynthMotifs* variant (e.g. SynthMotifsXL) carries exact node_gt.
-    return (dataset_name in {"MUTAG", "BA-2Motifs", "ShapeGGen", "MolMotif"}
-            or dataset_name.startswith("SynthMotifs"))
+    # Any SynthMotifs* or MolMotif* variant carries an exact node_gt mask.
+    return (dataset_name in {"MUTAG", "BA-2Motifs", "ShapeGGen"}
+            or dataset_name.startswith("SynthMotifs")
+            or dataset_name.startswith("MolMotif"))
 
 
 __all__ = [

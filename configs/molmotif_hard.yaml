@@ -1,0 +1,47 @@
+# WARNING -- this config is for an isolated test of the new arm, NOT for a run
+# whose reports you intend to keep. SEED_VARIANCE.md is written from the rows of
+# the cells in THIS config, and cached cells outside it contribute none, so
+# running this alone overwrites a 136-cell seed-variance table with 11 cells.
+# For a run that feeds the paper, use configs/full.yaml: the 408 already-computed
+# cell-runs are skipped in seconds, still contribute their rows, and only the 66
+# new MolMotifHard cell-runs actually compute.
+#
+# MolMotifHard only — the arm that can corroborate or refute the shift contrast.
+#
+# The paper's regime result currently rests on MUTAG alone: n=53 per arm with a
+# SMARTS proxy ground truth. MolMotif was meant to corroborate it and cannot,
+# because every attributor lands near GT AUROC 0.99 and the ranking is noise.
+# MolMotifHard removes that ceiling (carboxylic acid on Tox21: carbon and oxygen
+# only, so no rare-element shortcut). Measured locally on the scaffold split the
+# spread across attributors widens 0.267 -> 0.775.
+#
+# This config runs that arm and nothing else. Everything already computed keeps
+# its .done marker and is skipped, so this costs only the new cells:
+#   11 cells x 2 splits x 3 seeds = 66 cell-runs.
+#
+#   python -m molsanity.run_all --config configs/molmotif_hard.yaml
+#
+# The result is genuinely open. If the faithfulness-correctness collapse
+# replicates here, the paper has a second arm that is molecular AND exactly
+# labelled. If it does not, that is a negative result about the generality of
+# the finding and belongs in the paper just as plainly.
+seed: 0
+seeds: [0, 1, 2]
+budget: {epochs: 150, ig_steps: 50, pg_epochs: 30, max_eval_molecules: 200,
+         attribution_workers: auto, sgx_max_nodes: 8, sgx_rollouts: 20}
+split: {kind: scaffold, frac_train: 0.6, frac_val: 0.1}
+model: {hidden_channels: 64, num_layers: 3, dropout: 0.5, pool: mean}
+train: {lr: 0.001, weight_decay: 0.0005, batch_size: 64, class_weight: true}
+extra_splits: [random]
+cells:
+- {dataset: MolMotifHard, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: GINE, attributor: Saliency}
+- {dataset: MolMotifHard, backbone: GINE, attributor: InputXGradient}
+- {dataset: MolMotifHard, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: MolMotifHard, backbone: GINE, attributor: GNNExplainer}
+- {dataset: MolMotifHard, backbone: GINE, attributor: PGExplainer}
+- {dataset: MolMotifHard, backbone: GINE, attributor: SubgraphX}
+- {dataset: MolMotifHard, backbone: GCN, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: GAT, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: MPNN, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: AttentiveFP, attributor: IntegratedGradients}

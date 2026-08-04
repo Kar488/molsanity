@@ -48,6 +48,18 @@ cells:
 - {dataset: MolMotif, backbone: GAT, attributor: IntegratedGradients}
 - {dataset: MolMotif, backbone: MPNN, attributor: IntegratedGradients}
 - {dataset: MolMotif, backbone: AttentiveFP, attributor: IntegratedGradients}
+# MolMotifHard: MolMotif without the ceiling. See manifest.py for why.
+- {dataset: MolMotifHard, backbone: GINE, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: GINE, attributor: Saliency}
+- {dataset: MolMotifHard, backbone: GINE, attributor: InputXGradient}
+- {dataset: MolMotifHard, backbone: GINE, attributor: GuidedBackprop}
+- {dataset: MolMotifHard, backbone: GINE, attributor: GNNExplainer}
+- {dataset: MolMotifHard, backbone: GINE, attributor: PGExplainer}
+- {dataset: MolMotifHard, backbone: GINE, attributor: SubgraphX}
+- {dataset: MolMotifHard, backbone: GCN, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: GAT, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: MPNN, attributor: IntegratedGradients}
+- {dataset: MolMotifHard, backbone: AttentiveFP, attributor: IntegratedGradients}
 - {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
 - {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}
 - {dataset: ShapeGGen, backbone: GINE, attributor: InputXGradient}

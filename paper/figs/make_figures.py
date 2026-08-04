@@ -578,6 +578,52 @@ def copy_pipeline_figures():
             print(f"  MISSING {p} — the qualitative figure will not build")
 
 
+def fig_abstention(out: Path):
+    """Coverage-reliability curves: the selective-prediction view of trust.
+
+    Uses the package implementation of the curves rather than recomputing them,
+    so this figure, ABSTENTION.md and the macros cannot disagree.
+    """
+    sys.path.insert(0, str(HERE.parents[1]))
+    from molsanity.audit.abstention import rank_signals
+
+    ranked = rank_signals([r for recs in RECS.values() for r in recs])
+    if not ranked:
+        print("  SKIP fig_abstention (no records carry a signal and ground truth)")
+        return
+
+    LABEL = {"confidence": "confidence", "rationale_reliance": "rationale reliance",
+             "occ_spearman": "occlusion faith.", "stability": "stability",
+             "motif_top1_share": "motif top-1 share"}
+    fig, axes = plt.subplots(1, 2, figsize=(7.1, 2.9))
+    for i, r in enumerate(ranked):
+        cov = [pt["coverage"] for pt in r["curve"]]
+        # The best signal and any anti-predictive one are the two the text
+        # argues from, so they carry the ink; the rest are context.
+        neg = r["lift"] <= 0
+        best = i == 0
+        style = dict(lw=2.0, zorder=4, color=ACCENT) if best else (
+            dict(lw=1.8, zorder=4, color="#c0392b", ls="--") if neg else
+            dict(lw=1.0, zorder=2, color=MUTED, alpha=0.75))
+        lab = LABEL.get(r["signal"], r["signal"])
+        axes[0].plot(cov, [pt["mean_target"] for pt in r["curve"]],
+                     label=lab, **style)
+        axes[1].plot(cov, [pt["frac_below_chance"] for pt in r["curve"]],
+                     label=lab, **style)
+
+    axes[0].axhline(0.5, color=INK, lw=0.7, ls=":", zorder=1)
+    axes[0].set_ylabel("mean GT AUROC of retained")
+    axes[1].set_ylabel("fraction below chance")
+    for ax, lbl in zip(axes, "ab"):
+        ax.set_xlabel("coverage (fraction of molecules retained)")
+        ax.invert_xaxis()  # left-to-right = abstaining more
+        despine(ax)
+        panel_label(ax, lbl)
+    axes[0].legend(frameon=False, fontsize=6.2, loc="lower left", ncol=1)
+    fig.tight_layout()
+    save(fig, out)
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
@@ -587,5 +633,6 @@ if __name__ == "__main__":
     fig_distributions(HERE / "fig_distributions.pdf")
     fig_regime(HERE / "fig_regime.pdf")
     fig_coverage(HERE / "fig_coverage.pdf")
+    fig_abstention(HERE / "fig_abstention.pdf")
     copy_pipeline_figures()
     print("done.")

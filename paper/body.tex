@@ -1164,9 +1164,22 @@ a dataset whose entire purpose is exact ground truth sat in the
 \emph{no}-ground-truth block for two runs without anything flagging the
 contradiction.
 
-\paragraph{Three seeds, one split rule} Each cell is run at
-$\nPooledSeeds{}$ seeds and every figure quoted per cell is an across-seed
-mean, with the spread reported alongside it. What is \emph{not} varied is the
+\paragraph{Three seeds, one split rule, and one exception} Each cell is run at
+$\nPooledSeeds{}$ seeds, and every figure in the results matrix and in the
+pooled analysis is an across-seed mean. The selection tests
+(\S\ref{sec:selection}, Table~\ref{tab:selection}, Figure~\ref{fig:dissociation})
+are the exception, and it is a consequence of the design rather than an
+oversight: the split is a function of the seed, so different seeds audit
+different molecules, and a \emph{paired} per-molecule test requires the same
+molecules on both sides. Those tests are therefore computed within a single
+seed's records. The point estimates they report are correspondingly noisier
+than the matrix rows: on the MUTAG shift arm the ground-truth-best attributor
+scores $\mutShiftGtBestVal{}$ in the audited seed against an across-seed mean
+of $\mutShiftGtBestSeedMean{}\pm\mutShiftGtBestSeedSd{}$. The ordering is the
+same and the mismatch conclusion does not depend on the seed, but the number
+does, and we report both rather than only the one that supports the claim more
+comfortably. The full per-cell across-seed spread is published as supplementary
+material. What is \emph{not} varied is the
 split rule itself: each regime is one deterministic partition, so no interval
 here covers the variance of choosing a different scaffold-split implementation
 or ratio. Per-cell molecule counts are also modest where the dataset is
@@ -1295,6 +1308,12 @@ repository is the source of record for this manuscript; it carries
 \texttt{CITATION.cff} and \texttt{.zenodo.json} so that a versioned archive
 with a DOI, including the trained weights, is generated from a tagged release
 and deposited to accompany the journal version.
+
+The supplementary material is the pipeline's own generated reports, copied
+unchanged from that repository: the per-cell across-seed variance register, the
+selection experiment as the pipeline emitted it, the head-to-head benchmark
+including the framework metrics, the rationale-use and abstention analyses, and
+the maintained limitations register.
 
 Every figure and table in this paper is generated from those artifacts by
 \texttt{paper/figs/make\_\-figures.py} and

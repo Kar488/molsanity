@@ -380,3 +380,22 @@ paragraphs in `body.tex`, which are written for the pre-fix state.
   the full dependency set conflicts with the pinned numpy/rdkit here.
 - MUTAG ground truth is a nitro-motif *proxy* (documented in LIMITATIONS.md),
   not annotator labels; exact GT comes from synthetic Tier-1 sets.
+
+### Audit records are written without the seed in their path
+
+`run_all.py` builds `cell_id` as `dataset__backbone__attributor__split`, with
+no seed, so each seed's run overwrites the previous one's
+`artifacts/audit/<cell_id>/records.json`. What survives on disk is whichever
+seed ran last, unlabelled.
+
+- [ ] Put the seed in the records path and keep all three.
+- The consequence today: the selection tests, which read per-molecule records,
+  are single-seed. That is *methodologically* correct — the split is a function
+  of the seed, so a paired per-molecule test must stay within one seed — but
+  the retained seed is arbitrary rather than chosen, and it happened to be the
+  one where MUTAG·GINE·GNNExplainer scores 0.826 against an across-seed mean of
+  0.774 ± 0.086. Same ordering, materially different number.
+- The paper now states this and quotes both figures (§7, Table 5 caption,
+  abstract), and SEED_VARIANCE.md ships as supplementary material. Fixing the
+  path lets a future run pick the seed deliberately, or report the paired test
+  per seed and pool.

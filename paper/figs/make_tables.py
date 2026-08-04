@@ -482,6 +482,23 @@ def macros():
             gts = sorted(v["gt_auroc_mean"] for v in pa.values())
             add(f"{pre}GtSpan", f"{num(gts[0])}--{num(gts[-1])}")
             add(f"{pre}NAboveNine", sum(1 for g in gts if g > 0.9))
+            # The selection test is computed from ONE seed's per-molecule
+            # records -- it has to be, since the split is a function of the
+            # seed and a paired test needs the same molecules on both sides.
+            # The point estimate it reports is therefore not the across-seed
+            # mean that every table row is, so the across-seed mean and sd of
+            # the same cell are published next to it. For MUTAG-GINE-GNNExpl.
+            # under shift the difference is 0.826 single-seed against
+            # 0.774 +/- 0.086 across three: the same ordering, a materially
+            # different number, and a reviewer will find it in SEED_VARIANCE.md.
+            for r in CLS:
+                if (r["dataset"], r["backbone"], r["attributor"], r["split"]) \
+                        == (ds, bb, sel["gt_best"], sp):
+                    if r.get("gt_auroc") is not None:
+                        add(f"{pre}GtBestSeedMean", num(r["gt_auroc"]))
+                    if r.get("gt_auroc_sd") is not None:
+                        add(f"{pre}GtBestSeedSd", num(r["gt_auroc_sd"]))
+                    break
         # does the attributor GT ordering survive the change of split?
         A = {a: D.cell_mean(RECS[(ds, bb, a, "random")], "gt_auroc")
              for a in ATTR_ORDER if (ds, bb, a, "random") in RECS}
@@ -887,7 +904,11 @@ def tab_selection():
          "paired Wilcoxon test on per-molecule GT AUROC between the selected and "
          "the ground-truth-best attributor, over the molecules both audited, and "
          "$q$ its Benjamini--Hochberg adjustment over all "
-         + str(len(ARMS) * 2 * 3) + " selection tests in this table.}",
+         + str(len(ARMS) * 2 * 3) + " selection tests in this table. Because a "
+         "paired per-molecule test needs the same molecules on both sides and "
+         "the split is a function of the seed, this table is computed within a "
+         "single seed rather than across the three; the across-seed spread for "
+         "the same cells is supplementary material.}",
          "\\label{tab:selection}",
          "\\small",
          "\\renewcommand{\\arraystretch}{1.3}",

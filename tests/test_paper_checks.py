@@ -183,3 +183,51 @@ def test_no_claim_survives_without_the_data_that_supports_it():
     declared = set(re.findall(r"\\newif\\if(Has\w+)", macros_path.read_text()))
     missing = sorted(used - declared)
     assert not missing, f"body uses undeclared conditionals: {missing}"
+
+
+def test_prose_does_not_contradict_the_data():
+    """Prose goes stale silently; the macro checker cannot see it.
+
+    Every number in the manuscript is a generated macro, so a number can never
+    drift. Sentences *about* those numbers can, and did: across three review
+    rounds the paper still said it withdrew the regression cells (the operator
+    was corrected and 0 of 12 are now negative), that SubgraphX "will populate
+    the matrix on the next sweep" (it had), that BA-2Motifs was unscored (it is
+    scored), and that each cell is a "single split, single seed" (three seeds,
+    with a variance report). Each claim was true of an earlier run and false of
+    the committed one.
+
+    So: for a claim the data can settle, assert the data and the prose agree.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = (root / "body.tex").read_text() + (root / "abstract.tex").read_text()
+    mac = root / "generated" / "macros.tex"
+    if not mac.exists():
+        pytest.skip("paper macros not generated")
+    M = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}", mac.read_text()))
+
+    def val(name, default="0"):
+        return _num(M.get(name, default))
+
+    forbidden = []
+    # (condition that makes the phrase false, phrase, what the data says)
+    rules = [
+        (val("nRegNeg") == 0, "withdraw its numbers",
+         "nRegNeg = 0: the regression operator is corrected and no cell is negative"),
+        (val("nRegNeg") == 0, "excluded from every\nfaithfulness claim",
+         "nRegNeg = 0: the regression cells are no longer excluded"),
+        (val("nPooledSeeds", "1") > 1, "Single split, single seed",
+         f"nPooledSeeds = {M.get('nPooledSeeds')}"),
+        (val("nPooledSeeds", "1") > 1, "one deterministic split at\none seed",
+         f"nPooledSeeds = {M.get('nPooledSeeds')}"),
+        (True, "will populate the matrix on the next sweep",
+         "the sweep that populates it is the one being reported"),
+        (True, "postdates this\nsweep", "the fix is in the committed sweep"),
+        (True, "predate that\nfix", "the fix is in the committed sweep"),
+    ]
+    for stale, phrase, why in rules:
+        if stale and phrase in body:
+            forbidden.append(f"{phrase!r} -- but {why}")
+    assert not forbidden, "prose contradicts the committed data:\n  " + "\n  ".join(forbidden)

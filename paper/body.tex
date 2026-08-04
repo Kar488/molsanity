@@ -84,7 +84,7 @@ RDKit~\cite{rdkit}) and audits them. Specifically:
   $\pooledCalibRho{}$} when cells are pooled, a Simpson's-paradox trap for
   anyone reporting a single aggregate number.
 \item We report the negatives with the positives: a regression faithfulness
-  operator we mis-specified and whose numbers we withdraw, ground-truth arms
+  operator we mis-specified, diagnosed and corrected, ground-truth arms
   whose scaffold split is degenerate and are therefore excluded from the shift
   contrast rather than counted toward it, an exactly-labelled molecular arm too
   saturated to adjudicate the central claim, and the \nNoGtCells{} cells where
@@ -865,28 +865,28 @@ Tables~\ref{tab:regression}, \ref{tab:molecular} and~\ref{tab:molecularb} give
 every audited combination on a real molecular dataset. Three cross-task
 patterns hold, and one apparent pattern turns out to be an artefact.
 
-\paragraph{The regression faithfulness operator was mis-specified, and we
-withdraw its numbers} Across the \nRegCells{} regression combinations,
-\nRegNeg{} have negative occlusion faithfulness (median $\medRegOcc{}$), on
-cells whose predictive performance is well behaved ($R^2$ from
-$\esolRtwoMin{}$ to $\esolRtwoMax{}$ on ESOL). We do not interpret that
-pattern, and on inspection it is an artefact of our own operator rather than a
-property of the attributions. The operator compared two different quantities:
-the attribution was clipped at zero, keeping only atoms that push the
-prediction \emph{up}, while the occlusion effect kept its sign. A motif that
-drives a solubility prediction strongly down therefore scored as unimportant on
-the attribution side and dominant on the occlusion side, which is sufficient on
-its own to produce a systematic negative correlation. The unbounded
-output-space Fidelity$\pm$ values, which reach $\maxRegFidPlus{}$ against the
-$[-1,1]$ a probability-space fidelity occupies, are the visible symptom of the
-same mismatch. The corrected operator ranks by magnitude on both sides, reports
-the GraphFramEx characterisation score as undefined rather than clipping a
+\paragraph{A mis-specified regression operator, found and corrected} An
+earlier sweep reported negative occlusion faithfulness on most of the
+\nRegCells{} regression combinations, on cells whose predictive performance was
+well behaved ($R^2$ from $\esolRtwoMin{}$ to $\esolRtwoMax{}$ on ESOL). We did
+not interpret that pattern, and on inspection it was an artefact of our own
+operator rather than a property of the attributions. The operator compared two
+different quantities: the attribution was clipped at zero, keeping only atoms
+that push the prediction \emph{up}, while the occlusion effect kept its sign. A
+motif driving a solubility prediction strongly down therefore scored as
+unimportant on the attribution side and dominant on the occlusion side, which
+is sufficient on its own to produce a systematic negative correlation.
+
+The corrected operator ranks by magnitude on both sides, reports the
+GraphFramEx characterisation score as undefined rather than clipping a
 standard-deviation-space shift into $[0,1]$, and adds a bounded statistic
-giving the share of the total occlusion effect carried by the salient atoms. It
-is implemented and tested but postdates this sweep, so Table~\ref{tab:regression}
-is retained for completeness and the regression cells are excluded from every
-faithfulness claim in this paper. The classification path, on which every other
-result rests, is unchanged.
+giving the share of the total occlusion effect carried by the salient atoms.
+The sweep reported here uses it, and the pathology is gone: $\nRegNeg{}$ of the
+$\nRegCells{}$ regression cells now show negative occlusion faithfulness, with
+median $\medRegOcc{}$. We report the original error alongside the correction
+because a systematic negative result that turns out to be an artefact of the
+measuring instrument is the failure mode this whole paper is about, and we were
+not exempt from it.
 
 \paragraph{Coherence is high nearly everywhere, and says little} Motif top-1
 share lies between $\motifTopMin{}$ and $\motifTopMax{}$ across the
@@ -924,9 +924,12 @@ verified structurally, by requiring the induced subgraph on those nodes to be a
 house or a five-cycle before the mask is used, and cross-checked against a
 generator that produces the same construction with independent labels. It is
 refused rather than guessed when the check fails, so a reordered loader
-degrades to the behaviour reported here. The numbers in this paper predate that
-fix: BA-2Motifs is counted as audited and not as a ground-truth cell throughout,
-and the third exact-ground-truth arm it will provide is not claimed here.
+degrades to the behaviour reported here rather than inventing a mask. The
+recovery is in the sweep reported here: BA-2Motifs carries node-level ground
+truth throughout and appears in Table~\ref{tab:tier1} as a ground-truth arm. It
+is not a molecular one, so it takes no part in the shift contrast for the same
+reason SynthMotifs and ShapeGGen do not, but the correctness axis is now
+measured on it rather than reported as missing.
 
 \ifHasDegenerateCells
 \paragraph{Degenerate ground truth} $\nDegenerateGtCells{}$ ground-truth cells
@@ -967,23 +970,30 @@ throughout for this reason, and the lowest-AUC cell in the run
 (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$ at accuracy
 $\worstAucAcc{}$) is exactly the case where accuracy alone would mislead.
 
-\paragraph{Blocked, and re-examined} The results reported here come from a run
-in which SubgraphX (via DIG) and ShapeGGen (via GraphXAI) were both recorded as
-uninstallable, on the grounds that they need the compiled
+\paragraph{Blocked, re-examined, and now populated} An earlier run recorded
+SubgraphX (via DIG) and ShapeGGen (via GraphXAI) as uninstallable, on the
+grounds that they need the compiled
 \texttt{torch\_\-sparse}/\texttt{torch\_\-scatter} extensions for which no wheel
-exists at the pinned torch version. Revisiting that diagnosis, it was wrong in
-both cases. Those extensions build from source, DIG then installs, and
-SubgraphX is now wrapped and covered by tests in which it recovers a planted
-five-node motif exactly; it is enabled in the configuration and will populate
-the matrix on the next sweep. GraphXAI installs from a source checkout rather
-than a release, and ShapeGGen builds. It remains unintegrated for a different
-and more substantial reason: ShapeGGen is a node-classification benchmark on a
-single large graph, whereas every axis of this audit is defined per molecule at
-the graph level, so adopting it means extending the audit to node-level tasks
-rather than resolving a dependency. Both are recorded in the ledger, occupy no
-row in any table, and enter no aggregate. We report the earlier diagnosis
-alongside the correction because a coverage gap attributed to the environment
-turned out to be a gap in how hard we looked.
+exists at the pinned torch version. That diagnosis was wrong in both cases:
+the extensions build from source, DIG then installs, and GraphXAI installs from
+a source checkout rather than a release. Both are integrated in the sweep
+reported here. SubgraphX contributes a full attributor column on every
+ground-truth arm and ShapeGGen contributes its own cells, so neither is a gap
+in the tables any more.
+
+We keep the record of the wrong diagnosis because it cost real coverage for two
+sweeps, and because a dependency declared impossible is rarely re-examined once
+it is written down. The instructive part is that nothing about the environment
+changed between the two judgements --- only how hard we looked.
+
+Two limitations survive the fix rather than being resolved by it. SubgraphX is
+two to three orders of magnitude more expensive per molecule than the gradient
+family, which is a selection pressure on which attributors get benchmarked at
+all and which we discuss in \S\ref{sec:limits}. ShapeGGen is a
+node-classification benchmark on a single large graph, whereas every axis of
+this audit is defined per molecule at the graph level; it enters the audit as a
+graph-level task by construction, and its scaffold split is degenerate for the
+same reason the other non-molecular arms' are.
 
 \subsection{What to do when there is no ground truth}
 \label{sec:abstention}
@@ -1126,25 +1136,33 @@ on such a cell is fragile; we flag them rather than drop them, and the shift
 arms that carry the argument do not involve them.
 \fi
 
-\paragraph{A dataset that trains but was not scored} BA-2Motifs loads and
-trains in this run, but its cells contribute faithfulness only and appear in
-the no-ground-truth block despite being a synthetic benchmark designed to have
-exact labels, because our extractor did not read the ordering its node labels
-are encoded in. The recovery is implemented and tested but postdates this
-sweep, so the third exact-ground-truth arm is available to the next run and is
-not part of any number reported here.
+\paragraph{A dataset that was not scored, and now is} For two sweeps
+BA-2Motifs contributed faithfulness only, appearing in the no-ground-truth
+block despite being a synthetic benchmark designed to carry exact labels,
+because our extractor did not read the ordering those labels are encoded in.
+The recovery is in this sweep and BA-2Motifs is scored on the correctness axis
+throughout. We leave the episode in the record because the failure was silent:
+a dataset whose entire purpose is exact ground truth sat in the
+\emph{no}-ground-truth block for two runs without anything flagging the
+contradiction.
 
-\paragraph{Single split, single seed} Each cell is one deterministic split at
-one seed. Cross-checkpoint stability partially probes run-to-run variability,
-but no confidence interval in this paper covers split or seed variance, and the
-per-cell molecule counts (20 on the synthetic arms) make individual contrasts
-underpowered.
+\paragraph{Three seeds, one split rule} Each cell is run at
+$\nPooledSeeds{}$ seeds and every figure quoted per cell is an across-seed
+mean, with the spread reported alongside it. What is \emph{not} varied is the
+split rule itself: each regime is one deterministic partition, so no interval
+here covers the variance of choosing a different scaffold-split implementation
+or ratio. Per-cell molecule counts are also modest where the dataset is
+small --- $n=\mutShiftNMol{}$ on the MUTAG scaffold fold, which is the entire
+held-out set rather than a sample from it --- so individual contrasts remain
+underpowered even at $\nPooledSeeds{}$ seeds, which is why the central claim
+is made on the pooled estimate rather than on any single cell.
 
 \paragraph{Occlusion as a counterfactual} Zeroing node features takes the graph
 off the data manifold; a motif whose removal barely moves the output may be
-redundant rather than unimportant. This bears most heavily on the regression
-cells, where the output-space Fidelity$\pm$ values leave the range a
-probability-space fidelity occupies and we decline to interpret the sign.
+redundant rather than unimportant. It bears most visibly on the regression cells, whose
+output-space Fidelity$\pm$ values are shifts in units of the training target's
+standard deviation and so leave the $[-1,1]$ a probability-space fidelity
+occupies; they are comparable within a column and not across tasks.
 
 \paragraph{Proxy ground truth} MUTAG's mask is a nitro/aromatic-nitro SMARTS
 proxy, not annotator labels. It encodes an assumption about which substructure

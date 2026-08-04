@@ -25,16 +25,24 @@ truth ranks \mutShiftGtBest{} best at $\mutShiftGtBestVal{}$ (median paired gap
 $\mutShiftGapOccspearman{}$ AUROC, Wilcoxon $p\mutShiftPOccspearman{}$,
 Benjamini--Hochberg $q\mutShiftQOccspearman{}$ over the $\nSelectionTests{}$
 selection tests). What separates the regimes is the rank correlation between
-faithfulness and correctness, which moves from $+\mutIndRhoOccspearman{}$ in
-distribution to $\mutShiftRhoOccspearman{}$ under shift; across three seeds
-that reversal is $+0.36 \pm 0.19$ to $-0.66 \pm 0.09$, negative on every seed.
-We are explicit that faithfulness rankings mismatch the ground truth
-in-distribution as well ($\mutIndNMismatch{}$ of $\mutShiftNMetrics{}$
-metrics), so the finding is a collapse in rank correlation rather than
-agreement followed by disagreement. Faithfulness itself does not fall under
-shift (median change $\medSplitOccDelta{}$ across $\nSplitPairs{}$ cells
-audited on both splits), so a faithfulness metric gives no warning that its
-relationship to correctness has broken. Using \nRecords{} committed
+faithfulness and correctness. Pooled over all $\nPooledCells{}$ cells of the
+$\nPooledArms{}$ molecular ground-truth arms (each an across-seed mean of
+$\nPooledSeeds{}$ seeds), it moves from $+\pooledIndRho{}$ in distribution
+($p=\pooledIndP{}$) to $\pooledShiftRho{}$ under shift
+($p=\pooledShiftP{}$). On MUTAG alone the same contrast is
+$+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$. We report that
+$\nArmsAgree{}$ of the $\nArmsTotal{}$ arms move in this direction and one
+does not, and say why in \S\ref{sec:selection} rather than pooling the
+disagreement out of sight. We are equally explicit that faithfulness rankings
+mismatch the ground truth in-distribution as well ($\mutIndNMismatch{}$ of
+$\mutShiftNMetrics{}$ metrics on MUTAG), so the finding is a collapse in rank
+correlation rather than agreement followed by disagreement. Faithfulness itself does not fall under shift --- across the
+same $\nPooledCells{}$ cells it \emph{rises}, from $\pooledIndFaith{}$ to
+$\pooledShiftFaith{}$ ($p=\pooledShiftFaithP{}$), while ground-truth
+localisation does not move ($\pooledIndGt{}$ to $\pooledShiftGt{}$,
+$p=\pooledShiftGtP{}$). The metric therefore moves in the reassuring direction
+in exactly the regime where its relationship to correctness breaks, and gives
+no warning. Using \nRecords{} committed
 per-molecule records we further find that on confidently-wrong predictions
 ground-truth localisation degrades ($\regCCGt{}$ to $\regCEGt{}$, $n=\nRegCEGt{}$)
 while their measured faithfulness \emph{improves} ($\regCCOcc{}$ to

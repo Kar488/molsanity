@@ -51,7 +51,8 @@ ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
 # MolMotif is the molecular exactly-labelled arm, but it saturates at
 # GT AUROC ~0.99, where ranking attributors is noise around a ceiling; it is
 # reported as a probe that the audit works, not as a second shift contrast.
-ARMS = [("MUTAG", "GINE", "mut"), ("MolMotif", "GINE", "mol")]
+ARMS = [("MUTAG", "GINE", "mut"), ("MolMotifHard", "GINE", "hard"),
+        ("MolMotif", "GINE", "mol")]
 ARM = ARMS[0][:2]
 
 
@@ -257,6 +258,70 @@ def macros():
             "GNNExplainer": "GNNE", "PGExplainer": "PGE",
             "SubgraphX": "SGX"}
     add("nArms", len(ARMS))
+
+    # --- the pooled molecular result -----------------------------------------
+    # Per arm the 7-point rank correlation is a weak instrument; pooled over
+    # every molecular ground-truth cell it is the paper's central claim. Only
+    # datasets with a real Bemis-Murcko scaffold: the non-molecular arms have a
+    # degenerate scaffold split and cannot enter a shift contrast.
+    #
+    # Built from CLS, whose rows load_results() has already collapsed to the
+    # across-seed mean per cell. Computing it instead from the per-molecule
+    # records under artifacts/audit -- which carry a single seed per cell --
+    # silently reports rho = -0.255 (p = 0.152) in place of the seed-averaged
+    # -0.353 (p = 0.044). With the median across-seed sd on occlusion rho at
+    # 0.146, one seed is not the quantity to correlate, and the two answers sit
+    # on opposite sides of every conventional threshold.
+    MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
+    by_cell = {}
+    for r in CLS:
+        if r["dataset"] not in MOLECULAR_GT:
+            continue
+        g, o = r.get("gt_auroc"), r.get("occ_spearman")
+        if g is None or o is None:
+            continue
+        key = (r["dataset"], r["backbone"], r["attributor"], r["split"])
+        by_cell.setdefault(key, []).append((g, o))
+    per_cell = {}
+    for (ds, bb, at, sp), vals in by_cell.items():
+        per_cell.setdefault((ds, bb, at), {})[sp] = (
+            st.mean(v[0] for v in vals), st.mean(v[1] for v in vals))
+    seeds = [r.get("n_seeds", 1) for r in CLS
+             if r["dataset"] in MOLECULAR_GT and r.get("gt_auroc") is not None]
+    add("nPooledSeeds", min(seeds) if seeds else 1)
+    paired = {k: v for k, v in per_cell.items() if {"random", "scaffold"} <= set(v)}
+    add_flag("HasPooledMolecular", len(paired) >= 8)
+    if len(paired) >= 8:
+        ks = sorted(paired)
+        add("nPooledCells", len(ks))
+        add("nPooledArms", len({k[0] for k in ks}))
+        for sp, tag in (("random", "Ind"), ("scaffold", "Shift")):
+            rho, pv = D.spearman([paired[k][sp][1] for k in ks],
+                                 [paired[k][sp][0] for k in ks])
+            add(f"pooled{tag}Rho", num(rho))
+            add(f"pooled{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+            add(f"pooled{tag}Faith", num(st.mean(paired[k][sp][1] for k in ks)))
+            add(f"pooled{tag}Gt", num(st.mean(paired[k][sp][0] for k in ks)))
+        # Does faithfulness itself move, and does correctness?
+        for metric, idx, tag in (("faith", 1, "Faith"), ("gt", 0, "Gt")):
+            a = [paired[k]["random"][idx] for k in ks]
+            b = [paired[k]["scaffold"][idx] for k in ks]
+            pv = D.paired_wilcoxon(a, b)["p"]
+            add(f"pooledShift{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+        # Per-arm direction, so a contradicting arm cannot hide in the pool.
+        agree = 0
+        for ds in sorted({k[0] for k in ks}):
+            sub = [k for k in ks if k[0] == ds]
+            if len(sub) < 4:
+                continue
+            r0, _ = D.spearman([paired[k]["random"][1] for k in sub],
+                               [paired[k]["random"][0] for k in sub])
+            r1, _ = D.spearman([paired[k]["scaffold"][1] for k in sub],
+                               [paired[k]["scaffold"][0] for k in sub])
+            if r1 < r0:
+                agree += 1
+        add("nArmsAgree", agree)
+        add("nArmsTotal", len({k[0] for k in ks}))
 
     # Benjamini-Hochberg over the whole family of selection tests, so the prose
     # can quote an FDR-controlled value rather than a raw one. Built here in the

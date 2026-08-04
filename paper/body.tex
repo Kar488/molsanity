@@ -580,27 +580,44 @@ is large ($+\mutIndRhoOccspearman{}$ to $\mutShiftRhoOccspearman{}$ for
 occlusion $\rho$), though this does not make in-distribution evaluation safe,
 only much less dangerous.
 
-\paragraph{The exact-ground-truth arm cannot adjudicate this} \molDataset{} is
-the only arm that is both molecular and exactly labelled, and it is where a
-replication would carry most weight. It cannot supply one, for a reason worth
-stating rather than burying: the task is too easy. The top attributors sit at
-GT AUROC $\molShiftIxGGt{}$, $\molShiftSalGt{}$ and $\molShiftGBPGt{}$ under
-shift, so the ranking among them is noise around a ceiling, and the
-faithfulness--truth rank correlation is negative in \emph{both} regimes
-($\molIndRhoOccspearman{}$ in distribution, $\molShiftRhoOccspearman{}$ under
-shift) rather than turning negative under shift. All
-$\molShiftNMismatch{}$ metrics still mismatch the ground-truth-best
-(\molShiftGtBest{}, $\molShiftGtBestVal{}$), so the selection failure
-replicates; the \emph{regime contrast} does not, because \molDataset{} has no
-headroom in which to degrade. We report it as a probe that the audit machinery
-works on real molecules with exact labels, not as a second shift contrast.
+\paragraph{The pooled result, and the arm that dissents} Any single arm gives
+a rank correlation over seven attributors, which is a weak instrument. Pooled
+over all $\nPooledCells{}$ cells of the $\nPooledArms{}$ molecular
+ground-truth arms, the faithfulness--correctness correlation moves from
+$+\pooledIndRho{}$ in distribution ($p=\pooledIndP{}$) to $\pooledShiftRho{}$
+under scaffold shift ($p=\pooledShiftP{}$), while faithfulness itself rises
+($\pooledIndFaith{}$ to $\pooledShiftFaith{}$, $p=\pooledShiftFaithP{}$) and
+ground-truth localisation does not move ($p=\pooledShiftGtP{}$).
 
-This leaves the shift contrast resting on MUTAG alone. The other
-ground-truth arms cannot stand in: SynthMotifs, BA-2Motifs and ShapeGGen are
-not molecules, so a Bemis--Murcko scaffold is undefined for them and their
+Per arm, $\nArmsAgree{}$ of $\nArmsTotal{}$ move in that direction: MUTAG
+strongly ($+0.36$ to $-0.75$) and \hardDataset{} weakly ($-0.29$ to $-0.57$).
+\molDataset{} moves the other way ($-0.64$ to $-0.07$), and we report that
+rather than let the pool absorb it. The structural difference is visible in
+the ranking itself. On MUTAG no attributor exceeds GT AUROC $0.9$ and the seven
+are spread across the range; on both \molDataset{} arms four of seven sit above
+$0.9$, within a few hundredths of each other, so the rank correlation is
+carried by whether three poor attributors happen to order correctly against
+four that are effectively tied. A Spearman coefficient over such a
+distribution is not a sensitive instrument, and we would not draw a conclusion
+from any of the three arms on its own.
+
+\hardDataset{} exists because of this. \molDataset{} labels on halogen-aromatic
+presence, which a message-passing model can satisfy by detecting a rare
+\emph{element} rather than an arrangement; \hardDataset{} labels on a
+carboxylic acid, built from carbon and oxygen alone, so no single-element
+shortcut is available. It widens the usable range (GT AUROC spanning
+$0.38$--$1.00$ against $0.47$--$1.00$) without removing the bunching at the
+top, which is why it helps the pooled estimate without settling the question by
+itself.
+
+The arms that could not participate at all are the non-molecular ones.
+SynthMotifs, BA-2Motifs and ShapeGGen have exact node labels but are not
+molecules, so a Bemis--Murcko scaffold is undefined for them and their
 ``scaffold'' split comes back as an arbitrary deterministic partition
-(\S\ref{sec:limits}). A single-dataset contrast with a proxy ground truth
-is the honest scope of the result, and we state it as such.
+(\S\ref{sec:limits}). The shift contrast therefore rests on the
+$\nPooledArms{}$ molecular arms and their $\nPooledCells{}$ cells, two of
+which carry a ground truth that is exact by construction and one a chemically
+motivated proxy.
 
 \paragraph{Two caveats} First, our own faithfulness metric fails alongside the
 field-standard ones on the MUTAG shift arm. We therefore do not claim that
@@ -1042,12 +1059,17 @@ scaffold is undefined for them: our splitter reports every graph in its own
 scaffold bucket, which makes their ``scaffold'' split an arbitrary
 deterministic partition rather than a chemical shift, and we exclude them from
 the contrast rather than let a degenerate partition stand in for one.
-\molDataset{} is molecular \emph{and} exactly labelled --- by construction,
-since the label is presence of a substructure --- but saturates near GT AUROC
-$1.0$, leaving no headroom in which degradation could be observed. No public
-dataset is simultaneously molecular, exactly labelled and hard, which is the
-gap this paper is about; a reader should treat the regime contrast as a
-single-dataset result until such a dataset exists.
+\molDataset{} and \hardDataset{} are molecular \emph{and} exactly labelled,
+by construction, since the label is presence of a substructure. Their
+limitation is not that they are saturated outright but that their attributor
+rankings are \emph{bimodal}: four of seven sit above GT AUROC $0.9$ within a
+few hundredths of one another, so a seven-point rank correlation on either arm
+is carried by a handful of comparisons among effectively tied methods. We
+built \hardDataset{} to widen that range and it does, but not enough to make
+either arm decisive alone. No public dataset is simultaneously molecular,
+exactly labelled and \emph{graded} in difficulty; constructing one is the
+clearest next step for this line of work, and until it exists the pooled
+estimate across arms is a better instrument than any single one of them.
 
 \ifHasDegenerateCells
 \paragraph{Degenerate ground-truth cells} $\nDegenerateGtCells{}$ cells return

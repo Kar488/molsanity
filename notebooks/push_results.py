@@ -25,16 +25,26 @@ if not Path('/content/drive/MyDrive').exists():
     drive.mount('/content/drive')
 
 # --- 2. Find the repo, or clone it fresh -----------------------------------
-candidates = [p.parent for p in Path('/content').rglob('.git') if p.is_dir()]
-candidates = [p for p in candidates if p.name == REPO]
-if candidates:
-    repo = candidates[0]
-    print(f'found existing clone: {repo}')
+# Local disk only. A clone on Drive is worse than no clone: Drive is a FUSE
+# mount whose caching breaks git's bookkeeping ('fatal: shallow file has
+# changed since we read it'), and copying results/ into it is a Drive-to-Drive
+# copy of ~1700 files. The first version of this script searched all of
+# /content, found a stale Drive-hosted clone, and started down exactly that
+# path. Cloning fresh to local disk costs seconds.
+candidates = [q.parent for q in Path('/content').glob('*/.git')
+              if q.is_dir() and q.parent.name == REPO]
+repo = candidates[0] if candidates else None
+if repo:
+    print(f'found local clone: {repo}')
 else:
     repo = Path('/content') / REPO
-    print(f'no clone found; cloning into {repo}')
+    if repo.exists():
+        shutil.rmtree(repo)
+    print(f'cloning fresh to local disk: {repo}')
     subprocess.run(['git', 'clone', '--branch', BRANCH,
                     f'https://github.com/{OWNER}/{REPO}.git', str(repo)], check=True)
+assert not str(repo).startswith('/content/drive'), (
+    f'refusing to run git in a Drive-hosted repo: {repo}')
 os.chdir(repo)
 
 # --- 3. results/ must be the run's, not the repo's stale copy --------------

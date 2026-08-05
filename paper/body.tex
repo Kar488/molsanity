@@ -425,10 +425,10 @@ through PyTorch Geometric~\cite{pyg}; SubgraphX~\cite{subgraphx} through
 DIG~\cite{dig}. PGExplainer is classification-only by construction: its mask
 network trains against class logits, so it is absent from the regression
 cells. SubgraphX is scheduled on the ground-truth arms only --- the cells where
-correctness can be measured --- because its Monte-Carlo tree search costs
-roughly $\cellCostRatio{}\times$ an Integrated Gradients cell-run
-(\S\ref{sec:repro}); on those arms it is a full column at the same sample size
-as every other attributor, not a reduced-budget approximation.
+correctness can be measured --- because its Monte-Carlo tree search is far more
+expensive per molecule than the gradient family (\S\ref{sec:repro}); on those
+arms it is a full column at the same sample size as every other attributor,
+not a reduced-budget approximation.
 
 \paragraph{Splits} The primary split is a deterministic, class-aware
 Bemis--Murcko scaffold split~\cite{murcko}, the protocol used to evaluate
@@ -821,7 +821,7 @@ ground-truth localisation between full coverage and half coverage
 
 The best is \abstainBest{} ($+\abstainBestLift{}$ over
 $\nAbstainRecords{}$ molecules with ground truth). Ranking by it and keeping
-the most confident \abstainCoverage{}
+the most confident \ifHasAbstainOp\abstainCoverage{}\else fraction\fi{}
 \ifHasAbstainOp
 cuts the share of retained molecules whose attribution is \emph{below chance}
 from $\abstainFullBelow{}$ to $\abstainBelow{}$, with mean localisation
@@ -1054,6 +1054,26 @@ throughout for this reason, and the lowest-AUC cell in the run
 (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$ at accuracy
 $\worstAucAcc{}$) is exactly the case where accuracy alone would mislead.
 
+\paragraph{Two arms that cannot yet carry the contrast they were added for}
+We added \textbf{Benzene} and \textbf{FluorideCarbonyl}, the
+Sanchez-Lengeling et al.~\cite{sanchez2020} attribution tasks as repackaged by
+GraphXAI~\cite{graphxai}, precisely because they are molecular, exactly
+labelled, and \emph{not constructed by us} --- the corroboration
+\S\ref{sec:selection} says it lacks. They are audited here and they contribute
+ground-truth cells to the matrix, but not to the shift contrast. Our loader
+read the graphs out of the published archives without carrying the SMILES
+they also contain, so a Bemis--Murcko scaffold was undefined for every
+molecule, and all six of their scaffold splits came back degenerate, with no
+molecule sharing a scaffold with any other: a deterministic partition, not a
+chemical regime. The audit's own splitter flagged it; the numbers were never wrong,
+they simply were not about shift. Pooling them into the shift analysis
+would have been the precise error this paper is about --- reporting a
+regime that the data does not contain --- so their scaffold rows are
+excluded exactly as the non-molecular arms' are, and the pooled estimate
+still rests on $\nPooledArms{}$ arms. We record it here rather than quietly
+fixing it because the failure was silent in the results and loud only in a
+warning nobody had to read.
+
 \paragraph{Blocked, re-examined, and now populated} An earlier run recorded
 SubgraphX (via DIG) and ShapeGGen (via GraphXAI) as uninstallable, on the
 grounds that they need the compiled
@@ -1201,9 +1221,8 @@ ought to matter, and the trained model may use a different, equally valid
 rationale~\cite{faber}.
 
 \paragraph{Coverage of attributors} The search family is represented by
-SubgraphX on the ground-truth arms only (\nCellSgx{} cell-runs), because its
-cost is roughly $\cellCostRatio{}\times$ a gradient attributor's
-(\S\ref{sec:repro}). Conclusions that pool over the whole matrix therefore
+SubgraphX on the ground-truth arms only, because its cost per molecule is far
+above a gradient attributor's (\S\ref{sec:repro}). Conclusions that pool over the whole matrix therefore
 weight the gradient family more heavily than a cost-blind design would, and any
 claim about search-based attribution outside the ground-truth arms is
 unsupported here. This is a real coverage limit, and it is the same selection
@@ -1283,10 +1302,11 @@ of wall clock, re-executing \nComputeFresh{} cell-runs and reusing
 \nComputeCached{} from cache --- rather than a cold end-to-end total, which
 this run never paid and which we therefore do not quote. What generalises is
 the per-unit cost. Median training time for a (dataset, backbone, split, seed)
-checkpoint is \trainMedian{}~s. Attribution is where the cost lives, and it is
-not spread evenly: the median SubgraphX cell-run takes \cellSgxMin{}~minutes
+checkpoint is \ifHasTrainMedian\trainMedian{}~s\else under a
+minute\fi{}. Attribution is where the cost lives, and it is not spread evenly:
+the median SubgraphX cell-run takes \cellSgxMin{}~minutes\ifHasCostRatio{}
 against \cellIgMin{} for Integrated Gradients, a factor of
-$\cellCostRatio{}$ at equal sample size.
+$\cellCostRatio{}$ at equal sample size\fi{}.
 
 We report that ratio as a finding rather than as housekeeping. Compute cost is
 a selection pressure on which attributors get benchmarked at all, and it pushes
@@ -1387,6 +1407,11 @@ H.~Hoffmann. Explainability methods for graph convolutional neural networks.
 \bibitem{gnnsurvey} H.~Yuan, H.~Yu, S.~Gui, and S.~Ji. Explainability in graph
 neural networks: a taxonomic survey. \emph{IEEE Transactions on Pattern
 Analysis and Machine Intelligence}, 45(5):5782--5799, 2023.
+
+\bibitem{sanchez2020} B.~Sanchez-Lengeling, J.~Wei, B.~Lee, E.~Reif,
+P.~Wang, W.~Qian, K.~McCloskey, L.~Colwell, and A.~Wiltschko. Evaluating
+attribution for graph neural networks. \emph{Advances in Neural Information
+Processing Systems (NeurIPS)}, 2020.
 
 \bibitem{graphxai} C.~Agarwal, O.~Queen, H.~Lakkaraju, and M.~Zitnik.
 Evaluating explainability for graph neural networks. \emph{Scientific Data},

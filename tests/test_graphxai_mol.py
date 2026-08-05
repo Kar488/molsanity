@@ -186,7 +186,7 @@ def test_the_class_is_still_a_fallback(monkeypatch, tmp_path):
     assert len(out.dataset) == 2
 
 
-def _write_npz(path, graphs, imps, labels):
+def _write_npz(path, graphs, imps, labels, smi=None):
     """A .npz in the Sanchez-Lengeling layout GraphXAI ships.
 
     keys: attr, X, y, smiles. X[0] is the graph list; attr[i][0]['nodes'] is a
@@ -200,9 +200,10 @@ def _write_npz(path, graphs, imps, labels):
     for i, m in enumerate(imps):
         attr[i] = np.array([{"nodes": np.asarray(m, dtype=np.float32),
                              "n_edge": graphs[i]["n_edge"]}], dtype=object)
+    smi = smi or ["c1ccccc1"] * len(graphs)
     np.savez(path, attr=attr, X=X,
              y=np.asarray([[float(v)] for v in labels], dtype=np.float32),
-             smiles=np.array([["s", i] for i in range(len(graphs))], dtype=object))
+             smiles=np.array([[s, i] for i, s in enumerate(smi)], dtype=object))
 
 
 def _chain(n):
@@ -279,3 +280,44 @@ def test_the_npz_rationales_union_into_one_mask(tmp_path, monkeypatch):
         "both published rationales must survive into one mask")
     neg = [d for d in out.dataset if int(d.y) == 0][0]
     assert float(neg.node_gt.sum()) == 0.0
+
+
+def test_smiles_are_carried_so_the_scaffold_split_is_real(tmp_path):
+    """The defect that made the first run of these arms uninterpretable.
+
+    _graphs_from_npz originally built Data(x, edge_index, edge_attr, y) and
+    dropped the archive's SMILES. Bemis-Murcko then had no molecule to work
+    with, every graph landed in its own scaffold bucket, and scaffold_split
+    logged DEGENERATE for all six splits -- 0.0% of molecules sharing a
+    scaffold. The arms ran, produced plausible numbers, and those numbers were
+    not about scaffold shift at all.
+
+    A dataset whose whole purpose is to carry a shift contrast must not be able
+    to lose it silently.
+    """
+    from molsanity.data.datasets import _graphs_from_npz
+
+    smi = ["c1ccccc1CC", "c1ccccc1CCC"]
+    p = tmp_path / "fc.npz"
+    _write_npz(p, [_chain(6), _chain(6)],
+               [[[1], [1], [0], [0], [0], [0]], [[0]] * 6], [1, 0], smi=smi)
+    graphs, _ = _graphs_from_npz(str(p))
+    assert [g.smiles for g in graphs] == smi, (
+        "no SMILES on the graph means no Bemis-Murcko scaffold means no shift")
+
+
+def test_a_missing_smiles_table_is_survivable(tmp_path):
+    """Absent SMILES must not crash the loader -- only cost the shift regime."""
+    import numpy as np
+
+    from molsanity.data.datasets import _graphs_from_npz
+
+    p = tmp_path / "fc.npz"
+    _write_npz(p, [_chain(5), _chain(5)],
+               [[[1], [1], [0], [0], [0]], [[0]] * 5], [1, 0])
+    raw = dict(np.load(p, allow_pickle=True))
+    raw.pop("smiles")
+    np.savez(p, **raw)
+    graphs, _ = _graphs_from_npz(str(p))
+    assert len(graphs) == 2
+    assert not hasattr(graphs[0], "smiles") or graphs[0].smiles is None

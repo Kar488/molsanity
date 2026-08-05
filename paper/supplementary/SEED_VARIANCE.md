@@ -1,6 +1,6 @@
 # SEED_VARIANCE.md — how much of each effect is seed noise?
 
-Across-seed mean and standard deviation over 3 seeds, per cell, for 158 cells run under more than one seed. Read the standard deviation against the effect sizes quoted in RESULTS.md: an effect smaller than the spread here is not evidence.
+Across-seed mean and standard deviation over 3 seeds, per cell, for 186 cells run under more than one seed. Read the standard deviation against the effect sizes quoted in RESULTS.md: an effect smaller than the spread here is not evidence.
 
 ## GT AUROC
 
@@ -18,6 +18,34 @@ Across-seed mean and standard deviation over 3 seeds, per cell, for 158 cells ru
 | BA-2Motifs | GINE | PGExplainer | scaffold | 0.886 | 0.135 | 0.731 | 0.978 |
 | BA-2Motifs | GINE | Saliency | random | 0.975 | 0.041 | 0.928 | 1.000 |
 | BA-2Motifs | GINE | Saliency | scaffold | 0.937 | 0.041 | 0.901 | 0.982 |
+| Benzene | GINE | GNNExplainer | random | 0.512 | 0.033 | 0.474 | 0.531 |
+| Benzene | GINE | GNNExplainer | scaffold | 0.406 | 0.112 | 0.278 | 0.489 |
+| Benzene | GINE | GuidedBackprop | random | 0.897 | 0.135 | 0.743 | 0.991 |
+| Benzene | GINE | GuidedBackprop | scaffold | 0.825 | 0.146 | 0.729 | 0.993 |
+| Benzene | GINE | InputXGradient | random | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | InputXGradient | scaffold | 0.999 | 0.001 | 0.999 | 1.000 |
+| Benzene | GINE | IntegratedGradients | random | 1.000 | 0.000 | 1.000 | 1.000 |
+| Benzene | GINE | IntegratedGradients | scaffold | 0.999 | 0.001 | 0.998 | 1.000 |
+| Benzene | GINE | PGExplainer | random | 0.315 | 0.283 | 0.113 | 0.638 |
+| Benzene | GINE | PGExplainer | scaffold | 0.391 | 0.077 | 0.323 | 0.474 |
+| Benzene | GINE | Saliency | random | 0.997 | 0.004 | 0.992 | 1.000 |
+| Benzene | GINE | Saliency | scaffold | 0.999 | 0.000 | 0.999 | 0.999 |
+| Benzene | GINE | SubgraphX | random | 0.503 | 0.049 | 0.457 | 0.554 |
+| Benzene | GINE | SubgraphX | scaffold | 0.629 | 0.129 | 0.518 | 0.770 |
+| FluorideCarbonyl | GINE | GNNExplainer | random | 0.601 | 0.091 | 0.497 | 0.671 |
+| FluorideCarbonyl | GINE | GNNExplainer | scaffold | 0.574 | 0.097 | 0.463 | 0.640 |
+| FluorideCarbonyl | GINE | GuidedBackprop | random | 0.883 | 0.002 | 0.881 | 0.885 |
+| FluorideCarbonyl | GINE | GuidedBackprop | scaffold | 0.909 | 0.056 | 0.851 | 0.963 |
+| FluorideCarbonyl | GINE | InputXGradient | random | 0.812 | 0.035 | 0.775 | 0.843 |
+| FluorideCarbonyl | GINE | InputXGradient | scaffold | 0.782 | 0.053 | 0.725 | 0.828 |
+| FluorideCarbonyl | GINE | IntegratedGradients | random | 0.758 | 0.036 | 0.718 | 0.790 |
+| FluorideCarbonyl | GINE | IntegratedGradients | scaffold | 0.774 | 0.098 | 0.673 | 0.869 |
+| FluorideCarbonyl | GINE | PGExplainer | random | 0.239 | 0.121 | 0.122 | 0.363 |
+| FluorideCarbonyl | GINE | PGExplainer | scaffold | 0.215 | 0.043 | 0.174 | 0.259 |
+| FluorideCarbonyl | GINE | Saliency | random | 0.853 | 0.017 | 0.842 | 0.872 |
+| FluorideCarbonyl | GINE | Saliency | scaffold | 0.812 | 0.052 | 0.768 | 0.870 |
+| FluorideCarbonyl | GINE | SubgraphX | random | 0.491 | 0.078 | 0.401 | 0.538 |
+| FluorideCarbonyl | GINE | SubgraphX | scaffold | 0.455 | 0.033 | 0.430 | 0.492 |
 | MUTAG | AttentiveFP | IntegratedGradients | random | 0.040 | 0.007 | 0.034 | 0.047 |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 0.029 | 0.017 | 0.016 | 0.049 |
 | MUTAG | GAT | IntegratedGradients | random | 0.400 | 0.324 | 0.050 | 0.689 |
@@ -121,7 +149,7 @@ Across-seed mean and standard deviation over 3 seeds, per cell, for 158 cells ru
 | SynthMotifs | MPNN | IntegratedGradients | random | 0.872 | 0.052 | 0.812 | 0.903 |
 | SynthMotifs | MPNN | IntegratedGradients | scaffold | 0.845 | 0.015 | 0.829 | 0.860 |
 
-Median across-seed sd: **0.046**  ·  worst cell: **0.450**
+Median across-seed sd: **0.048**  ·  worst cell: **0.450**
 
 ## occlusion rho
 
@@ -157,6 +185,20 @@ Median across-seed sd: **0.046**  ·  worst cell: **0.450**
 | BBBP | GINE | PGExplainer | scaffold | 0.212 | 0.063 | 0.144 | 0.268 |
 | BBBP | MPNN | IntegratedGradients | random | 0.047 | 0.188 | -0.125 | 0.247 |
 | BBBP | MPNN | IntegratedGradients | scaffold | 0.160 | 0.158 | 0.048 | 0.341 |
+| Benzene | GINE | GNNExplainer | random | 0.004 | 0.042 | -0.031 | 0.050 |
+| Benzene | GINE | GNNExplainer | scaffold | -0.039 | 0.072 | -0.123 | 0.004 |
+| Benzene | GINE | GuidedBackprop | random | 0.384 | 0.131 | 0.261 | 0.522 |
+| Benzene | GINE | GuidedBackprop | scaffold | 0.408 | 0.079 | 0.342 | 0.495 |
+| Benzene | GINE | InputXGradient | random | 0.205 | 0.217 | -0.027 | 0.403 |
+| Benzene | GINE | InputXGradient | scaffold | 0.073 | 0.222 | -0.154 | 0.288 |
+| Benzene | GINE | IntegratedGradients | random | 0.374 | 0.210 | 0.150 | 0.566 |
+| Benzene | GINE | IntegratedGradients | scaffold | 0.277 | 0.186 | 0.067 | 0.419 |
+| Benzene | GINE | PGExplainer | random | -0.311 | 0.126 | -0.398 | -0.167 |
+| Benzene | GINE | PGExplainer | scaffold | -0.130 | 0.182 | -0.248 | 0.079 |
+| Benzene | GINE | Saliency | random | 0.152 | 0.214 | -0.091 | 0.312 |
+| Benzene | GINE | Saliency | scaffold | 0.068 | 0.201 | -0.126 | 0.275 |
+| Benzene | GINE | SubgraphX | random | 0.156 | 0.088 | 0.059 | 0.231 |
+| Benzene | GINE | SubgraphX | scaffold | 0.332 | 0.094 | 0.268 | 0.440 |
 | ClinTox | GINE | GNNExplainer | random | 0.276 | 0.438 | -0.018 | 0.779 |
 | ClinTox | GINE | GNNExplainer | scaffold | -0.027 | 0.154 | -0.200 | 0.093 |
 | ClinTox | GINE | IntegratedGradients | random | -0.288 | 0.112 | -0.417 | -0.221 |
@@ -171,6 +213,20 @@ Median across-seed sd: **0.046**  ·  worst cell: **0.450**
 | ESOL | GINE | GNNExplainer | scaffold | 0.464 | 0.298 | 0.131 | 0.706 |
 | ESOL | GINE | IntegratedGradients | random | 0.683 | 0.238 | 0.432 | 0.904 |
 | ESOL | GINE | IntegratedGradients | scaffold | 0.409 | 0.347 | 0.142 | 0.801 |
+| FluorideCarbonyl | GINE | GNNExplainer | random | 0.085 | 0.071 | 0.004 | 0.128 |
+| FluorideCarbonyl | GINE | GNNExplainer | scaffold | 0.081 | 0.086 | 0.006 | 0.175 |
+| FluorideCarbonyl | GINE | GuidedBackprop | random | 0.170 | 0.125 | 0.055 | 0.304 |
+| FluorideCarbonyl | GINE | GuidedBackprop | scaffold | 0.313 | 0.038 | 0.270 | 0.339 |
+| FluorideCarbonyl | GINE | InputXGradient | random | 0.046 | 0.042 | 0.000 | 0.083 |
+| FluorideCarbonyl | GINE | InputXGradient | scaffold | 0.272 | 0.072 | 0.199 | 0.342 |
+| FluorideCarbonyl | GINE | IntegratedGradients | random | 0.131 | 0.018 | 0.119 | 0.152 |
+| FluorideCarbonyl | GINE | IntegratedGradients | scaffold | 0.175 | 0.029 | 0.151 | 0.207 |
+| FluorideCarbonyl | GINE | PGExplainer | random | -0.119 | 0.120 | -0.243 | -0.003 |
+| FluorideCarbonyl | GINE | PGExplainer | scaffold | -0.108 | 0.064 | -0.177 | -0.051 |
+| FluorideCarbonyl | GINE | Saliency | random | 0.080 | 0.072 | 0.018 | 0.160 |
+| FluorideCarbonyl | GINE | Saliency | scaffold | 0.234 | 0.047 | 0.183 | 0.274 |
+| FluorideCarbonyl | GINE | SubgraphX | random | -0.001 | 0.096 | -0.075 | 0.108 |
+| FluorideCarbonyl | GINE | SubgraphX | scaffold | 0.049 | 0.044 | 0.023 | 0.100 |
 | FreeSolv | GINE | IntegratedGradients | random | 0.393 | 0.102 | 0.276 | 0.461 |
 | FreeSolv | GINE | IntegratedGradients | scaffold | 0.421 | 0.098 | 0.311 | 0.499 |
 | Lipophilicity | GINE | IntegratedGradients | random | 0.556 | 0.091 | 0.470 | 0.652 |
@@ -286,7 +342,7 @@ Median across-seed sd: **0.046**  ·  worst cell: **0.450**
 | hERG | GINE | IntegratedGradients | random | 0.240 | 0.810 | -0.691 | 0.776 |
 | hERG | GINE | IntegratedGradients | scaffold | 0.743 | 0.113 | 0.639 | 0.863 |
 
-Median across-seed sd: **0.146**  ·  worst cell: **0.960**
+Median across-seed sd: **0.133**  ·  worst cell: **0.960**
 
 ## Fidelity+
 
@@ -322,6 +378,20 @@ Median across-seed sd: **0.146**  ·  worst cell: **0.960**
 | BBBP | GINE | PGExplainer | scaffold | 0.189 | 0.077 | 0.143 | 0.278 |
 | BBBP | MPNN | IntegratedGradients | random | 0.109 | 0.018 | 0.089 | 0.119 |
 | BBBP | MPNN | IntegratedGradients | scaffold | 0.175 | 0.075 | 0.107 | 0.256 |
+| Benzene | GINE | GNNExplainer | random | 0.136 | 0.119 | 0.004 | 0.235 |
+| Benzene | GINE | GNNExplainer | scaffold | 0.046 | 0.016 | 0.028 | 0.059 |
+| Benzene | GINE | GuidedBackprop | random | 0.267 | 0.194 | 0.050 | 0.422 |
+| Benzene | GINE | GuidedBackprop | scaffold | 0.177 | 0.144 | 0.072 | 0.342 |
+| Benzene | GINE | InputXGradient | random | 0.251 | 0.211 | 0.012 | 0.415 |
+| Benzene | GINE | InputXGradient | scaffold | 0.139 | 0.162 | 0.029 | 0.325 |
+| Benzene | GINE | IntegratedGradients | random | 0.251 | 0.211 | 0.010 | 0.400 |
+| Benzene | GINE | IntegratedGradients | scaffold | 0.141 | 0.161 | 0.029 | 0.325 |
+| Benzene | GINE | PGExplainer | random | 0.036 | 0.037 | 0.004 | 0.077 |
+| Benzene | GINE | PGExplainer | scaffold | 0.074 | 0.092 | 0.008 | 0.179 |
+| Benzene | GINE | Saliency | random | 0.248 | 0.211 | 0.010 | 0.410 |
+| Benzene | GINE | Saliency | scaffold | 0.140 | 0.161 | 0.031 | 0.324 |
+| Benzene | GINE | SubgraphX | random | 0.261 | 0.177 | 0.061 | 0.401 |
+| Benzene | GINE | SubgraphX | scaffold | 0.161 | 0.115 | 0.069 | 0.290 |
 | ClinTox | GINE | GNNExplainer | random | 0.215 | 0.026 | 0.194 | 0.245 |
 | ClinTox | GINE | GNNExplainer | scaffold | 0.237 | 0.044 | 0.191 | 0.280 |
 | ClinTox | GINE | IntegratedGradients | random | 0.177 | 0.046 | 0.148 | 0.230 |
@@ -336,6 +406,20 @@ Median across-seed sd: **0.146**  ·  worst cell: **0.960**
 | ESOL | GINE | GNNExplainer | scaffold | -0.519 | 0.304 | -0.698 | -0.169 |
 | ESOL | GINE | IntegratedGradients | random | -1.457 | 0.229 | -1.668 | -1.213 |
 | ESOL | GINE | IntegratedGradients | scaffold | -0.649 | 0.489 | -1.207 | -0.294 |
+| FluorideCarbonyl | GINE | GNNExplainer | random | 0.153 | 0.099 | 0.050 | 0.248 |
+| FluorideCarbonyl | GINE | GNNExplainer | scaffold | 0.129 | 0.125 | 0.034 | 0.270 |
+| FluorideCarbonyl | GINE | GuidedBackprop | random | 0.148 | 0.084 | 0.060 | 0.226 |
+| FluorideCarbonyl | GINE | GuidedBackprop | scaffold | 0.179 | 0.129 | 0.101 | 0.328 |
+| FluorideCarbonyl | GINE | InputXGradient | random | 0.270 | 0.081 | 0.181 | 0.338 |
+| FluorideCarbonyl | GINE | InputXGradient | scaffold | 0.163 | 0.098 | 0.099 | 0.276 |
+| FluorideCarbonyl | GINE | IntegratedGradients | random | 0.333 | 0.111 | 0.206 | 0.413 |
+| FluorideCarbonyl | GINE | IntegratedGradients | scaffold | 0.178 | 0.112 | 0.091 | 0.305 |
+| FluorideCarbonyl | GINE | PGExplainer | random | 0.081 | 0.099 | 0.020 | 0.195 |
+| FluorideCarbonyl | GINE | PGExplainer | scaffold | 0.017 | 0.006 | 0.013 | 0.024 |
+| FluorideCarbonyl | GINE | Saliency | random | 0.203 | 0.010 | 0.192 | 0.211 |
+| FluorideCarbonyl | GINE | Saliency | scaffold | 0.168 | 0.101 | 0.096 | 0.283 |
+| FluorideCarbonyl | GINE | SubgraphX | random | 0.196 | 0.129 | 0.047 | 0.281 |
+| FluorideCarbonyl | GINE | SubgraphX | scaffold | 0.172 | 0.097 | 0.092 | 0.279 |
 | FreeSolv | GINE | IntegratedGradients | random | -0.685 | 0.069 | -0.735 | -0.606 |
 | FreeSolv | GINE | IntegratedGradients | scaffold | -0.612 | 0.229 | -0.874 | -0.447 |
 | Lipophilicity | GINE | IntegratedGradients | random | 0.317 | 0.865 | -0.636 | 1.052 |
@@ -451,7 +535,7 @@ Median across-seed sd: **0.146**  ·  worst cell: **0.960**
 | hERG | GINE | IntegratedGradients | random | 0.384 | 0.504 | -0.188 | 0.765 |
 | hERG | GINE | IntegratedGradients | scaffold | 0.730 | 0.108 | 0.661 | 0.854 |
 
-Median across-seed sd: **0.078**  ·  worst cell: **2.109**
+Median across-seed sd: **0.089**  ·  worst cell: **2.109**
 
 ## accuracy
 
@@ -487,12 +571,40 @@ Median across-seed sd: **0.078**  ·  worst cell: **2.109**
 | BBBP | GINE | PGExplainer | scaffold | 0.827 | 0.043 | 0.795 | 0.875 |
 | BBBP | MPNN | IntegratedGradients | random | 0.757 | 0.018 | 0.740 | 0.775 |
 | BBBP | MPNN | IntegratedGradients | scaffold | 0.818 | 0.008 | 0.810 | 0.825 |
+| Benzene | GINE | GNNExplainer | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | GNNExplainer | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
+| Benzene | GINE | GuidedBackprop | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | GuidedBackprop | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
+| Benzene | GINE | InputXGradient | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | InputXGradient | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
+| Benzene | GINE | IntegratedGradients | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | IntegratedGradients | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
+| Benzene | GINE | PGExplainer | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | PGExplainer | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
+| Benzene | GINE | Saliency | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | Saliency | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
+| Benzene | GINE | SubgraphX | random | 0.872 | 0.184 | 0.660 | 0.990 |
+| Benzene | GINE | SubgraphX | scaffold | 0.860 | 0.117 | 0.790 | 0.995 |
 | ClinTox | GINE | GNNExplainer | random | 0.730 | 0.028 | 0.705 | 0.760 |
 | ClinTox | GINE | GNNExplainer | scaffold | 0.673 | 0.077 | 0.585 | 0.725 |
 | ClinTox | GINE | IntegratedGradients | random | 0.730 | 0.028 | 0.705 | 0.760 |
 | ClinTox | GINE | IntegratedGradients | scaffold | 0.673 | 0.077 | 0.585 | 0.725 |
 | DILI | GINE | IntegratedGradients | random | 0.714 | 0.106 | 0.613 | 0.824 |
 | DILI | GINE | IntegratedGradients | scaffold | 0.737 | 0.042 | 0.697 | 0.782 |
+| FluorideCarbonyl | GINE | GNNExplainer | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | GNNExplainer | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
+| FluorideCarbonyl | GINE | GuidedBackprop | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | GuidedBackprop | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
+| FluorideCarbonyl | GINE | InputXGradient | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | InputXGradient | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
+| FluorideCarbonyl | GINE | IntegratedGradients | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | IntegratedGradients | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
+| FluorideCarbonyl | GINE | PGExplainer | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | PGExplainer | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
+| FluorideCarbonyl | GINE | Saliency | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | Saliency | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
+| FluorideCarbonyl | GINE | SubgraphX | random | 0.945 | 0.026 | 0.915 | 0.965 |
+| FluorideCarbonyl | GINE | SubgraphX | scaffold | 0.927 | 0.028 | 0.895 | 0.950 |
 | MUTAG | AttentiveFP | IntegratedGradients | random | 0.736 | 0.070 | 0.672 | 0.810 |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 0.774 | 0.000 | 0.774 | 0.774 |
 | MUTAG | GAT | IntegratedGradients | random | 0.621 | 0.224 | 0.362 | 0.759 |
@@ -640,12 +752,40 @@ Median across-seed sd: **0.044**  ·  worst cell: **0.335**
 | BBBP | GINE | PGExplainer | scaffold | 0.925 | 0.014 | 0.910 | 0.939 |
 | BBBP | MPNN | IntegratedGradients | random | 0.906 | 0.007 | 0.899 | 0.914 |
 | BBBP | MPNN | IntegratedGradients | scaffold | 0.923 | 0.005 | 0.917 | 0.927 |
+| Benzene | GINE | GNNExplainer | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | GNNExplainer | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | GuidedBackprop | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | GuidedBackprop | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | InputXGradient | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | InputXGradient | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | IntegratedGradients | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | IntegratedGradients | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | PGExplainer | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | PGExplainer | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | Saliency | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | Saliency | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
+| Benzene | GINE | SubgraphX | random | 1.000 | 0.000 | 0.999 | 1.000 |
+| Benzene | GINE | SubgraphX | scaffold | 0.998 | 0.003 | 0.995 | 1.000 |
 | ClinTox | GINE | GNNExplainer | random | 0.881 | 0.026 | 0.861 | 0.910 |
 | ClinTox | GINE | GNNExplainer | scaffold | 0.844 | 0.022 | 0.821 | 0.866 |
 | ClinTox | GINE | IntegratedGradients | random | 0.881 | 0.026 | 0.861 | 0.910 |
 | ClinTox | GINE | IntegratedGradients | scaffold | 0.844 | 0.022 | 0.821 | 0.866 |
 | DILI | GINE | IntegratedGradients | random | 0.761 | 0.038 | 0.719 | 0.790 |
 | DILI | GINE | IntegratedGradients | scaffold | 0.801 | 0.025 | 0.786 | 0.830 |
+| FluorideCarbonyl | GINE | GNNExplainer | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | GNNExplainer | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
+| FluorideCarbonyl | GINE | GuidedBackprop | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | GuidedBackprop | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
+| FluorideCarbonyl | GINE | InputXGradient | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | InputXGradient | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
+| FluorideCarbonyl | GINE | IntegratedGradients | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | IntegratedGradients | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
+| FluorideCarbonyl | GINE | PGExplainer | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | PGExplainer | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
+| FluorideCarbonyl | GINE | Saliency | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | Saliency | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
+| FluorideCarbonyl | GINE | SubgraphX | random | 0.974 | 0.015 | 0.958 | 0.988 |
+| FluorideCarbonyl | GINE | SubgraphX | scaffold | 0.977 | 0.010 | 0.970 | 0.989 |
 | MUTAG | AttentiveFP | IntegratedGradients | random | 0.915 | 0.042 | 0.875 | 0.958 |
 | MUTAG | AttentiveFP | IntegratedGradients | scaffold | 0.886 | 0.009 | 0.876 | 0.894 |
 | MUTAG | GAT | IntegratedGradients | random | 0.672 | 0.083 | 0.583 | 0.746 |

@@ -122,7 +122,11 @@ def hashable_budget(budget: dict | None) -> dict:
 #   ``mol_from_data``. v1 always went through ``graph_to_mol``, decoding every
 #   dataset with MUTAG's atom vocabulary, which made MoleculeNet scaffolds
 #   near-unique and leaked 30-56% of true scaffolds from train into test.
-SCAFFOLD_SPLIT_VERSION = 2
+# 3: the GraphXAI arms carried no SMILES, so their Bemis-Murcko scaffolds were
+# undefined and every scaffold split came back DEGENERATE (0.0% grouped). The
+# fix attaches the archive's SMILES; every scaffold cell must recompute, and
+# the random arm is untouched by construction.
+SCAFFOLD_SPLIT_VERSION = 3
 
 
 def stage_config(cell: dict, split_kind: str, cfg: dict, seed: int) -> dict:

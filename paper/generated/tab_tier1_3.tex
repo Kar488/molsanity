@@ -1,6 +1,6 @@
 \begin{table*}[t]
 \centering
-\caption{\textbf{Ground-truth cells, continued (3 of 3).} Columns and conventions as in Table~\ref{tab:tier1}.}
+\caption{\textbf{Ground-truth cells, continued (3 of 4).} Columns and conventions as in Table~\ref{tab:tier1}.}
 \label{tab:tier1part3}
 \footnotesize
 \renewcommand{\arraystretch}{1.15}
@@ -9,6 +9,30 @@
 \toprule
 \textbf{dataset} & \textbf{backbone} & \textbf{attributor} & \textbf{split} & \textbf{$n$} & \textbf{acc} & \textbf{AUC} & \textbf{GT AUROC} & \textbf{GT AUPRC} & \textbf{occ.\ $\rho$} & \textbf{Fid+} & \textbf{Fid--} & \textbf{stab.} \\
 \midrule
+MolMotifHard & AttentiveFP & IG & random & 200 & 0.972 & 0.981 & 0.878 & 0.823 & \textbf{0.476} & 0.411 & 0.087 & 0.932 \\
+MolMotifHard & GAT & IG & random & 200 & 0.962 & 0.992 & 0.793 & 0.770 & 0.041 & 0.466 & 0.404 & 0.966 \\
+MolMotifHard & GCN & IG & random & 200 & 0.885 & 0.988 & 0.901 & 0.855 & 0.040 & 0.359 & 0.355 & 0.700 \\
+MolMotifHard & GINE & GNNExpl. & random & 200 & 0.935 & 0.998 & 0.413 & 0.385 & $-$0.075 & 0.141 & 0.251 & 0.942 \\
+MolMotifHard & GINE & GuidedBP & random & 200 & 0.935 & 0.998 & 0.919 & 0.890 & $-$0.050 & 0.204 & 0.243 & 0.884 \\
+MolMotifHard & GINE & Input$\times$Grad & random & 200 & 0.935 & 0.998 & 0.996 & 0.994 & $-$0.068 & 0.228 & 0.221 & 0.925 \\
+MolMotifHard & GINE & IG & random & 200 & 0.935 & 0.998 & 0.985 & 0.973 & $-$0.074 & 0.218 & 0.231 & 0.914 \\
+MolMotifHard & GINE & PGExpl. & random & 200 & 0.935 & 0.998 & 0.512 & 0.419 & $-$0.051 & 0.162 & 0.208 & 0.830 \\
+MolMotifHard & GINE & Saliency & random & 200 & 0.935 & 0.998 & \textbf{0.998} & 0.996 & $-$0.064 & 0.217 & 0.217 & 0.911 \\
+MolMotifHard & GINE & SubgraphX & random & 200 & 0.935 & 0.998 & 0.408 & 0.320 & $-$0.040 & 0.201 & 0.150 & --- \\
+MolMotifHard & MPNN & IG & random & 200 & 0.908 & 0.996 & 0.953 & 0.920 & 0.310 & 0.289 & 0.222 & 0.933 \\
+\addlinespace[2pt]
+MolMotifHard & AttentiveFP & IG & scaffold & 200 & 0.975 & 0.995 & 0.900 & 0.825 & 0.316 & 0.388 & 0.075 & 0.893 \\
+MolMotifHard & GAT & IG & scaffold & 200 & 0.958 & 0.997 & 0.807 & 0.737 & $-$0.045 & 0.382 & 0.356 & 0.921 \\
+MolMotifHard & GCN & IG & scaffold & 200 & 0.845 & 0.995 & 0.866 & 0.761 & 0.026 & 0.261 & 0.401 & 0.637 \\
+MolMotifHard & GINE & GNNExpl. & scaffold & 200 & 0.892 & 0.997 & 0.420 & 0.349 & $-$0.167 & 0.180 & 0.225 & 0.960 \\
+MolMotifHard & GINE & GuidedBP & scaffold & 200 & 0.892 & 0.997 & 0.875 & 0.818 & $-$0.136 & 0.285 & 0.186 & 0.794 \\
+MolMotifHard & GINE & Input$\times$Grad & scaffold & 200 & 0.892 & 0.997 & 0.995 & 0.990 & $-$0.173 & 0.273 & 0.199 & 0.873 \\
+MolMotifHard & GINE & IG & scaffold & 200 & 0.892 & 0.997 & 0.994 & 0.986 & $-$0.201 & 0.308 & 0.188 & 0.909 \\
+MolMotifHard & GINE & PGExpl. & scaffold & 200 & 0.892 & 0.997 & 0.376 & 0.300 & $-$0.087 & 0.087 & 0.235 & 0.705 \\
+MolMotifHard & GINE & Saliency & scaffold & 200 & 0.892 & 0.997 & \textbf{0.999} & 0.995 & $-$0.165 & 0.278 & 0.211 & 0.847 \\
+MolMotifHard & GINE & SubgraphX & scaffold & 200 & 0.892 & 0.997 & 0.472 & 0.310 & $-$0.130 & 0.238 & 0.175 & --- \\
+MolMotifHard & MPNN & IG & scaffold & 200 & 0.987 & 0.998 & 0.965 & 0.924 & \textbf{0.578} & 0.480 & 0.093 & 0.886 \\
+\addlinespace[2pt]
 ShapeGGen & GINE & GNNExpl. & random & 50 & 0.780 & 0.578 & 0.549 & 0.591 & 0.389 & 0.239 & 0.155 & 0.563 \\
 ShapeGGen & GINE & GuidedBP & random & 50 & 0.780 & 0.578 & \textbf{0.773} & 0.811 & 0.481 & 0.239 & 0.161 & 0.796 \\
 ShapeGGen & GINE & Input$\times$Grad & random & 50 & 0.780 & 0.578 & 0.725 & 0.764 & 0.435 & 0.250 & 0.171 & 0.744 \\
@@ -24,30 +48,6 @@ ShapeGGen & GINE & IG & scaffold & 50 & 0.580 & 0.552 & 0.727 & 0.749 & 0.111 & 
 ShapeGGen & GINE & PGExpl. & scaffold & 50 & 0.580 & 0.552 & 0.567 & 0.611 & $-$0.062 & 0.021 & 0.034 & 0.653 \\
 ShapeGGen & GINE & Saliency & scaffold & 50 & 0.580 & 0.552 & 0.776 & 0.801 & 0.164 & 0.020 & 0.025 & 0.445 \\
 ShapeGGen & GINE & SubgraphX & scaffold & 50 & 0.580 & 0.552 & 0.598 & 0.580 & \textbf{0.407} & 0.059 & $-$0.006 & 0.217 \\
-\addlinespace[2pt]
-SynthMotifs & AttentiveFP & IG & random & 200 & 0.980 & 0.999 & 0.871 & 0.721 & 0.185 & 0.441 & 0.230 & 0.726 \\
-SynthMotifs & GAT & IG & random & 200 & 0.990 & 1.000 & 0.793 & 0.660 & 0.242 & 0.284 & 0.209 & 0.384 \\
-SynthMotifs & GCN & IG & random & 200 & 0.888 & 1.000 & 0.852 & 0.767 & 0.415 & 0.323 & 0.125 & 0.694 \\
-SynthMotifs & GINE & GNNExpl. & random & 200 & 0.972 & 1.000 & 0.632 & 0.388 & 0.123 & 0.232 & 0.251 & 0.698 \\
-SynthMotifs & GINE & GuidedBP & random & 200 & 0.972 & 1.000 & \textbf{0.995} & 0.983 & \textbf{0.640} & 0.272 & 0.061 & 0.795 \\
-SynthMotifs & GINE & Input$\times$Grad & random & 200 & 0.972 & 1.000 & 0.970 & 0.899 & 0.475 & 0.273 & 0.111 & 0.656 \\
-SynthMotifs & GINE & IG & random & 200 & 0.972 & 1.000 & 0.990 & 0.960 & 0.472 & 0.265 & 0.095 & 0.849 \\
-SynthMotifs & GINE & PGExpl. & random & 200 & 0.972 & 1.000 & 0.415 & 0.209 & $-$0.084 & 0.091 & 0.226 & 0.427 \\
-SynthMotifs & GINE & Saliency & random & 200 & 0.972 & 1.000 & 0.979 & 0.927 & 0.489 & 0.274 & 0.105 & 0.560 \\
-SynthMotifs & GINE & SubgraphX & random & 200 & 0.972 & 1.000 & 0.770 & 0.533 & 0.459 & 0.245 & 0.056 & 0.744 \\
-SynthMotifs & MPNN & IG & random & 200 & 0.993 & 1.000 & 0.872 & 0.694 & 0.337 & 0.423 & 0.417 & 0.590 \\
-\addlinespace[2pt]
-SynthMotifs & AttentiveFP & IG & scaffold & 200 & 0.963 & 1.000 & 0.870 & 0.688 & 0.270 & 0.375 & 0.204 & 0.741 \\
-SynthMotifs & GAT & IG & scaffold & 200 & 0.872 & 1.000 & 0.912 & 0.820 & 0.430 & 0.496 & 0.269 & 1.000 \\
-SynthMotifs & GCN & IG & scaffold & 200 & 0.860 & 0.996 & 0.953 & 0.826 & 0.352 & 0.246 & 0.144 & 0.625 \\
-SynthMotifs & GINE & GNNExpl. & scaffold & 200 & 0.947 & 1.000 & 0.642 & 0.397 & 0.092 & 0.327 & 0.341 & 0.637 \\
-SynthMotifs & GINE & GuidedBP & scaffold & 200 & 0.947 & 1.000 & \textbf{0.974} & 0.928 & \textbf{0.623} & 0.424 & 0.045 & 0.732 \\
-SynthMotifs & GINE & Input$\times$Grad & scaffold & 200 & 0.947 & 1.000 & 0.955 & 0.865 & 0.421 & 0.403 & 0.133 & 0.705 \\
-SynthMotifs & GINE & IG & scaffold & 200 & 0.947 & 1.000 & 0.973 & 0.901 & 0.459 & 0.412 & 0.065 & 0.741 \\
-SynthMotifs & GINE & PGExpl. & scaffold & 200 & 0.947 & 1.000 & 0.354 & 0.181 & $-$0.073 & 0.105 & 0.339 & 0.585 \\
-SynthMotifs & GINE & Saliency & scaffold & 200 & 0.947 & 1.000 & 0.957 & 0.886 & 0.401 & 0.394 & 0.151 & 0.601 \\
-SynthMotifs & GINE & SubgraphX & scaffold & 200 & 0.947 & 1.000 & 0.751 & 0.500 & 0.283 & 0.377 & 0.045 & 0.764 \\
-SynthMotifs & MPNN & IG & scaffold & 200 & 0.838 & 0.999 & 0.845 & 0.651 & 0.225 & 0.317 & 0.288 & 0.550 \\
 \bottomrule
 \end{tabular}}
 \end{table*}

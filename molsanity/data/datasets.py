@@ -363,22 +363,83 @@ def _graphxai_load_graphs(name: str, class_name: str):
                 "not the data.")
         datapath = os.path.join(here, cands[0])
 
+    # Read the .npz ourselves first. GraphXAI's own load_graphs reads the same
+    # file correctly and then builds Explanation objects on top of it --
+    # edge_mask_from_node_mask, set_whole_graph -- and that machinery raises
+    # "'numpy.float32' object cannot be interpreted as an integer" on numpy 2.
+    # Two sweeps lost all 84 cell-runs to it. None of those objects are used
+    # here: the audit needs node importances, and the file already holds them.
+    try:
+        return _graphs_from_npz(datapath)
+    except Exception as exc:
+        log.warning("%s: reading %s directly failed (%s); trying GraphXAI's "
+                    "own loader", name, os.path.basename(datapath), exc)
     try:
         out = load_graphs(datapath)
+        return out[0], out[1]
     except Exception as exc:
-        log.warning("%s: load_graphs(%s) failed (%s); trying the dataset class",
-                    name, os.path.basename(datapath), exc)
-        try:
-            import graphxai.datasets as gxd
-            src = getattr(gxd, class_name)()
-            return getattr(src, "graphs", None), getattr(src, "explanations", None)
-        except Exception as exc2:
-            raise DatasetBlocked(
-                f"{name}: GraphXAI's {class_name} failed both directly "
-                f"({exc}) and via its class ({exc2}). Skipping per Hard Rule 4."
-            ) from exc2
-    # load_graphs returns (graphs, explanations) or (graphs, explanations, ids).
-    return out[0], out[1]
+        log.warning("%s: load_graphs failed (%s); trying the dataset class",
+                    name, exc)
+    try:
+        import graphxai.datasets as gxd
+        src = getattr(gxd, class_name)()
+        return getattr(src, "graphs", None), getattr(src, "explanations", None)
+    except Exception as exc:
+        raise DatasetBlocked(
+            f"{name}: {class_name} could not be read directly, via load_graphs, "
+            f"or via its class ({exc}). Skipping per Hard Rule 4.") from exc
+
+
+class _NodeImportance:
+    """One published rationale: a per-node importance vector."""
+
+    __slots__ = ("node_imp",)
+
+    def __init__(self, v):
+        self.node_imp = v
+
+
+def _graphs_from_npz(datapath: str):
+    """Build graphs and rationales straight out of a Sanchez-Lengeling .npz.
+
+    The archive holds ``attr``, ``X``, ``y`` and ``smiles``. ``X[0]`` is the
+    list of graphs, each a dict of ``nodes``/``edges``/``receivers``/
+    ``senders``; ``attr[i][0]['nodes']`` is a (num_nodes, num_rationales)
+    importance matrix, one column per published pathway, because a molecule can
+    contain the rationale substructure more than once.
+
+    This mirrors GraphXAI's load_graphs for the parts we use and stops there.
+    """
+    import numpy as np
+    import torch
+    from torch_geometric.data import Data
+
+    raw = np.load(datapath, allow_pickle=True)
+    att, X, y = raw["attr"], raw["X"], raw["y"]
+    X = X[0]
+    labels = [y[i][0] for i in range(y.shape[0])]
+
+    graphs, expls = [], []
+    for i in range(len(X)):
+        xi = X[i]
+        e1 = torch.from_numpy(np.asarray(xi["receivers"])).long().reshape(-1)
+        e2 = torch.from_numpy(np.asarray(xi["senders"])).long().reshape(-1)
+        g = Data(
+            x=torch.from_numpy(np.asarray(xi["nodes"])).float(),
+            edge_index=torch.stack([e1, e2]),
+            edge_attr=torch.from_numpy(np.asarray(xi["edges"])).float(),
+            y=torch.tensor([int(labels[i])], dtype=torch.long),
+        )
+        imp = np.asarray(att[i][0]["nodes"], dtype=np.float64)
+        if imp.ndim == 1:
+            imp = imp[:, None]
+        graphs.append(g)
+        expls.append([
+            _NodeImportance(torch.from_numpy((imp[:, j] > 0).astype("float32")))
+            for j in range(imp.shape[1])])
+    if not graphs:
+        raise ValueError(f"{datapath}: no graphs in the archive")
+    return graphs, expls
 
 
 def _load_graphxai_mol(spec: DatasetSpec) -> LoadedDataset:

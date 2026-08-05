@@ -122,6 +122,40 @@ cells:
   - {dataset: MolMotifHard, backbone: MPNN,        attributor: IntegratedGradients}
   - {dataset: MolMotifHard, backbone: AttentiveFP, attributor: IntegratedGradients}
 
+  # --- Tier-1 exact GT, molecular, and NOT BUILT BY US (GraphXAI) ---
+  # MolMotif and MolMotifHard are exactly labelled and molecular, and we made
+  # them. A reviewer discounts a benchmark constructed by the authors of the
+  # audit, and reasonably. These two are the Sanchez-Lengeling et al. (NeurIPS
+  # 2020) attribution tasks as repackaged by GraphXAI: real ZINC-derived
+  # molecules with third-party per-atom rationales, published before this work
+  # existed.
+  #
+  # FluorideCarbonyl is the one that can corroborate. Its label is a
+  # CONJUNCTION -- fluoride and carbonyl -- so the model cannot satisfy it by
+  # detecting one conspicuous group, which is the same property that makes
+  # MolMotifHard discriminate where MolMotif saturates. Benzene is expected to
+  # behave like MolMotif and bunch near the ceiling; it is here for
+  # independence, not difficulty, and if it saturates we report that.
+  #
+  # Both are molecular, so both have a real Bemis-Murcko scaffold and can carry
+  # a shift contrast -- which is the point. Leave-one-out on the committed run
+  # says MUTAG carries the pooled effect alone (rho -0.027, p 0.907 without
+  # it); more molecular arms is the only fix for that.
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: Saliency}
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: InputXGradient}
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: PGExplainer}
+  - {dataset: FluorideCarbonyl, backbone: GINE, attributor: SubgraphX}
+  - {dataset: Benzene, backbone: GINE, attributor: IntegratedGradients}
+  - {dataset: Benzene, backbone: GINE, attributor: Saliency}
+  - {dataset: Benzene, backbone: GINE, attributor: InputXGradient}
+  - {dataset: Benzene, backbone: GINE, attributor: GuidedBackprop}
+  - {dataset: Benzene, backbone: GINE, attributor: GNNExplainer}
+  - {dataset: Benzene, backbone: GINE, attributor: PGExplainer}
+  - {dataset: Benzene, backbone: GINE, attributor: SubgraphX}
+
   # --- Tier-1 exact GT (ShapeGGen, via k-hop enclosing subgraphs) ---
   - {dataset: ShapeGGen, backbone: GINE, attributor: IntegratedGradients}
   - {dataset: ShapeGGen, backbone: GINE, attributor: Saliency}

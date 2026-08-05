@@ -142,6 +142,51 @@ MANIFEST: dict[str, DatasetSpec] = {
                "defines the label. This is the arm that can corroborate or "
                "refute the shift contrast MUTAG currently carries alone."),
     ),
+    "Benzene": DatasetSpec(
+        name="Benzene",
+        tier=1,
+        task="graph-classification",
+        source=("GraphXAI real_world (Sanchez-Lengeling et al., NeurIPS 2020; "
+                "repackaged by Agarwal et al. 2023)"),
+        licence="MIT (GraphXAI)",
+        loader="graphxai_mol",
+        has_ground_truth=True,
+        extras={"graphxai_class": "Benzene", "max_graphs": 1000, "seed": 0,
+                "balance": True},
+        notes=("Real ZINC-derived molecules labelled by benzene-ring presence, "
+               "with per-atom rationales published by a THIRD PARTY. That is "
+               "the reason it is here. MolMotif and MolMotifHard are exactly "
+               "labelled and molecular, but we built them, and a benchmark "
+               "constructed by the authors of an audit is weaker corroboration "
+               "than one that already existed. Expect it to behave like "
+               "MolMotif rather than MolMotifHard: a benzene ring is a "
+               "conspicuous substructure, so the task may saturate and rank "
+               "attributors around a ceiling. It is included for independence, "
+               "not for difficulty. A molecule may contain several rings and "
+               "therefore several published rationales; the mask is their "
+               "union."),
+    ),
+    "FluorideCarbonyl": DatasetSpec(
+        name="FluorideCarbonyl",
+        tier=1,
+        task="graph-classification",
+        source=("GraphXAI real_world (Sanchez-Lengeling et al., NeurIPS 2020; "
+                "repackaged by Agarwal et al. 2023)"),
+        licence="MIT (GraphXAI)",
+        loader="graphxai_mol",
+        has_ground_truth=True,
+        extras={"graphxai_class": "FluorideCarbonyl", "max_graphs": 1000,
+                "seed": 0, "balance": True},
+        notes=("Real molecules whose label is the joint presence of a fluoride "
+               "and a carbonyl, with third-party per-atom rationales. The "
+               "conjunction is what makes this the more valuable of the two "
+               "GraphXAI arms: the model cannot satisfy it by detecting one "
+               "conspicuous group, so the ranking should spread rather than "
+               "bunch at the ceiling -- the same reason MolMotifHard "
+               "corroborates the shift contrast where MolMotif cannot. This is "
+               "the arm that could replicate the central claim on data we did "
+               "not construct."),
+    ),
     # ---- Tier 2: real molecular property prediction -------------------------
     "ESOL": DatasetSpec(
         name="ESOL", tier=2, task="graph-regression",

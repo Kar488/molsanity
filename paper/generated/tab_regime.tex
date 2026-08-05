@@ -1,6 +1,6 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{Reliability stratified by confidence/correctness regime}, pooled over the 21785 per-molecule records this run committed. A molecule is \emph{confident-correct} or \emph{confident-error} when its temperature-scaled confidence is at least $0.8$, \emph{borderline} otherwise. $n$ is given per metric because ground truth exists for only a minority of molecules. In particular the confident-error GT mean rests on too few molecules to interpret, and is printed rather than hidden.}
+\caption{\textbf{Reliability stratified by confidence/correctness regime}, pooled over the 26185 per-molecule records this run committed. A molecule is \emph{confident-correct} or \emph{confident-error} when its temperature-scaled confidence is at least $0.8$, \emph{borderline} otherwise. $n$ is given per metric because ground truth exists for only a minority of molecules. In particular the confident-error GT mean rests on too few molecules to interpret, and is printed rather than hidden.}
 \label{tab:regime}
 \footnotesize
 \renewcommand{\arraystretch}{1.25}
@@ -9,9 +9,9 @@
 \textbf{regime} & \multicolumn{2}{c}{\textbf{occlusion $\rho$}} & \multicolumn{2}{c}{\textbf{GT AUROC}} & \multicolumn{2}{c}{\textbf{stability}} \\
  & \textit{mean} & \textit{n} & \textit{mean} & \textit{n} & \textit{mean} & \textit{n} \\
 \midrule
-confident-correct & 0.170 & 11310 & 0.787 & 7270 & 0.787 & 10847 \\
-confident-error & 0.443 & 466 & 0.612 & 166 & 0.825 & 461 \\
-borderline & 0.039 & 7057 & 0.677 & 3386 & 0.747 & 6972 \\
+confident-correct & 0.126 & 14226 & 0.790 & 8736 & 0.805 & 13461 \\
+confident-error & 0.330 & 559 & 0.674 & 257 & 0.829 & 545 \\
+borderline & 0.032 & 7667 & 0.696 & 4040 & 0.754 & 7509 \\
 \bottomrule
 \end{tabular}
 \end{table}

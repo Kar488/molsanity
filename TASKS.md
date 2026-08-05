@@ -380,3 +380,46 @@ paragraphs in `body.tex`, which are written for the pre-fix state.
   the full dependency set conflicts with the pinned numpy/rdkit here.
 - MUTAG ground truth is a nitro-motif *proxy* (documented in LIMITATIONS.md),
   not annotator labels; exact GT comes from synthetic Tier-1 sets.
+
+### Audit records are written without the seed in their path
+
+`run_all.py` builds `cell_id` as `dataset__backbone__attributor__split`, with
+no seed, so each seed's run overwrites the previous one's
+`artifacts/audit/<cell_id>/records.json`. What survives on disk is whichever
+seed ran last, unlabelled.
+
+- [ ] Put the seed in the records path and keep all three.
+- The consequence today: the selection tests, which read per-molecule records,
+  are single-seed. That is *methodologically* correct — the split is a function
+  of the seed, so a paired per-molecule test must stay within one seed — but
+  the retained seed is arbitrary rather than chosen, and it happened to be the
+  one where MUTAG·GINE·GNNExplainer scores 0.826 against an across-seed mean of
+  0.774 ± 0.086. Same ordering, materially different number.
+- The paper now states this and quotes both figures (§7, Table 5 caption,
+  abstract), and SEED_VARIANCE.md ships as supplementary material. Fixing the
+  path lets a future run pick the seed deliberately, or report the paired test
+  per seed and pool.
+
+### Two third-party molecular ground-truth arms, built but not yet run
+
+GraphXAI repackages the Sanchez-Lengeling et al. (NeurIPS 2020) attribution
+tasks as `graphxai/datasets/real_world/{benzene,fluoride_carbonyl,
+alkane_carbonyl}`: real ZINC-derived molecules with per-atom rationales
+published by someone other than us. The original build brief listed them as a
+Tier-1 target "if loadable" and they were never attempted.
+
+- [x] `graphxai_mol` loader (`molsanity/data/datasets.py`), manifest entries for
+      Benzene and FluorideCarbonyl, ground-truth wiring, `configs/full.yaml`
+      cells, and `tests/test_graphxai_mol.py` (6 tests against a stand-in
+      package, since GraphXAI does not import in this container).
+- [ ] **Run them.** 14 new cells x 2 splits x 3 seeds = 84 cell-runs. At the
+      measured medians (SubgraphX 55 min, IG 4 min) the SubgraphX column alone
+      is ~11 h; budget a day.
+- [ ] If FluorideCarbonyl replicates the shift contrast, §5.3 changes from "one
+      arm carries this and two we built are consistent with it" to a claim with
+      independent corroboration. Leave-one-out currently says MUTAG alone
+      carries the pooled effect (rho -0.027, p 0.907 without it).
+- [ ] Expect Benzene to saturate like MolMotif -- a benzene ring is
+      conspicuous. Report it either way; a third arm bunching at the ceiling is
+      itself evidence about what these benchmarks can and cannot adjudicate.
+- Not yet in the paper. Nothing in the manuscript claims these arms exist.

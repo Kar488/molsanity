@@ -30,12 +30,17 @@ ROWS = list(CLS) + list(REG)
 BENCH = D.load_benchmark()
 RECS = D.load_records()
 
-DATASET_ORDER = ["SynthMotifs", "SynthMotifsXL", "MUTAG", "BBBP", "BACE",
+DATASET_ORDER = ["SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen",
+                 "MUTAG", "MolMotif", "MolMotifHard", "BBBP", "BACE",
                  "ClinTox", "SIDER", "Tox21", "DILI", "hERG",
                  "ESOL", "FreeSolv", "Lipophilicity"]
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
-              "GuidedBackprop", "GNNExplainer", "PGExplainer"]
-ARMS = [("MUTAG", "GINE"), ("SynthMotifs", "GINE")]
+              "GuidedBackprop", "GNNExplainer", "PGExplainer", "SubgraphX"]
+# Must mirror ARMS in make_tables.py: the molecular ground-truth arms, the only
+# ones whose "scaffold" split is a chemical shift rather than an arbitrary
+# deterministic partition. Panelling a non-molecular arm here would show a
+# shift contrast the data cannot support.
+ARMS = [("MUTAG", "GINE"), ("MolMotifHard", "GINE"), ("MolMotif", "GINE")]
 # The backbone sweep is read off the exact-ground-truth arm; must stay in step
 # with ``bb_ds`` in make_tables.py, which defines the \bb* macros quoted in the
 # caption and in the prose.
@@ -44,7 +49,17 @@ CARRIED_EDGE = "#4b5563"
 
 
 def gt_kind(dataset: str) -> str:
-    return "exact" if dataset in D.GT_EXACT else "proxy"
+    """Which of the three kinds of node ground truth a dataset carries.
+
+    The distinction the paper turns on is not exact-vs-proxy but whether an arm
+    is exact *and* molecular: only a molecular arm has a Bemis-Murcko scaffold,
+    so only a molecular arm can carry a shift contrast.
+    """
+    if dataset in D.GT_EXACT_MOL:
+        return "exact-mol"
+    if dataset in D.GT_EXACT_SYNTH:
+        return "exact-synth"
+    return "proxy"
 
 
 # ---------------------------------------------------------------- figure 1
@@ -60,20 +75,22 @@ def fig_faithfulness_correctness(out: Path):
     ax.axhspan(0, 0.5, color="#f3f4f6", zorder=0)
     ax.axhline(0.5, color=MUTED, lw=0.7, ls="--", zorder=1)
     ax.axvline(0.0, color=MUTED, lw=0.7, ls=":", zorder=1)
-    ax.text(0.015, 0.507, "chance localisation", transform=ax.get_yaxis_transform(),
-            ha="left", va="bottom", fontsize=6.2, color=MUTED)
-    ax.text(0.015, 0.487, "anti-aligned with ground truth",
-            transform=ax.get_yaxis_transform(), ha="left", va="top",
-            fontsize=6.2, color=MUTED)
+    bandbox = dict(boxstyle="square,pad=0.12", fc="white", ec="none", alpha=0.82)
+    ax.text(0.985, 0.507, "chance localisation", transform=ax.get_yaxis_transform(),
+            ha="right", va="bottom", fontsize=6.2, color=MUTED, bbox=bandbox,
+            zorder=6)
+    ax.text(0.985, 0.487, "anti-aligned with ground truth",
+            transform=ax.get_yaxis_transform(), ha="right", va="top",
+            fontsize=6.2, color=MUTED, bbox=bandbox, zorder=6)
 
     for r in with_gt:
         carried = r["provenance"] == "carried"
         ax.scatter(r["occ_spearman"], r["gt_auroc"],
                    marker=ATTRIBUTOR_MARKER.get(r["attributor"], "o"),
-                   s=40, linewidths=0.9 if carried else 0.7,
+                   s=26, linewidths=0.9 if carried else 0.5,
                    facecolor="none" if carried else GT_COLOR[gt_kind(r["dataset"])],
                    edgecolor=GT_COLOR[gt_kind(r["dataset"])] if carried else "white",
-                   alpha=0.95, zorder=3)
+                   alpha=0.9, zorder=3)
 
     def find(ds, bb, at, sp):
         for r in with_gt:
@@ -81,11 +98,11 @@ def fig_faithfulness_correctness(out: Path):
                 return r
         return None
 
+    # One exemplar per ground-truth kind, chosen to sit in the corners the
+    # reader is asked to look at; the cloud is too dense for more than that.
     for r, label, off in [
-        (find("SynthMotifs", "GINE", "Saliency", "scaffold"), "Synth·Sal (shift)", (20, -14)),
-        (find("SynthMotifs", "GINE", "IntegratedGradients", "scaffold"), "Synth·IG (shift)", (24, 8)),
-        (find("MUTAG", "GINE", "Saliency", "scaffold"), "MUTAG·Saliency", (24, 12)),
-        (find("MUTAG", "GINE", "IntegratedGradients", "scaffold"), "MUTAG·IG", (14, 16)),
+        (find("MUTAG", "GINE", "Saliency", "scaffold"), "MUTAG·Saliency", (26, 10)),
+        (find("MUTAG", "GINE", "IntegratedGradients", "scaffold"), "MUTAG·IG", (30, 4)),
     ]:
         if r is None:
             continue
@@ -103,20 +120,30 @@ def fig_faithfulness_correctness(out: Path):
     despine(ax)
     panel_label(ax, "a")
 
-    h_gt = [plt.Line2D([], [], ls="", marker="o", ms=5, mfc=GT_COLOR["exact"],
-                       mec="white", label="exact node GT (synthetic)"),
-            plt.Line2D([], [], ls="", marker="o", ms=5, mfc=GT_COLOR["proxy"],
-                       mec="white", label="motif-proxy GT (MUTAG)"),
-            plt.Line2D([], [], ls="", marker="o", ms=5, mfc="none",
-                       mec=CARRIED_EDGE, label="carried from earlier run")]
+    kinds = {gt_kind(r["dataset"]) for r in with_gt}
+    labels = {"exact-mol": "exact node GT (molecular)",
+              "exact-synth": "exact node GT (synthetic)",
+              "proxy": "motif-proxy GT (MUTAG)"}
+    h_gt = [plt.Line2D([], [], ls="", marker="o", ms=5, mfc=GT_COLOR[k],
+                       mec="white", label=labels[k])
+            for k in ("exact-mol", "exact-synth", "proxy") if k in kinds]
+    # Only advertise the carried-row encoding when a carried row is on the plot.
+    if any(r["provenance"] == "carried" for r in with_gt):
+        h_gt.append(plt.Line2D([], [], ls="", marker="o", ms=5, mfc="none",
+                               mec=CARRIED_EDGE, label="carried from earlier run"))
     h_at = [plt.Line2D([], [], ls="", marker=ATTRIBUTOR_MARKER[a], ms=4.5,
                        mfc="0.45", mec="white", label=SHORT[a])
             for a in ATTR_ORDER if any(r["attributor"] == a for r in with_gt)]
-    leg1 = ax.legend(handles=h_gt, loc="lower left", handletextpad=0.3,
-                     borderpad=0.2, labelspacing=0.25)
-    ax.add_artist(leg1)
-    ax.legend(handles=h_at, loc="upper left", ncol=2, handletextpad=0.3,
-              columnspacing=0.9, borderpad=0.2, labelspacing=0.25)
+    # Both legends live under the figure: with every ground-truth cell on
+    # panel (a) there is no in-axes gap left that a legend can occupy without
+    # covering points.
+    leg1 = fig.legend(handles=h_gt, loc="lower left", ncol=len(h_gt),
+                      bbox_to_anchor=(0.055, -0.005), frameon=False,
+                      handletextpad=0.3, columnspacing=1.1, fontsize=6.4)
+    fig.add_artist(leg1)
+    fig.legend(handles=h_at, loc="lower left", ncol=len(h_at),
+               bbox_to_anchor=(0.055, -0.075), frameon=False,
+               handletextpad=0.3, columnspacing=1.1, fontsize=6.4)
 
     ax = axes[1]
     regimes = ["classification", "regression"]
@@ -143,7 +170,7 @@ def fig_faithfulness_correctness(out: Path):
     despine(ax, keep=("bottom",))
     panel_label(ax, "b", dx=-0.03)
 
-    fig.subplots_adjust(wspace=0.22)
+    fig.subplots_adjust(wspace=0.22, bottom=0.28)
     save(fig, out)
 
 
@@ -151,7 +178,7 @@ def fig_faithfulness_correctness(out: Path):
 def fig_dissociation(out: Path):
     marks = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
              "characterization": "charact."}
-    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, 2.5 * len(ARMS)))
+    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, 2.35 * len(ARMS)))
     for row, (ds, bb) in enumerate(ARMS):
         for col, (sp, title) in enumerate([("random", "in-distribution"),
                                            ("scaffold", "scaffold shift")]):
@@ -211,8 +238,7 @@ def fig_dissociation(out: Path):
                     "faithfulness↔truth rank corr.:  " + txt,
                     transform=ax.transAxes, fontsize=5.7, color=INK, va="top")
     for row in range(len(ARMS)):
-        panel_label(axes[row][0], "ab"[row] if len(ARMS) == 2 else str(row),
-                    dx=-0.26, dy=1.20)
+        panel_label(axes[row][0], "abcdef"[row], dx=-0.26, dy=1.20)
     axes[-1][1].text(0.0, -0.60,
                      "*  selected attributor is significantly worse than the "
                      "ground-truth-best  ·  † mismatch, not significant",
@@ -288,18 +314,20 @@ def fig_heatmaps(out: Path):
         cb.ax.tick_params(labelsize=6.6, length=2)
         cb.outline.set_visible(False)
 
+    n_gt, n_no = len(gt_sets), len(datasets) - len(gt_sets)
     note = fig.add_subplot(gs[1, 1]); note.axis("off")
-    note.text(0.0, 0.70, "Panel b stops after two rows.",
+    # Panel b's rotated tick labels hang below its axes into this one, so the
+    # note starts well down rather than at the top of its box.
+    note.text(0.0, 0.66, f"Panel b stops after {n_gt} rows.",
               transform=note.transAxes, ha="left", va="top", fontsize=7.0,
               color=INK, weight="bold")
-    note.text(0.0, 0.58,
-              f"Of the {len(datasets)} datasets audited, {len(gt_sets)} carry "
-              "node-level labels\nagainst which an attribution can be scored. "
-              f"For the other\n{len(datasets) - len(gt_sets)}, every real "
-              "molecular property dataset in the sweep,\nno such labels are "
-              "published, so only panel a can\nbe computed at all. "
-              "Faithfulness is auditable\neverywhere; correctness almost "
-              "nowhere.",
+    note.text(0.0, 0.53,
+              f"Of the {len(datasets)} datasets audited, {n_gt} carry node-level "
+              f"labels\nagainst which an attribution can be scored. The other "
+              f"{n_no}\nare the real molecular property datasets, for which no\n"
+              "such labels are published, so only panel a can be\ncomputed at "
+              "all. Faithfulness is auditable everywhere;\ncorrectness only "
+              "where a benchmark was built for it.",
               transform=note.transAxes, ha="left", va="top", fontsize=6.6,
               color=INK, linespacing=1.5)
     panel_label(axA, "a", dx=-0.22, dy=1.06)
@@ -624,8 +652,110 @@ def fig_abstention(out: Path):
     save(fig, out)
 
 
+def fig_lead(out: Path):
+    """The claim and its scope in one view, before any qualification.
+
+    Form follows the two jobs. Panels (a) and (b) are a RELATIONSHIP question --
+    does faithfulness track correctness -- so they are scatters of the two axes
+    against each other, one per regime. Panel (c) is a MAGNITUDE question over
+    four fits -- how much of the pooled effect survives dropping each arm -- so
+    it is a dot plot, not a third scatter.
+
+    Putting (c) beside (a) and (b) is the whole point: a reader meets the effect
+    and the fact that one dataset carries it at the same moment, rather than
+    finding the second three pages later among the caveats.
+
+    Layout choices come from looking at the first render, not from assuming. The
+    correlation sits in each panel TITLE because every in-panel position for it
+    collided with data, and the legend is one figure-level row above the
+    scatters because both panels are occupied corner to corner.
+    """
+    MOL = ("MUTAG", "MolMotif", "MolMotifHard")
+    # Fixed hue order per arm, never cycled. The three-hue set passes all six
+    # checks of the palette validator (worst adjacent CVD dE 11.0, deutan), and
+    # marker shape carries identity too, so it is never colour alone.
+    ARM_COLOR = {"MUTAG": "#D55E00", "MolMotifHard": "#0072B2", "MolMotif": "#009E73"}
+    ARM_MARKER = {"MUTAG": "o", "MolMotifHard": "s", "MolMotif": "^"}
+
+    cells = {}
+    for r in CLS:
+        if r["dataset"] not in MOL:
+            continue
+        g, o = r.get("gt_auroc"), r.get("occ_spearman")
+        if g is None or o is None:
+            continue
+        cells.setdefault((r["dataset"], r["backbone"], r["attributor"]), {})[r["split"]] = (g, o)
+    paired = {k: v for k, v in cells.items() if {"random", "scaffold"} <= set(v)}
+    if len(paired) < 8:
+        print("  SKIP fig_lead (too few paired molecular cells)")
+        return
+    ks = sorted(paired)
+
+    fig, axes = plt.subplots(
+        1, 3, figsize=(7.1, 2.9), constrained_layout=True,
+        gridspec_kw={"width_ratios": [1, 1, 1.35]})
+
+    handles = []
+    for ax, split, title in zip(axes[:2], ("random", "scaffold"),
+                                ("In distribution", "Under scaffold shift")):
+        for ds in MOL:
+            sub = [k for k in ks if k[0] == ds]
+            if not sub:
+                continue
+            h, = ax.plot([paired[k][split][1] for k in sub],
+                         [paired[k][split][0] for k in sub],
+                         ARM_MARKER[ds], ms=4.6, mfc=ARM_COLOR[ds], mec="white",
+                         mew=0.6, ls="none", label=ds, zorder=3)
+            if split == "random":
+                handles.append(h)
+        rho, pv = D.spearman([paired[k][split][1] for k in ks],
+                             [paired[k][split][0] for k in ks])
+        ax.axhline(0.5, color=MUTED, lw=0.7, ls=":", zorder=1)
+        ax.axvline(0.0, color=MUTED, lw=0.7, ls=":", zorder=1)
+        ax.set_xlim(-0.9, 1.0)
+        ax.set_ylim(-0.05, 1.08)
+        ax.set_xlabel("occlusion faithfulness  $\\rho$")
+        ax.set_title(f"{title}\n$\\rho$ = {rho:+.3f},  $p$ = {pv:.3f}",
+                     fontsize=7.8, color=INK, pad=5)
+        despine(ax)
+    axes[0].set_ylabel("ground-truth localisation\n(GT AUROC)")
+    axes[1].set_yticklabels([])
+
+    # (c) leave-one-out: the scope of the claim, beside the claim.
+    ax = axes[2]
+    fits = [("all three arms", ks, INK)]
+    for ds in MOL:
+        fits.append((f"without {ds}", [k for k in ks if k[0] != ds], ARM_COLOR[ds]))
+    for y, (label, keys, colour) in enumerate(fits):
+        if len(keys) < 8:
+            continue
+        rho, pv = D.spearman([paired[k]["scaffold"][1] for k in keys],
+                             [paired[k]["scaffold"][0] for k in keys])
+        sig = pv < 0.05
+        ax.plot([rho], [y], "o", ms=7.4 if sig else 6.6,
+                mfc=colour if sig else "white", mec=colour, mew=1.5, zorder=3)
+        ax.text(rho, y - 0.3, f"{rho:+.2f}" + ("*" if sig else ""),
+                va="bottom", ha="center", fontsize=6.9, color=INK)
+    ax.axvline(0, color=MUTED, lw=0.7, ls=":", zorder=1)
+    ax.set_yticks(range(len(fits)))
+    ax.set_yticklabels([f[0] for f in fits], fontsize=7.0)
+    ax.set_ylim(len(fits) - 0.5, -0.75)
+    ax.set_xlim(-0.72, 0.22)
+    ax.set_xlabel("scaffold-split $\\rho$   ($*$ $p<0.05$)")
+    ax.set_title("How much any one arm carries", fontsize=7.8, color=INK, pad=5)
+    despine(ax)
+
+    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.055, 0.955),
+               ncol=3, frameon=False, fontsize=6.8, handletextpad=0.3,
+               columnspacing=1.2)
+    for ax, lbl in zip(axes, "abc"):
+        panel_label(ax, lbl)
+    save(fig, out)
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
+    fig_lead(HERE / "fig_lead.pdf")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
     fig_dissociation(HERE / "fig_dissociation.pdf")
     fig_heatmaps(HERE / "fig_heatmaps.pdf")

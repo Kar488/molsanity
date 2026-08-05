@@ -183,3 +183,134 @@ def test_no_claim_survives_without_the_data_that_supports_it():
     declared = set(re.findall(r"\\newif\\if(Has\w+)", macros_path.read_text()))
     missing = sorted(used - declared)
     assert not missing, f"body uses undeclared conditionals: {missing}"
+
+
+def test_prose_does_not_contradict_the_data():
+    """Prose goes stale silently; the macro checker cannot see it.
+
+    Every number in the manuscript is a generated macro, so a number can never
+    drift. Sentences *about* those numbers can, and did: across three review
+    rounds the paper still said it withdrew the regression cells (the operator
+    was corrected and 0 of 12 are now negative), that SubgraphX "will populate
+    the matrix on the next sweep" (it had), that BA-2Motifs was unscored (it is
+    scored), and that each cell is a "single split, single seed" (three seeds,
+    with a variance report). Each claim was true of an earlier run and false of
+    the committed one.
+
+    So: for a claim the data can settle, assert the data and the prose agree.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = (root / "body.tex").read_text() + (root / "abstract.tex").read_text()
+    mac = root / "generated" / "macros.tex"
+    if not mac.exists():
+        pytest.skip("paper macros not generated")
+    M = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}", mac.read_text()))
+
+    def val(name, default="0"):
+        return _num(M.get(name, default))
+
+    forbidden = []
+    # (condition that makes the phrase false, phrase, what the data says)
+    rules = [
+        (val("nRegNeg") == 0, "withdraw its numbers",
+         "nRegNeg = 0: the regression operator is corrected and no cell is negative"),
+        (val("nRegNeg") == 0, "excluded from every\nfaithfulness claim",
+         "nRegNeg = 0: the regression cells are no longer excluded"),
+        (val("nPooledSeeds", "1") > 1, "Single split, single seed",
+         f"nPooledSeeds = {M.get('nPooledSeeds')}"),
+        (val("nPooledSeeds", "1") > 1, "one deterministic split at\none seed",
+         f"nPooledSeeds = {M.get('nPooledSeeds')}"),
+        (True, "will populate the matrix on the next sweep",
+         "the sweep that populates it is the one being reported"),
+        (True, "postdates this\nsweep", "the fix is in the committed sweep"),
+        (True, "predate that\nfix", "the fix is in the committed sweep"),
+    ]
+    for stale, phrase, why in rules:
+        if stale and phrase in body:
+            forbidden.append(f"{phrase!r} -- but {why}")
+    assert not forbidden, "prose contradicts the committed data:\n  " + "\n  ".join(forbidden)
+
+
+def test_no_hand_typed_statistics_in_the_prose():
+    """A statistic typed as a literal cannot go stale loudly -- only silently.
+
+    Three review rounds after the sweep changed, the selection section still
+    read "MUTAG strongly (+0.36 to -0.75)" while the macros, the table and the
+    figure all said +0.143 to -0.643. Nothing caught it: the macro checker only
+    sees macros that fail to expand, and a literal always expands.
+
+    So the rule the paper already claims to follow is now enforced. Decimal
+    literals are allowed only where they are a *definition* the code shares --
+    a threshold, a percentile, a resample count -- and each such literal is
+    listed here with the code that defines it. Anything else must be a macro.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = (root / "body.tex").read_text() + (root / "abstract.tex").read_text()
+
+    # value -> where the same number is defined in code, so a reviewer can check
+    ALLOWED = {
+        "0.5": "chance AUROC; also the TwoSlopeNorm centre in make_figures.py",
+        "0.05": "alpha, stats.bootstrap_ci / significance threshold",
+        "0.9": "make_tables.py NAboveNine bunching threshold",
+        "0.6": "make_tables.py nMotifInBand lower edge",
+        "0.8": "audit threshold tau_c",
+        "0.003": "GPU-vs-CPU GNNExplainer drift, measured and recorded in TASKS.md",
+        "0.012": "GPU-vs-CPU GNNExplainer drift, measured and recorded in TASKS.md",
+        "0.495": "figure width fraction, not a statistic",
+    }
+    # The bibliography is DOIs, arXiv ids and lengths, none of them results.
+    text = body.split("\\begin{thebibliography}")[0]
+    # Strip comments, \includegraphics options and URLs before looking.
+    text = re.sub(r"(?<!\\)%.*", "", text)
+    text = re.sub(r"\\includegraphics\[[^]]*\]", "", text)
+    text = re.sub(r"\\(url|href)\{[^}]*\}", "", text)
+
+    bad = []
+    for lit in re.findall(r"(?<![0-9A-Za-z.=])[0-9]+\.[0-9]+", text):
+        if lit not in ALLOWED:
+            bad.append(lit)
+    assert not bad, (
+        "decimal literals in the manuscript that are not generated macros: "
+        + ", ".join(sorted(set(bad)))
+        + "\nEvery statistic must come from paper/generated/macros.tex. If one "
+          "of these is a definition rather than a result, add it to ALLOWED "
+          "with the code that defines it.")
+
+
+def test_split_tables_lose_no_rows():
+    """Splitting a table across floats is where rows go missing quietly.
+
+    The ground-truth matrix was one oversized landscape float until it was
+    split into three, and the molecular matrix into two. A reviewer reading
+    the PDF reported the last table looked truncated -- it was not, but the
+    only way to be sure is to count. Every row in the data must appear in
+    exactly one float.
+    """
+    import re
+
+    gen = Path(__file__).resolve().parents[1] / "paper" / "generated"
+    if not (gen / "macros.tex").exists():
+        pytest.skip("paper tables not generated")
+    sys.path.insert(0, str(FIGS))
+    D = pytest.importorskip("msdata")
+    cls, reg = D.load_results()
+    rows = list(cls) + list(reg)
+
+    def emitted(pattern):
+        n = 0
+        for f in sorted(gen.glob(pattern)):
+            t = f.read_text()
+            if "\\midrule" not in t:
+                continue
+            body = t.split("\\midrule", 1)[1].split("\\bottomrule")[0]
+            n += sum(1 for l in body.splitlines()
+                     if "&" in l and l.strip().endswith("\\\\"))
+        return n
+
+    n_gt = sum(1 for r in rows if r.get("gt_auroc") is not None)
+    assert emitted("tab_tier1_*.tex") == n_gt, (
+        "ground-truth floats emit a different number of rows than the data has")

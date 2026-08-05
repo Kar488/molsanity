@@ -131,6 +131,15 @@ def synth_motifs_node_mask(data) -> np.ndarray | None:
     return None
 
 
+# Datasets whose loader attaches an exact per-node mask as ``node_gt``. Named
+# once so ``ground_truth_mask`` and ``has_ground_truth`` cannot disagree: a
+# dataset in one and not the other trains and audits normally while silently
+# scoring zero ground-truth molecules, which reads as "no signal" rather than
+# "not wired up". That cost an experiment once already.
+_NODE_GT_DATASETS = {"ShapeGGen", "Benzene", "FluorideCarbonyl",
+                     "AlkaneCarbonyl"}
+
+
 def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
     """Dispatch to the right GT extractor. Returns None when no GT is defined."""
     if dataset_name == "MUTAG":
@@ -139,7 +148,7 @@ def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
         return ba2motifs_node_mask(data)
     if (dataset_name.startswith("SynthMotifs")
             or dataset_name.startswith("MolMotif")
-            or dataset_name == "ShapeGGen"):
+            or dataset_name in _NODE_GT_DATASETS):
         # All carry an exact per-node mask on the graph object as ``node_gt``.
         # Prefix matching rather than an exact set: a new MolMotif variant that
         # is not registered here trains and audits normally but silently scores
@@ -151,7 +160,7 @@ def ground_truth_mask(dataset_name: str, data) -> np.ndarray | None:
 
 def has_ground_truth(dataset_name: str) -> bool:
     # Any SynthMotifs* or MolMotif* variant carries an exact node_gt mask.
-    return (dataset_name in {"MUTAG", "BA-2Motifs", "ShapeGGen"}
+    return (dataset_name in {"MUTAG", "BA-2Motifs"} | _NODE_GT_DATASETS
             or dataset_name.startswith("SynthMotifs")
             or dataset_name.startswith("MolMotif"))
 

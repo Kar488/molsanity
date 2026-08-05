@@ -51,7 +51,8 @@ ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
 # MolMotif is the molecular exactly-labelled arm, but it saturates at
 # GT AUROC ~0.99, where ranking attributors is noise around a ceiling; it is
 # reported as a probe that the audit works, not as a second shift contrast.
-ARMS = [("MUTAG", "GINE", "mut"), ("MolMotif", "GINE", "mol")]
+ARMS = [("MUTAG", "GINE", "mut"), ("MolMotifHard", "GINE", "hard"),
+        ("MolMotif", "GINE", "mol")]
 ARM = ARMS[0][:2]
 
 
@@ -137,6 +138,17 @@ def macros():
     add("runRDKit", MAN["versions"]["rdkit"])
     add("runCaptum", MAN["versions"]["captum"])
     add("runGitRev", MAN["git_rev"][:7])
+    add("runPython", MAN["python"].split()[0])
+    add("runNumpy", MAN["versions"]["numpy"])
+    add("runScipy", MAN["versions"]["scipy"])
+    add("runSklearn", MAN["versions"]["sklearn"])
+    # The manifest records CUDA availability and device count, not the GPU
+    # model, so the paper says only what was actually logged.
+    add("runCuda", "yes" if MAN.get("cuda", {}).get("available") else "no")
+    add("runDevices", MAN.get("cuda", {}).get("device_count", 0))
+    _ns = max([r.get("n_seeds", 1) or 1 for r in list(CLS) + list(REG)] or [1])
+    add("nRunSeeds", _ns)
+    add("runSeedList", ", ".join(str(i) for i in range(_ns)))
 
     led = COV["ledger"]
     add("nDone", led["done"])
@@ -258,6 +270,151 @@ def macros():
             "SubgraphX": "SGX"}
     add("nArms", len(ARMS))
 
+    # --- the pooled molecular result -----------------------------------------
+    # Per arm the 7-point rank correlation is a weak instrument; pooled over
+    # every molecular ground-truth cell it is the paper's central claim. Only
+    # datasets with a real Bemis-Murcko scaffold: the non-molecular arms have a
+    # degenerate scaffold split and cannot enter a shift contrast.
+    #
+    # Built from CLS, whose rows load_results() has already collapsed to the
+    # across-seed mean per cell. Computing it instead from the per-molecule
+    # records under artifacts/audit -- which carry a single seed per cell --
+    # silently reports rho = -0.255 (p = 0.152) in place of the seed-averaged
+    # -0.353 (p = 0.044). With the median across-seed sd on occlusion rho at
+    # 0.146, one seed is not the quantity to correlate, and the two answers sit
+    # on opposite sides of every conventional threshold.
+    MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
+    by_cell = {}
+    for r in CLS:
+        if r["dataset"] not in MOLECULAR_GT:
+            continue
+        g, o = r.get("gt_auroc"), r.get("occ_spearman")
+        if g is None or o is None:
+            continue
+        key = (r["dataset"], r["backbone"], r["attributor"], r["split"])
+        by_cell.setdefault(key, []).append((g, o))
+    per_cell = {}
+    for (ds, bb, at, sp), vals in by_cell.items():
+        per_cell.setdefault((ds, bb, at), {})[sp] = (
+            st.mean(v[0] for v in vals), st.mean(v[1] for v in vals))
+    seeds = [r.get("n_seeds", 1) for r in CLS
+             if r["dataset"] in MOLECULAR_GT and r.get("gt_auroc") is not None]
+    add("nPooledSeeds", min(seeds) if seeds else 1)
+
+    # --- compute cost, parsed from the run log, never typed --------------------
+    # JCIM asks for reproduction cost. Timings are derived from the committed
+    # log's timestamps so they cannot drift from the run they describe.
+    import datetime as _dt
+    import glob as _glob
+    import re as _re
+    logs = sorted(_glob.glob(str(D.REPO / "results" / "logs" / "run_*.log")))
+    add_flag("HasCompute", bool(logs))
+    if logs:
+        lines = Path(logs[-1]).read_text().splitlines()
+        stamp = lambda l: _dt.datetime.strptime(l[:19], "%Y-%m-%d %H:%M:%S")
+        add("computeWall", f"{(stamp(lines[-1]) - stamp(lines[0])).total_seconds() / 60:.0f}")
+        n_done = sum(1 for l in lines if "] DONE" in l)
+        n_cached = sum(1 for l in lines if "[cached]" in l)
+        add("nComputeCached", n_cached)
+        add("nComputeFresh", n_done - n_cached)
+        # NB: never bind `m` here -- add() closes over the accumulator list of
+        # that name, and a loop variable called `m` silently replaces it with a
+        # regex match, so every later add() raises on a NoneType.
+        durs, last = [], None
+        for l in lines:
+            hit = _re.search(r"\[cell (\S+?)\] DONE", l)
+            if not hit:
+                continue
+            ts = stamp(l)
+            if last and "[cached]" not in l:
+                durs.append((hit.group(1).split("__")[2], (ts - last).total_seconds()))
+            last = ts
+        by = {}
+        for a, d in durs:
+            by.setdefault(a, []).append(d)
+        for attr, tag in (("SubgraphX", "Sgx"), ("IntegratedGradients", "Ig")):
+            v = sorted(by.get(attr, []))
+            if v:
+                add(f"cell{tag}Min", f"{v[len(v) // 2] / 60:.0f}")
+                add(f"nCell{tag}", len(v))
+        if by.get("SubgraphX") and by.get("IntegratedGradients"):
+            a = sorted(by["SubgraphX"])[len(by["SubgraphX"]) // 2]
+            b = sorted(by["IntegratedGradients"])[len(by["IntegratedGradients"]) // 2]
+            add("cellCostRatio", f"{a / b:.0f}")
+        trains, last = [], None
+        for l in lines:
+            dated = _re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", l)
+            if dated and _re.search(r"\[(cell|stage cell_)", l):
+                last = stamp(l)
+            if "Saved checkpoint" in l and "_early" not in l and dated and last:
+                trains.append((stamp(l) - last).total_seconds())
+        if trains:
+            trains.sort()
+            add("trainMedian", f"{trains[len(trains) // 2]:.0f}")
+    paired = {k: v for k, v in per_cell.items() if {"random", "scaffold"} <= set(v)}
+    add_flag("HasPooledMolecular", len(paired) >= 8)
+    if len(paired) >= 8:
+        ks = sorted(paired)
+        add("nPooledCells", len(ks))
+        add("nPooledArms", len({k[0] for k in ks}))
+        for sp, tag in (("random", "Ind"), ("scaffold", "Shift")):
+            rho, pv = D.spearman([paired[k][sp][1] for k in ks],
+                                 [paired[k][sp][0] for k in ks])
+            add(f"pooled{tag}Rho", num(rho))
+            add(f"pooled{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+            add(f"pooled{tag}Faith", num(st.mean(paired[k][sp][1] for k in ks)))
+            add(f"pooled{tag}Gt", num(st.mean(paired[k][sp][0] for k in ks)))
+        # Does faithfulness itself move, and does correctness?
+        for metric, idx, tag in (("faith", 1, "Faith"), ("gt", 0, "Gt")):
+            a = [paired[k]["random"][idx] for k in ks]
+            b = [paired[k]["scaffold"][idx] for k in ks]
+            pv = D.paired_wilcoxon(a, b)["p"]
+            add(f"pooledShift{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+        # Per-arm direction, so a contradicting arm cannot hide in the pool.
+        agree = 0
+        for ds in sorted({k[0] for k in ks}):
+            sub = [k for k in ks if k[0] == ds]
+            if len(sub) < 4:
+                continue
+            r0, _ = D.spearman([paired[k]["random"][1] for k in sub],
+                               [paired[k]["random"][0] for k in sub])
+            r1, _ = D.spearman([paired[k]["scaffold"][1] for k in sub],
+                               [paired[k]["scaffold"][0] for k in sub])
+            if r1 < r0:
+                agree += 1
+        add("nArmsAgree", agree)
+        add("nArmsTotal", len({k[0] for k in ks}))
+
+        # Leave-one-arm-out. The pooled p is the number a reader will quote, so
+        # the paper must say how much of it any single arm carries -- the first
+        # check a sceptical reviewer runs, and running it ourselves is cheaper
+        # than being told. On the 2026-08-04 run it is unflattering: drop MUTAG
+        # and the effect is gone (rho -0.027, p 0.907). The pooled result is
+        # MUTAG plus corroboration, not three arms independently agreeing.
+        loo = {}
+        for drop in sorted({k[0] for k in ks}):
+            keep = [k for k in ks if k[0] != drop]
+            if len(keep) < 8:
+                continue
+            r, pv = D.spearman([paired[k]["scaffold"][1] for k in keep],
+                               [paired[k]["scaffold"][0] for k in keep])
+            loo[drop] = (r, pv, len(keep))
+        add_flag("HasLeaveOneOut", bool(loo))
+        for ds, (r, pv, n) in loo.items():
+            tag = {"MUTAG": "Mut", "MolMotif": "Mol", "MolMotifHard": "Hard"}.get(ds, ds)
+            add(f"loo{tag}Rho", num(r))
+            add(f"loo{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
+            add(f"nLoo{tag}", n)
+        add("nLooSurvive", sum(1 for _, pv, _ in loo.values() if pv < 0.05))
+        add("nLooTotal", len(loo))
+        # Cells contributed by a single arm -- the n a per-arm correlation
+        # would actually be computed on, quoted when we say no arm is
+        # significant on its own.
+        per_arm = sorted({sum(1 for k in ks if k[0] == d)
+                          for d in {k[0] for k in ks}})
+        add("nArmCells", per_arm[0] if len(per_arm) == 1
+            else f"{per_arm[0]}--{per_arm[-1]}")
+
     # Benjamini-Hochberg over the whole family of selection tests, so the prose
     # can quote an FDR-controlled value rather than a raw one. Built here in the
     # same order tab_selection walks so the macro and the table agree.
@@ -318,6 +475,30 @@ def macros():
                     add(f"{pre}NPaired{t}", x["n_paired"])
             for k, v in sel["rank_correlation"].items():
                 add(f"{pre}Rho{k.replace('_', '').capitalize()}", num(v["rho"]))
+            # The bunching argument: an arm whose attributors are spread over
+            # the AUROC range gives Spearman something to rank; one where most
+            # of them sit within a few hundredths of 1.0 does not. Both the
+            # range and the count above 0.9 used to be typed into the prose.
+            gts = sorted(v["gt_auroc_mean"] for v in pa.values())
+            add(f"{pre}GtSpan", f"{num(gts[0])}--{num(gts[-1])}")
+            add(f"{pre}NAboveNine", sum(1 for g in gts if g > 0.9))
+            # The selection test is computed from ONE seed's per-molecule
+            # records -- it has to be, since the split is a function of the
+            # seed and a paired test needs the same molecules on both sides.
+            # The point estimate it reports is therefore not the across-seed
+            # mean that every table row is, so the across-seed mean and sd of
+            # the same cell are published next to it. For MUTAG-GINE-GNNExpl.
+            # under shift the difference is 0.826 single-seed against
+            # 0.774 +/- 0.086 across three: the same ordering, a materially
+            # different number, and a reviewer will find it in SEED_VARIANCE.md.
+            for r in CLS:
+                if (r["dataset"], r["backbone"], r["attributor"], r["split"]) \
+                        == (ds, bb, sel["gt_best"], sp):
+                    if r.get("gt_auroc") is not None:
+                        add(f"{pre}GtBestSeedMean", num(r["gt_auroc"]))
+                    if r.get("gt_auroc_sd") is not None:
+                        add(f"{pre}GtBestSeedSd", num(r["gt_auroc_sd"]))
+                    break
         # does the attributor GT ordering survive the change of split?
         A = {a: D.cell_mean(RECS[(ds, bb, a, "random")], "gt_auroc")
              for a in ATTR_ORDER if (ds, bb, a, "random") in RECS}
@@ -548,6 +729,19 @@ def macros():
 
 # ------------------------------------------------------------- tier-1 table
 def tab_tier1():
+    """Every ground-truth cell, split across floats rather than shrunk to fit.
+
+    This was one ``table*`` wrapped in ``adjustbox{max width=\\textwidth,
+    max totalheight=0.80\\textheight}``. At 100 rows the HEIGHT constraint is
+    the binding one, and adjustbox scales uniformly -- so clamping the height
+    also shrank the width, producing a half-column-wide block of ~5pt type with
+    empty margins either side. A reference table nobody can read is not a
+    reference table.
+
+    Now split on dataset boundaries into floats that each fit a page at
+    \\footnotesize, using the same approach as ``tab_molecular``. Width still
+    fills the text block; height is never scaled.
+    """
     rows = [r for r in CLS if r["gt_auroc"] is not None]
     rows.sort(key=lambda r: (r["dataset"], r["split"], r["backbone"], r["attributor"]))
     blocks: dict[tuple, list] = {}
@@ -559,50 +753,84 @@ def tab_tier1():
                                          r["occ_spearman"])))
                 for v in blocks.values() if len(v) > 1}
 
-    L = ["\\begin{table*}[t]", "\\centering",
-         "\\caption{\\textbf{Every committed cell in which attribution "
-         "\\emph{correctness} is measurable.} Ground truth is exact for the "
-         "synthetic sets and a chemically motivated nitro-motif proxy for "
-         "MUTAG. GT AUROC $=0.5$ is chance; below $0.5$ the attribution is "
-         "anti-aligned with the true motif. Occlusion $\\rho$ is the "
-         "attribution--occlusion rank agreement (higher $=$ more faithful to "
-         "the model). Rows marked \\textsuperscript{c} are \\emph{carried}: "
-         "they survive in the results matrix from an earlier reduced-budget "
-         "CPU run because the corresponding cell failed in the latest run "
-         "(Table~\\ref{tab:ledger}); every other row was produced by the run "
-         "in Table~\\ref{tab:ledger}. Bold marks the best GT AUROC and the best "
-         "occlusion $\\rho$ within each dataset$\\times$split block (emphasis "
-         "only; values are unaltered).}",
-         "\\label{tab:tier1}",
-         "\\small",
-         "\\renewcommand{\\arraystretch}{1.25}",
-         # Width-only scaling overshot the page by ~1pt; clamp the height too,
-         # leaving room for the five-line caption above it.
-         "\\adjustbox{max width=\\textwidth,"
-         "max totalheight=0.80\\textheight}{%",
-         "\\begin{tabular}{lllcrrrrrrrrr}",
-         "\\toprule",
-         "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "
-         "\\textbf{split} & \\textbf{$n$} & \\textbf{acc} & \\textbf{AUC} & "
-         "\\textbf{GT AUROC} & \\textbf{GT AUPRC} & \\textbf{occ.\\ $\\rho$} & "
-         "\\textbf{Fid+} & \\textbf{Fid--} & \\textbf{stab.} \\\\",
-         "\\midrule"]
-    prev = None
-    for r in rows:
-        b = bench_of(r)
-        if prev is not None and (r["dataset"], r["split"]) != prev:
-            L.append("\\addlinespace[2pt]")
-        prev = (r["dataset"], r["split"])
-        L.append(" & ".join([
-            tex(r["dataset"]) + prov_mark(r), r["backbone"],
-            SHORT.get(r["attributor"], r["attributor"]), r["split"],
-            f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
-            bold(n(r["gt_auroc"]), id(r) in best_gt), n(r["gt_auprc"]),
-            bold(n(r["occ_spearman"]), id(r) in best_occ),
-            n(r["fid+"]), n(r["fid-"]), n(b.get("stability")),
-        ]) + " \\\\")
-    L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
-    write("tab_tier1.tex", "\n".join(L) + "\n")
+    # Pack whole datasets into parts of at most MAX_ROWS; a dataset is never
+    # split across floats, so no block of comparable rows is separated.
+    MAX_ROWS = 46
+    datasets = sorted({r["dataset"] for r in rows})
+    parts, cur, cur_n = [], [], 0
+    for ds in datasets:
+        k = sum(1 for r in rows if r["dataset"] == ds)
+        if cur and cur_n + k > MAX_ROWS:
+            parts.append(cur)
+            cur, cur_n = [], 0
+        cur.append(ds)
+        cur_n += k
+    if cur:
+        parts.append(cur)
+
+    n_carried = sum(1 for r in rows if r.get("provenance") == "carried")
+    carried_note = (
+        " Rows marked \\textsuperscript{c} are \\emph{carried}: they survive in "
+        "the results matrix from an earlier reduced-budget run because the "
+        "corresponding cell failed in the latest one (Table~\\ref{tab:ledger}); "
+        "every other row was produced by the run in Table~\\ref{tab:ledger}."
+        if n_carried else
+        " Every row was produced by the single run in Table~\\ref{tab:ledger}; "
+        "none are carried over from an earlier one.")
+
+    head = ("\\textbf{Every committed cell in which attribution "
+            "\\emph{correctness} is measurable.} Ground truth is exact for the "
+            "synthetic sets and for \\molDataset{}/\\hardDataset{} (the label "
+            "\\emph{is} the substructure), and a chemically motivated "
+            "nitro-motif proxy for MUTAG. GT AUROC $=0.5$ is chance; below "
+            "$0.5$ the attribution is anti-aligned with the true motif. "
+            "Occlusion $\\rho$ is the attribution--occlusion rank agreement "
+            "(higher $=$ more faithful to the model)." + carried_note +
+            " Bold marks the best GT AUROC and the best occlusion $\\rho$ "
+            "within each dataset$\\times$split block (emphasis only; values "
+            "are unaltered).")
+
+    for pi, part in enumerate(parts):
+        sub = [r for r in rows if r["dataset"] in part]
+        cap = head if pi == 0 else (
+            f"\\textbf{{Ground-truth cells, continued ({pi + 1} of "
+            f"{len(parts)}).}} Columns and conventions as in "
+            "Table~\\ref{tab:tier1}.")
+        L = ["\\begin{table*}[t]", "\\centering",
+             "\\caption{" + cap + "}"]
+        if pi == 0:
+            L.append("\\label{tab:tier1}")
+        else:
+            L.append(f"\\label{{tab:tier1part{pi + 1}}}")
+        L += ["\\footnotesize",
+              "\\renewcommand{\\arraystretch}{1.15}",
+              # Width only. Never clamp height here: see the docstring.
+              "\\adjustbox{max width=\\textwidth}{%",
+              "\\begin{tabular}{lllcrrrrrrrrr}",
+              "\\toprule",
+              "\\textbf{dataset} & \\textbf{backbone} & \\textbf{attributor} & "
+              "\\textbf{split} & \\textbf{$n$} & \\textbf{acc} & \\textbf{AUC} & "
+              "\\textbf{GT AUROC} & \\textbf{GT AUPRC} & \\textbf{occ.\\ $\\rho$} & "
+              "\\textbf{Fid+} & \\textbf{Fid--} & \\textbf{stab.} \\\\",
+              "\\midrule"]
+        prev = None
+        for r in sub:
+            b = bench_of(r)
+            if prev is not None and (r["dataset"], r["split"]) != prev:
+                L.append("\\addlinespace[2pt]")
+            prev = (r["dataset"], r["split"])
+            L.append(" & ".join([
+                tex(r["dataset"]) + prov_mark(r), r["backbone"],
+                SHORT.get(r["attributor"], r["attributor"]), r["split"],
+                f"{int(r['n_mol'])}", n(r["acc"]), n(r["auc"]),
+                bold(n(r["gt_auroc"]), id(r) in best_gt), n(r["gt_auprc"]),
+                bold(n(r["occ_spearman"]), id(r) in best_occ),
+                n(r["fid+"]), n(r["fid-"]), n(b.get("stability")),
+            ]) + " \\\\")
+        L += ["\\bottomrule", "\\end{tabular}}", "\\end{table*}"]
+        name = "tab_tier1.tex" if len(parts) == 1 else f"tab_tier1_{pi + 1}.tex"
+        write(name, "\n".join(L) + "\n")
+    return len(parts)
 
 
 # --------------------------------------------------------------- run ledger
@@ -616,14 +844,19 @@ def tab_ledger():
     for k in COV["carried_cells"]:
         carried[k[0]] = carried.get(k[0], 0) + 1
 
+    carried_note = (
+        " \\emph{carried} counts cells whose row still appears in the results "
+        "matrix from an earlier reduced-budget CPU run because this run's "
+        "attempt failed. Those rows are marked \\textsuperscript{c} throughout "
+        "this paper and are never mixed into a this-run aggregate."
+        if COV["n_carried"] else
+        " The \\emph{carried} column counts rows surviving from an earlier "
+        "reduced-budget run because this run's attempt failed; it is zero, so "
+        "every row in this paper is from the sweep reported here.")
     L = ["\\begin{table}[t]", "\\centering",
          "\\caption{\\textbf{The run ledger.} Outcome of every cell the "
          "\\texttt{" + tex(MAN["config_name"]) + "} sweep attempted, as recorded "
-         "in \\texttt{results/PROGRESS.md}. \\emph{carried} counts cells whose "
-         "row still appears in the results matrix from an earlier "
-         "reduced-budget CPU run because this run's attempt failed. Those "
-         "rows are marked \\textsuperscript{c} throughout this paper and are "
-         "never mixed into a this-run aggregate.}",
+         "in \\texttt{results/PROGRESS.md}." + carried_note + "}",
          "\\label{tab:ledger}",
          "\\footnotesize",
          "\\renewcommand{\\arraystretch}{1.25}",
@@ -643,9 +876,16 @@ def tab_ledger():
           f"\\textbf{{{COV['n_carried']}}} \\\\",
           "\\bottomrule", "\\end{tabular}"]
     reasons = sorted(D.failure_reasons().items(), key=lambda kv: -len(kv[1]))
-    L.append("\\\\[4pt]\\raggedright\\footnotesize \\textbf{Failure reasons.} ")
-    L.append("; ".join(f"{len(v)}~$\\times$ ``{tex(k[:66])}\\dots''"
-                       for k, v in reasons) + ".")
+    # A clean sweep leaves no reasons to list; emitting the heading anyway
+    # printed a bare "Failure reasons. ." under the table.
+    if reasons:
+        L.append("\\\\[4pt]\\raggedright\\footnotesize "
+                 "\\textbf{Failure reasons.} ")
+        L.append("; ".join(f"{len(v)}~$\\times$ ``{tex(k[:66])}\\dots''"
+                           for k, v in reasons) + ".")
+    else:
+        L.append("\\\\[4pt]\\raggedright\\footnotesize "
+                 "No cell failed and none was skipped.")
     L.append("\\end{table}")
     write("tab_ledger.tex", "\n".join(L) + "\n")
 
@@ -654,8 +894,9 @@ def tab_ledger():
 def tab_selection():
     L = ["\\begin{table*}[t]", "\\centering",
          "\\caption{\\textbf{Does a faithfulness-only ranking pick the "
-         "ground-truth-best attributor?} Two cell families, each audited on both "
-         "splits with the same backbone and the same six attributors, so within "
+         "ground-truth-best attributor?} " + str(len(ARMS)) + " molecular cell "
+         "families, each audited on both splits with the same backbone and the "
+         "same " + str(len(ATTR_ORDER)) + " attributors, so within "
          "a family only the split changes and the contrast isolates distribution "
          "shift rather than confounding it with a change of dataset. Each row "
          "ranks the attributors by one faithfulness/fidelity metric and asks "
@@ -663,7 +904,11 @@ def tab_selection():
          "paired Wilcoxon test on per-molecule GT AUROC between the selected and "
          "the ground-truth-best attributor, over the molecules both audited, and "
          "$q$ its Benjamini--Hochberg adjustment over all "
-         + str(len(ARMS) * 2 * 3) + " selection tests in this table.}",
+         + str(len(ARMS) * 2 * 3) + " selection tests in this table. Because a "
+         "paired per-molecule test needs the same molecules on both sides and "
+         "the split is a function of the seed, this table is computed within a "
+         "single seed rather than across the three; the across-seed spread for "
+         "the same cells is supplementary material.}",
          "\\label{tab:selection}",
          "\\small",
          "\\renewcommand{\\arraystretch}{1.3}",
@@ -837,9 +1082,11 @@ def tab_molecular():
             "model-side reliability can be measured, which is the gap the "
             "Tier-1 cells are needed to close. \\emph{charact.} is the "
             "GraphFramEx characterisation score and \\emph{unfaith.} the "
-            "PyG/DIG unfaithfulness metric, computed on the same molecules; "
-            "both are blank for carried rows (\\textsuperscript{c}), whose "
-            "per-molecule records this run did not regenerate. Bold marks the "
+            "PyG/DIG unfaithfulness metric, computed on the same molecules"
+            + ("; both are blank for carried rows (\\textsuperscript{c}), whose "
+               "per-molecule records this run did not regenerate"
+               if any(r.get("provenance") == "carried" for r in rows) else "")
+            + ". Bold marks the "
             "highest occlusion $\\rho$ per dataset (emphasis only).}")
     for pi, part in enumerate(parts):
         sub = [r for r in rows if r["dataset"] in part]

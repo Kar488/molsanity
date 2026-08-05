@@ -8,6 +8,7 @@ add a content checksum over the processed tensors and write a provenance JSON.
 from __future__ import annotations
 
 import hashlib
+import random as _random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -299,6 +300,117 @@ def _load_shapeggen(spec: DatasetSpec) -> LoadedDataset:
     return LoadedDataset(spec, graphs, prov)
 
 
+def _load_graphxai_mol(spec: DatasetSpec) -> LoadedDataset:
+    """A real-molecule attribution benchmark from GraphXAI's ``real_world`` set.
+
+    These are the Sanchez-Lengeling et al. (NeurIPS 2020) tasks as repackaged
+    by GraphXAI: real molecules (ZINC-derived) with per-atom ground-truth
+    rationales, published by a third party. That last property is the point.
+    Every other exactly-labelled molecular arm in this study is one we built
+    (MolMotif, MolMotifHard), and a benchmark constructed by the authors of the
+    audit is worth less as corroboration than one that already existed.
+
+    A graph may carry *several* explanations, because a molecule can contain
+    several instances of the rationale substructure (two benzene rings, say).
+    Any of them is a valid rationale, so the mask is their union: an atom
+    belonging to any published pathway counts as ground truth. Taking only the
+    first would mark real rationale atoms as negatives and score a correct
+    attribution as wrong.
+
+    Negatives keep an all-zero mask, as in MolMotif: they are needed to train
+    the classifier, and ``attribution_gt_scores`` already returns NaN where a
+    mask has one class, so they contribute to accuracy and not to GT AUROC.
+    """
+    import torch
+
+    class_name = spec.extras.get("graphxai_class")
+    try:
+        import graphxai.datasets as gxd
+        cls = getattr(gxd, class_name)
+    except Exception as exc:  # blocked-tolerant, Hard Rule 4
+        raise DatasetBlocked(
+            f"{spec.name} requires GraphXAI's {class_name} dataset, which is "
+            f"not importable ({exc}). GraphXAI's published wheel omits its "
+            "subpackages; install from a source checkout. Skipping and logging."
+        ) from exc
+
+    seed = int(spec.extras.get("seed", 0))
+    max_graphs = int(spec.extras.get("max_graphs", 1000))
+    balance = bool(spec.extras.get("balance", True))
+
+    try:
+        src = cls(seed=seed)
+    except Exception as exc:
+        raise DatasetBlocked(
+            f"{spec.name}: GraphXAI's {class_name} failed to load ({exc}). "
+            "Its data file ships in the source checkout; a wheel install has "
+            "the class but not the .npz. Skipping per Hard Rule 4."
+        ) from exc
+
+    graphs_in = getattr(src, "graphs", None)
+    expl_in = getattr(src, "explanations", None)
+    if not graphs_in or expl_in is None or len(expl_in) != len(graphs_in):
+        raise DatasetBlocked(
+            f"{spec.name}: {class_name} exposed {len(graphs_in or [])} graphs "
+            f"and {len(expl_in or [])} explanation sets; cannot align them.")
+
+    def _union_mask(expls, n_nodes: int) -> "torch.Tensor":
+        mask = torch.zeros(n_nodes, dtype=torch.float32)
+        for e in (expls if isinstance(expls, (list, tuple)) else [expls]):
+            imp = getattr(e, "node_imp", None)
+            if imp is None:
+                continue
+            v = imp.detach().cpu().reshape(-1).float()
+            if v.numel() != n_nodes:
+                continue          # shape mismatch: skip rather than pad
+            mask = torch.maximum(mask, (v > 0).float())
+        return mask
+
+    pos, neg, dropped = [], [], 0
+    for g, expls in zip(graphs_in, expl_in):
+        n = int(g.num_nodes)
+        mask = _union_mask(expls, n)
+        label = int(g.y.reshape(-1)[0])
+        if label == 1:
+            if mask.sum() == 0 or mask.sum() == n:
+                dropped += 1     # a mask covering none or all cannot be scored
+                continue
+        else:
+            mask = torch.zeros(n, dtype=torch.float32)
+        (pos if label == 1 else neg).append((g, mask, label))
+
+    rng = _random.Random(seed)
+    if balance:
+        k = min(len(pos), len(neg), max(max_graphs // 2, 1))
+        if k == 0:
+            raise DatasetBlocked(
+                f"{spec.name}: {len(pos)} positive and {len(neg)} negative "
+                "molecules with a scoreable mask; cannot build a balanced task.")
+        pos, neg = rng.sample(pos, k), rng.sample(neg, k)
+    picked = pos + neg
+    rng.shuffle(picked)
+    picked = picked[:max_graphs]
+
+    graphs = []
+    for g, mask, label in picked:
+        d = g.clone() if hasattr(g, "clone") else g
+        d.x = d.x.float()
+        if d.edge_attr is not None:
+            d.edge_attr = d.edge_attr.float()
+        d.y = torch.tensor([label], dtype=torch.long)
+        d.node_gt = mask
+        graphs.append(d)
+
+    n_pos = sum(1 for _, _, y in picked if y == 1)
+    cache_dir = DATA_ROOT / spec.name
+    checksum = _verify_or_record_checksum(spec, graphs, cache_dir)
+    prov = _write_provenance(spec, graphs, cache_dir, checksum)
+    log.info("Loaded %s (GraphXAI %s): %d molecules (%d positive), %d dropped "
+             "for an unscoreable mask, checksum %s",
+             spec.name, class_name, len(graphs), n_pos, dropped, checksum[:12])
+    return LoadedDataset(spec, graphs, prov)
+
+
 _TDC_GROUPS = {
     "Tox": "single_pred.Tox",
     "ADME": "single_pred.ADME",
@@ -377,6 +489,7 @@ _LOADERS = {
     "shapeggen": _load_shapeggen,
     "molmotif": _load_molmotif,
     "tdc": _load_tdc,
+    "graphxai_mol": _load_graphxai_mol,
 }
 
 

@@ -1,6 +1,6 @@
 \begin{table*}[t]
 \centering
-\caption{\textbf{Does a faithfulness-only ranking pick the ground-truth-best attributor?} Two cell families, each audited on both splits with the same backbone and the same six attributors, so within a family only the split changes and the contrast isolates distribution shift rather than confounding it with a change of dataset. Each row ranks the attributors by one faithfulness/fidelity metric and asks whether its top choice is the one the ground truth ranks best. $p$ is a paired Wilcoxon test on per-molecule GT AUROC between the selected and the ground-truth-best attributor, over the molecules both audited, and $q$ its Benjamini--Hochberg adjustment over all 12 selection tests in this table.}
+\caption{\textbf{Does a faithfulness-only ranking pick the ground-truth-best attributor?} 3 molecular cell families, each audited on both splits with the same backbone and the same 7 attributors, so within a family only the split changes and the contrast isolates distribution shift rather than confounding it with a change of dataset. Each row ranks the attributors by one faithfulness/fidelity metric and asks whether its top choice is the one the ground truth ranks best. $p$ is a paired Wilcoxon test on per-molecule GT AUROC between the selected and the ground-truth-best attributor, over the molecules both audited, and $q$ its Benjamini--Hochberg adjustment over all 18 selection tests in this table. Because a paired per-molecule test needs the same molecules on both sides and the split is a function of the seed, this table is computed within a single seed rather than across the three; the across-seed spread for the same cells is supplementary material.}
 \label{tab:selection}
 \small
 \renewcommand{\arraystretch}{1.3}
@@ -16,6 +16,14 @@ MUTAG$\cdot$GINE, $n$=58 & in-distribution & occlusion $\rho$ & GuidedBP & 0.037
 MUTAG$\cdot$GINE, $n$=53 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.013 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.643 \\
  &  & Fidelity+ & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.107 \\
  &  & characterisation & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.036 \\
+\addlinespace[2pt]
+MolMotifHard$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & SubgraphX & 0.421 & Saliency & 0.994 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.286 \\
+ &  & Fidelity+ & SubgraphX & 0.421 & Saliency & 0.994 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.107 \\
+ &  & characterisation & SubgraphX & 0.421 & Saliency & 0.994 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.357 \\
+\addlinespace[2pt]
+MolMotifHard$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & PGExpl. & 0.565 & IG & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.893 \\
+ &  & Fidelity+ & IG & 1.000 & IG & 1.000 & no & --- & --- & 0.821 \\
+ &  & characterisation & IG & 1.000 & IG & 1.000 & no & --- & --- & 0.857 \\
 \addlinespace[2pt]
 MolMotif$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & GNNExpl. & 0.630 & Input$\times$Grad & 0.999 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.571 \\
  &  & Fidelity+ & GuidedBP & 0.998 & Input$\times$Grad & 0.999 & \textbf{yes} & 0.091 & 0.091 & 0.750 \\

@@ -83,6 +83,37 @@ Simpson's-paradox trap for anyone reporting a single aggregate number. Results
 are the committed full.yaml run: 474 of 474 cell-runs completed. Every number,
 figure and table regenerates from the committed artifacts.
 
+## Acknowledgements (paste-ready)
+
+> This work was carried out at La Trobe University. It builds directly on
+> open-source software and released benchmarks: PyTorch Geometric, Captum,
+> RDKit, DIG and GraphXAI, and the MUTAG, MoleculeNet and Therapeutics Data
+> Commons collections. MolSanity wraps the canonical implementations of the
+> attribution methods it audits rather than reimplementing them, and would not
+> be possible without the authors of those packages releasing them openly.
+> Compute for the reported sweep was provided by Google Colab.
+>
+> **Generative AI disclosure.** The software, experiments and manuscript were
+> developed with the assistance of a large language model (Anthropic Claude)
+> used as a coding and drafting tool. All experimental results were produced by
+> the released code, and all reported numbers are generated from the committed
+> artifacts rather than written by hand; the authors verified the analyses and
+> take full responsibility for the content.
+
+Three things to check before pasting:
+
+1. **Funding.** The draft claims none. If any grant, scholarship or internal
+   support applies, name it — an undeclared funder is a correction later.
+2. **Compute.** It says Google Colab; amend if any of the sweep ran elsewhere.
+3. **The AI disclosure is the one real decision.** Springer Nature and ChemRxiv
+   both require disclosure of generative-AI assistance in preparing a
+   manuscript, and neither permits AI authorship. Given how this project was
+   built, the honest choice is to declare it, and declaring it costs nothing —
+   the reproducibility argument in §9 is stronger for it, not weaker, because
+   every number regenerates from code rather than resting on anyone's typing.
+   Delete the paragraph only if you are certain your reading of the policy
+   differs.
+
 ## Declarations
 
 - **Conflict of interest**: none.

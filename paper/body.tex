@@ -1297,6 +1297,26 @@ SubgraphX at the full per-cell sample and reduced the number of cells instead,
 which makes the coverage limit explicit (\S\ref{sec:limits}) rather than hiding
 it inside a confidence interval.\fi{}
 
+\section{Acknowledgements}
+
+This work was carried out at La Trobe University. It builds directly on
+open-source software and released benchmarks: PyTorch Geometric~\cite{pyg},
+Captum~\cite{captum}, RDKit~\cite{rdkit}, DIG~\cite{dig} and
+GraphXAI~\cite{graphxai}, and the MUTAG~\cite{mutag},
+MoleculeNet~\cite{moleculenet} and Therapeutics Data Commons~\cite{tdc}
+collections. MolSanity wraps the canonical implementations of the attribution
+methods it audits rather than reimplementing them, and would not be possible
+without the authors of those packages releasing them openly. Compute for the
+reported sweep was provided by Google Colab.
+
+\paragraph{Generative AI disclosure} The software, experiments and manuscript
+were developed with the assistance of a large language model (Anthropic
+Claude) used as a coding and drafting tool. All experimental results were
+produced by the released code, and every number, figure and table in this paper
+is generated from the committed artifacts rather than written by hand
+(\S\ref{sec:repro}); the authors verified the analyses and take full
+responsibility for the content.
+
 \section{Data and code availability}
 \label{sec:availability}
 

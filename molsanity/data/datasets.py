@@ -300,6 +300,87 @@ def _load_shapeggen(spec: DatasetSpec) -> LoadedDataset:
     return LoadedDataset(spec, graphs, prov)
 
 
+# Where each GraphXAI real-world dataset lives. Its ``.npz`` sits beside the
+# module, so the module file locates the data without hard-coding a path.
+_GRAPHXAI_MODULES = {
+    "Benzene": "graphxai.datasets.real_world.benzene.benzene",
+    "FluorideCarbonyl":
+        "graphxai.datasets.real_world.fluoride_carbonyl.fluoride_carbonyl",
+    "AlkaneCarbonyl":
+        "graphxai.datasets.real_world.alkane_carbonyl.alkane_carbonyl",
+}
+
+
+def _graphxai_load_graphs(name: str, class_name: str):
+    """Graphs and explanations from a GraphXAI real-world dataset.
+
+    Deliberately bypasses the dataset *class* and calls ``load_graphs`` on the
+    packaged ``.npz`` directly. ``Benzene.__init__`` reads the file and then
+    calls ``GraphDataset.__init__``, which builds train/val/test indices with
+    sklearn; on numpy 2 that raises
+
+        'numpy.float32' object cannot be interpreted as an integer
+
+    and takes the whole dataset down with it. The first sweep to schedule these
+    arms lost all 84 cell-runs to it. We never use GraphXAI's splits --
+    MolSanity does its own Bemis-Murcko and random splitting -- so the split
+    code is pure liability here, and skipping it is a fix rather than a
+    workaround.
+
+    The class is still tried as a fallback, in case a future version moves the
+    loading out of ``load_graphs``.
+    """
+    import importlib
+    import os
+
+    mod_path = _GRAPHXAI_MODULES.get(class_name)
+    if mod_path is None:
+        raise DatasetBlocked(
+            f"{name}: no GraphXAI module registered for '{class_name}'.")
+    try:
+        from graphxai.datasets.real_world.extract_google_datasets import (
+            load_graphs)
+        mod = importlib.import_module(mod_path)
+    except Exception as exc:  # blocked-tolerant, Hard Rule 4
+        raise DatasetBlocked(
+            f"{name} requires GraphXAI's {class_name}, which is not importable "
+            f"({exc}). GraphXAI's published wheel omits its subpackages; "
+            "install from a source checkout. Skipping and logging."
+        ) from exc
+
+    # The module names its data file in a *_datapath constant; fall back to the
+    # only .npz sitting next to it rather than hard-coding either.
+    datapath = next((v for k, v in vars(mod).items()
+                     if k.endswith("datapath") and isinstance(v, str)), None)
+    if datapath is None or not os.path.exists(datapath):
+        here = os.path.dirname(getattr(mod, "__file__", "") or "")
+        cands = sorted(f for f in os.listdir(here or ".") if f.endswith(".npz")) \
+            if here else []
+        if not cands:
+            raise DatasetBlocked(
+                f"{name}: no .npz data file beside {mod_path}. GraphXAI ships "
+                "it in the source checkout; a wheel install has the class but "
+                "not the data.")
+        datapath = os.path.join(here, cands[0])
+
+    try:
+        out = load_graphs(datapath)
+    except Exception as exc:
+        log.warning("%s: load_graphs(%s) failed (%s); trying the dataset class",
+                    name, os.path.basename(datapath), exc)
+        try:
+            import graphxai.datasets as gxd
+            src = getattr(gxd, class_name)()
+            return getattr(src, "graphs", None), getattr(src, "explanations", None)
+        except Exception as exc2:
+            raise DatasetBlocked(
+                f"{name}: GraphXAI's {class_name} failed both directly "
+                f"({exc}) and via its class ({exc2}). Skipping per Hard Rule 4."
+            ) from exc2
+    # load_graphs returns (graphs, explanations) or (graphs, explanations, ids).
+    return out[0], out[1]
+
+
 def _load_graphxai_mol(spec: DatasetSpec) -> LoadedDataset:
     """A real-molecule attribution benchmark from GraphXAI's ``real_world`` set.
 
@@ -324,45 +405,11 @@ def _load_graphxai_mol(spec: DatasetSpec) -> LoadedDataset:
     import torch
 
     class_name = spec.extras.get("graphxai_class")
-    try:
-        import graphxai.datasets as gxd
-        cls = getattr(gxd, class_name)
-    except Exception as exc:  # blocked-tolerant, Hard Rule 4
-        raise DatasetBlocked(
-            f"{spec.name} requires GraphXAI's {class_name} dataset, which is "
-            f"not importable ({exc}). GraphXAI's published wheel omits its "
-            "subpackages; install from a source checkout. Skipping and logging."
-        ) from exc
-
     seed = int(spec.extras.get("seed", 0))
     max_graphs = int(spec.extras.get("max_graphs", 1000))
     balance = bool(spec.extras.get("balance", True))
 
-    # Benzene and FluorideCarbonyl both take (split_sizes, seed, data_path,
-    # device) as of the checkout this was written against. The bare fallback is
-    # insurance: a signature change would otherwise be caught below and logged
-    # as "blocked", losing the arm quietly after the sweep has already paid for
-    # the training runs.
-    try:
-        src = cls(seed=seed)
-    except TypeError:
-        try:
-            src = cls()
-        except Exception as exc:
-            raise DatasetBlocked(
-                f"{spec.name}: GraphXAI's {class_name} rejected both "
-                f"cls(seed=...) and cls() ({exc}). Its constructor has changed; "
-                "the adapter needs updating. Skipping per Hard Rule 4."
-            ) from exc
-    except Exception as exc:
-        raise DatasetBlocked(
-            f"{spec.name}: GraphXAI's {class_name} failed to load ({exc}). "
-            "Its data file ships in the source checkout; a wheel install has "
-            "the class but not the .npz. Skipping per Hard Rule 4."
-        ) from exc
-
-    graphs_in = getattr(src, "graphs", None)
-    expl_in = getattr(src, "explanations", None)
+    graphs_in, expl_in = _graphxai_load_graphs(spec.name, class_name)
     if not graphs_in or expl_in is None or len(expl_in) != len(graphs_in):
         raise DatasetBlocked(
             f"{spec.name}: {class_name} exposed {len(graphs_in or [])} graphs "

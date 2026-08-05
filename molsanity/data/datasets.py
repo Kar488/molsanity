@@ -399,6 +399,40 @@ class _NodeImportance:
         self.node_imp = v
 
 
+def _npz_smiles(raw, n_graphs: int):
+    """The SMILES column of the archive's ``smiles`` table, or None.
+
+    GraphXAI reads ``data['smiles'][:, 1]`` for ZINC ids, so the table has at
+    least two columns and the layout is not documented beyond that. Rather than
+    assume an index, find the column RDKit can actually parse: a scaffold split
+    that silently degenerates is far more expensive than a failed import, and
+    this project has now paid for that lesson twice.
+    """
+    import numpy as np
+
+    tbl = raw.get("smiles") if hasattr(raw, "get") else None
+    if tbl is None or getattr(tbl, "ndim", 0) != 2 or tbl.shape[0] < n_graphs:
+        return None
+    try:
+        from rdkit import Chem
+        from rdkit import RDLogger
+        RDLogger.DisableLog("rdApp.*")
+    except Exception:
+        return None
+
+    probe = min(20, n_graphs)
+    for col in range(tbl.shape[1]):
+        vals = [str(v) for v in np.asarray(tbl[:probe, col]).reshape(-1)]
+        ok = sum(1 for s in vals if s and Chem.MolFromSmiles(s) is not None)
+        if ok >= max(1, int(0.8 * probe)):
+            log.info("npz smiles: column %d parses for %d/%d probed molecules",
+                     col, ok, probe)
+            return [str(v) for v in np.asarray(tbl[:, col]).reshape(-1)]
+    log.warning("npz smiles: no column parsed as SMILES; the scaffold split "
+                "for this dataset will be degenerate.")
+    return None
+
+
 def _graphs_from_npz(datapath: str):
     """Build graphs and rationales straight out of a Sanchez-Lengeling .npz.
 
@@ -418,6 +452,7 @@ def _graphs_from_npz(datapath: str):
     att, X, y = raw["attr"], raw["X"], raw["y"]
     X = X[0]
     labels = [y[i][0] for i in range(y.shape[0])]
+    smiles = _npz_smiles(raw, len(X))
 
     graphs, expls = [], []
     for i in range(len(X)):
@@ -430,6 +465,13 @@ def _graphs_from_npz(datapath: str):
             edge_attr=torch.from_numpy(np.asarray(xi["edges"])).float(),
             y=torch.tensor([int(labels[i])], dtype=torch.long),
         )
+        if smiles is not None:
+            # Without this the graph has no molecule to reconstruct, every
+            # molecule lands in its own Bemis-Murcko bucket, and the "scaffold"
+            # split is an arbitrary deterministic partition. The first run of
+            # these arms did exactly that: 0.0% of molecules shared a scaffold
+            # and scaffold_split logged DEGENERATE for all six splits.
+            g.smiles = smiles[i]
         imp = np.asarray(att[i][0]["nodes"], dtype=np.float64)
         if imp.ndim == 1:
             imp = imp[:, None]

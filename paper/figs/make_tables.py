@@ -283,6 +283,14 @@ def macros():
     # -0.353 (p = 0.044). With the median across-seed sd on occlusion rho at
     # 0.146, one seed is not the quantity to correlate, and the two answers sit
     # on opposite sides of every conventional threshold.
+    # Benzene and FluorideCarbonyl are molecular and exactly labelled and are
+    # deliberately NOT here yet. In the 2026-08-05 sweep their loader dropped
+    # the archive's SMILES, so Bemis-Murcko had nothing to work with and all
+    # six of their scaffold splits came back DEGENERATE at 0.0% grouped. Their
+    # "shift" rows are an arbitrary deterministic partition, not a chemical
+    # regime, and pooling them here would put non-shift data into the shift
+    # contrast -- the exact error this paper is about. They join this tuple
+    # when a run with SCAFFOLD_SPLIT_VERSION >= 3 gives them a real partition.
     MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
     by_cell = {}
     for r in CLS:
@@ -337,6 +345,12 @@ def macros():
             if v:
                 add(f"cell{tag}Min", f"{v[len(v) // 2] / 60:.0f}")
                 add(f"nCell{tag}", len(v))
+        # A resumed sweep's final invocation may re-execute only a handful of
+        # cells, so the log it leaves behind need not contain both attributors
+        # or any training at all. The cost comparison then cannot be made and
+        # the prose that quotes it has to disappear rather than default.
+        add_flag("HasCostRatio",
+                 bool(by.get("SubgraphX") and by.get("IntegratedGradients")))
         if by.get("SubgraphX") and by.get("IntegratedGradients"):
             a = sorted(by["SubgraphX"])[len(by["SubgraphX"]) // 2]
             b = sorted(by["IntegratedGradients"])[len(by["IntegratedGradients"]) // 2]
@@ -348,6 +362,7 @@ def macros():
                 last = stamp(l)
             if "Saved checkpoint" in l and "_early" not in l and dated and last:
                 trains.append((stamp(l) - last).total_seconds())
+        add_flag("HasTrainMedian", bool(trains))
         if trains:
             trains.sort()
             add("trainMedian", f"{trains[len(trains) // 2]:.0f}")

@@ -184,3 +184,98 @@ def test_the_class_is_still_a_fallback(monkeypatch, tmp_path):
         lambda path: (_ for _ in ()).throw(RuntimeError("moved")))
     out = _load_graphxai_mol(_spec())
     assert len(out.dataset) == 2
+
+
+def _write_npz(path, graphs, imps, labels):
+    """A .npz in the Sanchez-Lengeling layout GraphXAI ships.
+
+    keys: attr, X, y, smiles. X[0] is the graph list; attr[i][0]['nodes'] is a
+    (num_nodes, num_rationales) importance matrix.
+    """
+    import numpy as np
+
+    X = np.empty(1, dtype=object)
+    X[0] = np.array(graphs, dtype=object)
+    attr = np.empty(len(imps), dtype=object)
+    for i, m in enumerate(imps):
+        attr[i] = np.array([{"nodes": np.asarray(m, dtype=np.float32),
+                             "n_edge": graphs[i]["n_edge"]}], dtype=object)
+    np.savez(path, attr=attr, X=X,
+             y=np.asarray([[float(v)] for v in labels], dtype=np.float32),
+             smiles=np.array([["s", i] for i in range(len(graphs))], dtype=object))
+
+
+def _chain(n):
+    import numpy as np
+    return {"nodes": np.eye(n, dtype=np.float32),
+            "edges": np.ones((n - 1, 3), dtype=np.float32),
+            "receivers": np.arange(n - 1, dtype=np.float32),
+            "senders": np.arange(1, n, dtype=np.float32),
+            "n_edge": n - 1}
+
+
+def test_the_npz_is_read_without_graphxai_at_all(tmp_path):
+    """The path that finally works, verified against a real archive.
+
+    GraphXAI's load_graphs reads this same file correctly and then builds
+    Explanation objects; that machinery raises "'numpy.float32' object cannot
+    be interpreted as an integer" on numpy 2 and cost two sweeps their 84
+    cell-runs. Note that receivers/senders here are float32 -- exactly as the
+    shipped archives store them, and the reason a loader that indexes with them
+    breaks.
+    """
+    from molsanity.data.datasets import _graphs_from_npz
+
+    p = tmp_path / "fc.npz"
+    _write_npz(p, [_chain(4), _chain(3)],
+               [[[1, 0], [1, 0], [0, 1], [0, 1]], [[0], [0], [0]]], [1, 0])
+    graphs, expls = _graphs_from_npz(str(p))
+
+    assert len(graphs) == len(expls) == 2
+    assert graphs[0].edge_index.dtype == torch.long, "float indices would break PyG"
+    assert graphs[0].edge_index.shape == (2, 3)
+    assert int(graphs[0].y) == 1 and int(graphs[1].y) == 0
+    # Two columns -> two published rationales for the first molecule.
+    assert len(expls[0]) == 2
+    assert expls[0][0].node_imp.tolist() == [1, 1, 0, 0]
+    assert expls[0][1].node_imp.tolist() == [0, 0, 1, 1]
+
+
+def test_the_npz_rationales_union_into_one_mask(tmp_path, monkeypatch):
+    """End to end: several rationale columns become one ground-truth mask."""
+    import sys
+    import types
+
+    from molsanity.data.datasets import _graphs_from_npz
+
+    # 6 atoms, two rationales of two atoms each: the union is 4 of 6, so the
+    # molecule stays scoreable. A union covering every atom is dropped, which
+    # is deliberate -- AUROC over a single-class mask is undefined, not 1.0.
+    p = tmp_path / "fc.npz"
+    _write_npz(p, [_chain(6), _chain(6)],
+               [[[1, 0], [1, 0], [0, 1], [0, 1], [0, 0], [0, 0]],
+                [[0], [0], [0], [0], [0], [0]]], [1, 0])
+    graphs, expls = _graphs_from_npz(str(p))
+
+    mod = types.ModuleType("graphxai")
+    dsmod = types.ModuleType("graphxai.datasets")
+    exmod = types.ModuleType(
+        "graphxai.datasets.real_world.extract_google_datasets")
+    bzmod = types.ModuleType("graphxai.datasets.real_world.benzene.benzene")
+    bzmod.__file__ = str(tmp_path / "benzene.py")
+    bzmod.benzene_datapath = str(p)
+    exmod.load_graphs = lambda _p: (_ for _ in ()).throw(
+        TypeError("'numpy.float32' object cannot be interpreted as an integer"))
+    mod.datasets = dsmod
+    for nm, m in [("graphxai", mod), ("graphxai.datasets", dsmod),
+                  ("graphxai.datasets.real_world.extract_google_datasets", exmod),
+                  ("graphxai.datasets.real_world.benzene.benzene", bzmod)]:
+        monkeypatch.setitem(sys.modules, nm, m)
+
+    monkeypatch.chdir(tmp_path)
+    out = _load_graphxai_mol(_spec())
+    pos = [d for d in out.dataset if int(d.y) == 1][0]
+    assert pos.node_gt.tolist() == [1, 1, 1, 1, 0, 0], (
+        "both published rationales must survive into one mask")
+    neg = [d for d in out.dataset if int(d.y) == 0][0]
+    assert float(neg.node_gt.sum()) == 0.0

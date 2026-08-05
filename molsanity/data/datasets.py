@@ -338,8 +338,22 @@ def _load_graphxai_mol(spec: DatasetSpec) -> LoadedDataset:
     max_graphs = int(spec.extras.get("max_graphs", 1000))
     balance = bool(spec.extras.get("balance", True))
 
+    # Benzene and FluorideCarbonyl both take (split_sizes, seed, data_path,
+    # device) as of the checkout this was written against. The bare fallback is
+    # insurance: a signature change would otherwise be caught below and logged
+    # as "blocked", losing the arm quietly after the sweep has already paid for
+    # the training runs.
     try:
         src = cls(seed=seed)
+    except TypeError:
+        try:
+            src = cls()
+        except Exception as exc:
+            raise DatasetBlocked(
+                f"{spec.name}: GraphXAI's {class_name} rejected both "
+                f"cls(seed=...) and cls() ({exc}). Its constructor has changed; "
+                "the adapter needs updating. Skipping per Hard Rule 4."
+            ) from exc
     except Exception as exc:
         raise DatasetBlocked(
             f"{spec.name}: GraphXAI's {class_name} failed to load ({exc}). "

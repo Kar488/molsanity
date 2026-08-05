@@ -23,7 +23,3 @@ The rationale-use test: occluding the ground-truth substructure and measuring wh
 ## `ABSTENTION.md`
 
 Coverage-reliability curves for selective prediction on explanations -- what an audit buys a practitioner who can abstain.
-
-## `LIMITATIONS.md`
-
-The maintained limitations register, longer than the manuscript's limitations section and including items that did not survive editing.

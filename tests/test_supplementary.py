@@ -46,3 +46,54 @@ def test_the_seed_variance_report_is_in_the_bundle():
     body = " ".join((ROOT / "paper" / "body.tex").read_text().split())
     assert "supplementary material" in body, (
         "the bundle exists but the manuscript never points a reader at it")
+
+
+def test_no_working_document_is_bundled():
+    """Supplementary material is generated reports, not working documents.
+
+    LIMITATIONS.md shipped in this bundle for exactly one commit. It is a
+    hand-maintained register, current for whoever is building the thing and
+    free to describe a run that is no longer the reported one -- and it did:
+    the regression cells "are excluded from every faithfulness claim until the
+    next sweep", the shift contrast resting on MUTAG and MolMotif. The
+    manuscript has a test forbidding those sentences in its own prose, so
+    attaching them as supplementary material reintroduced the contradictions
+    through the side door.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "make_supplementary", ROOT / "paper" / "make_supplementary.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    overlap = mod.BUNDLE.keys() & mod.NEVER_BUNDLE
+    assert not overlap, f"working documents in the bundle: {sorted(overlap)}"
+    if BUNDLE.exists():
+        on_disk = {f.name for f in BUNDLE.glob("*.md")} - {"README.md"}
+        assert not (on_disk & mod.NEVER_BUNDLE), (
+            "a working document is sitting in paper/supplementary/: "
+            f"{sorted(on_disk & mod.NEVER_BUNDLE)}")
+
+
+def test_bundled_reports_carry_no_in_progress_language():
+    """A generated report describes a finished run, or it is not shippable.
+
+    "being recomputed", "until the next sweep", "are withdrawn" are all true
+    of a repository mid-correction and all wrong in a file attached to a
+    submission, where a reviewer reads them as describing the work they are
+    assessing.
+    """
+    import re
+
+    if not BUNDLE.exists():
+        pytest.skip("supplementary bundle not generated")
+    bad = re.compile(
+        r"being recomputed|next sweep|are withdrawn|development environment"
+        r"|\bTODO\b|\bFIXME\b|\bWIP\b", re.I)
+    hits = []
+    for f in sorted(BUNDLE.glob("*.md")):
+        for i, line in enumerate(f.read_text().splitlines(), 1):
+            if bad.search(line):
+                hits.append(f"{f.name}:{i}: {line.strip()[:90]}")
+    assert not hits, "in-progress language in supplementary material:\n  " + \
+        "\n  ".join(hits)

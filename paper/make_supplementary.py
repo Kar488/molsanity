@@ -8,6 +8,18 @@ what a preprint server and a journal both want (a folder of files to upload),
 and copies drift, so ``tests/test_supplementary.py`` asserts byte equality with
 ``results/`` and the Makefile regenerates the bundle on every build.
 
+**Only pipeline-generated reports belong here.** ``results/`` also holds
+hand-maintained working documents -- LIMITATIONS.md, PROGRESS.md, TASKS.md --
+and those are written for the people building this, not for a reader of the
+paper. LIMITATIONS.md was in this bundle for one commit before that rule
+existed. It still said the regression cells "are excluded from every
+faithfulness claim until the next sweep" and that the shift contrast rests on
+MUTAG and MolMotif: both true of an earlier run, both false now, and the
+manuscript has a test forbidding exactly those sentences in its own prose.
+Attaching them as supplementary material would have reintroduced the
+contradictions through the side door. The manuscript's own limitations section
+is the current one.
+
 The bundle exists because of one thing in particular: the selection tests in
 the manuscript are computed within a single seed -- a paired per-molecule test
 needs the same molecules on both sides, and the split is a function of the seed
@@ -45,10 +57,11 @@ BUNDLE = {
     "ABSTENTION.md":
         "Coverage-reliability curves for selective prediction on explanations "
         "-- what an audit buys a practitioner who can abstain.",
-    "LIMITATIONS.md":
-        "The maintained limitations register, longer than the manuscript's "
-        "limitations section and including items that did not survive editing.",
 }
+
+# Working documents. Current for the build, not written for a reader of the
+# paper, and free to describe a run that is no longer the reported one.
+NEVER_BUNDLE = {"LIMITATIONS.md", "PROGRESS.md", "TASKS.md", "RESULTS.md"}
 
 
 def main() -> None:
@@ -56,6 +69,15 @@ def main() -> None:
     missing = [n for n in BUNDLE if not (SRC / n).exists()]
     if missing:
         raise SystemExit(f"missing reports in results/: {missing}")
+    if BUNDLE.keys() & NEVER_BUNDLE:
+        raise SystemExit(
+            f"working documents cannot be supplementary material: "
+            f"{sorted(BUNDLE.keys() & NEVER_BUNDLE)}")
+    # A previous run may have left a file here that no longer belongs.
+    for f in OUT.glob("*.md"):
+        if f.name != "README.md" and f.name not in BUNDLE:
+            f.unlink()
+            print(f"  removed {f.name} (no longer bundled)")
 
     lines = [
         "# Supplementary material",

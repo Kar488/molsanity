@@ -85,11 +85,16 @@ RDKit~\cite{rdkit}) and audits them. Specifically:
   dataset. The failure is not confined to shift: it is
   $\nSelMismatchInd{}$ of $\nSelTestsInd{}$ in distribution
   (\nameref{sec:selection}).
-\item We separate what shift breaks from what it leaves alone. The
-  \emph{backbone} ordering does not survive the change of split
-  ($\rho=\bbRankRho{}$ over $\bbRankN{}$ backbones), so which architecture
-  localises best in distribution says little about which does under shift. The
-  \emph{attributor} ordering largely does survive ($\rho=\mutAttrRankRho{}$ on
+\item We separate what shift breaks from what it leaves alone, and on this run
+  it leaves a great deal alone. Which \emph{backbone} localises best is largely
+  preserved across the split
+  (\ifHasBackboneArms$\rho=\bbRankRhoMin{}$--$\bbRankRhoMax{}$ over the
+  $\nBbArms{}$ molecular arms carrying all $\bbRankN{}$ backbones\else
+  $\rho=\bbRankRho{}$\fi), though \emph{which} backbone is used moves
+  localisation by
+  \ifHasBackboneArms$\bbSpreadMin{}$--$\bbSpreadMax{}$\else$\bbIndSpread{}$\fi{}
+  AUROC and so has to be reported. The
+  \emph{attributor} ordering largely survives too ($\rho=\mutAttrRankRho{}$ on
   MUTAG, $\molAttrRankRho{}$ on \molDataset{}), and the level of faithfulness
   does not shift systematically either (across the $\nSplitPairs{}$ cells
   audited on both splits the median change is $\medSplitOccDelta{}$). The
@@ -142,7 +147,7 @@ explanation recovers a known rationale, which requires ground-truth
 substructures, typically synthetic~\cite{graphxai}. The tension between the
 two is known: Faber et al.~\cite{faber} argue that comparing against ground
 truth is misleading when the trained model does not use that rationale, and
-Sanchez-Lengeling et al.~\cite{sanchezlengeling} built the first systematic
+Sanchez-Lengeling et al.~\cite{sanchez2020} built the first systematic
 attribution benchmark for molecular GNNs on exactly this basis. Outside graphs,
 sanity checks~\cite{sanitychecks} and retraining-based benchmarks~\cite{roar}
 made a parallel case that plausible-looking attributions can be uninformative.
@@ -155,7 +160,7 @@ enough that a citation is not a sufficient answer. Table~\ref{tab:related}
 scores all of them on the same capabilities; what follows states what each row
 of that table means.
 
-\emph{Sanchez-Lengeling et al.}~\cite{sanchezlengeling} is the nearest
+\emph{Sanchez-Lengeling et al.}~\cite{sanchez2020} is the nearest
 neighbour and the earliest. It built the first systematic attribution benchmark
 for molecular GNNs on tasks whose ground-truth substructure is known by
 construction, establishing that attribution methods should be scored against a
@@ -164,7 +169,7 @@ highlighting. MolSanity inherits that premise. What it adds is the faithfulness
 axis measured on the \emph{same} molecules and the joint behaviour of the two.
 A benchmark that reports correctness alone cannot show that a faithfulness-based
 choice of attributor is the wrong choice, because it never makes that choice.
-The selection-consistency test of \nameref{sec:selectiondef} makes it, and its
+The selection-consistency test of \S\ref{sec:selectiondef} makes it, and its
 outcome changes with the split.
 
 \emph{MolFaith}~\cite{molfaith} is the closest work on the faithfulness axis
@@ -421,7 +426,7 @@ molecules ($2000$ resamples, fixed seed). Attributor comparisons within a cell
 are paired on molecule identity and tested with the two-sided Wilcoxon
 signed-rank test; correlations are Spearman throughout, as all statistics here
 are ordinal in nature and several are heavy-tailed. Sample sizes are the
-audited molecules per cell (20--120), which is small enough that we treat
+audited molecules per cell ($\nMolMin{}$--$\nMolMax{}$), which is small enough that we treat
 individual $p$-values as descriptive and report them unadjusted for
 multiplicity, leaning on replication across cells rather than on any single
 test. Where a statistic is undefined for a molecule it is dropped from that
@@ -500,7 +505,7 @@ is these two splits on the same dataset.
 \paragraph{Scale of the study} The sweep trains every (dataset, backbone)
 pair on both splits and audits every (dataset, backbone, attributor, split)
 combination, giving \nDone{} audited combinations and \nRecords{} per-molecule
-audit records in total. Audited samples are 20--120 molecules per combination,
+audit records in total. Audited samples are $\nMolMin{}$--$\nMolMax{}$ molecules per combination,
 drawn from the held-out test fold. Exact software versions, hardware, seed and
 the per-combination outcome ledger are recorded with the released artifacts
 (\nameref{sec:availability}).
@@ -878,18 +883,26 @@ dataset in the sweep publishes per-atom labels. Blank cells were not audited.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig_backbone.pdf}
-\caption{\textbf{The backbone ordering does not survive the change of split.}
-Integrated Gradients held fixed; ground-truth localisation across the
-\bbIndN{} backbones on \bbDataset{}, in distribution \textbf{(a)} and under
-scaffold shift \textbf{(b)}. Dashed line is chance. Spearman correlation
-between the two orderings is $\bbRankRho{}$ over $\bbRankN{}$ backbones.}
+\caption{\textbf{Which backbone localises best is a large effect, and a stable
+one across the split.} Integrated Gradients held fixed; ground-truth
+localisation across the \bbIndN{} backbones on \bbDataset{} --- a molecular arm
+with exact node labels, so its scaffold split is a chemical regime --- in
+distribution \textbf{(a)} and under scaffold shift \textbf{(b)}. Dashed line is
+chance. The two orderings correlate at $\rho=\bbRankRho{}$ over $\bbRankN{}$
+backbones\ifHasBackboneArms{}, and at $\bbRankRhoMin{}$--$\bbRankRhoMax{}$
+across the $\nBbArms{}$ molecular arms carrying the full sweep\fi{}. The gap
+between best and worst backbone is $\bbIndSpread{}$ AUROC in distribution and
+$\bbShiftSpread{}$ under shift: the architecture matters, and it matters the
+same way in both regimes.}
 \label{fig:backbone}
 \end{figure}
 \fi
 
-Figure~\ref{fig:heatmaps} lays the two axes over the audited grid, and two
-further comparisons show that neither axis is a stable property of the
-attributor or of the architecture.
+Figure~\ref{fig:heatmaps} lays the two axes over the audited grid. Two further
+comparisons ask whether either axis is a stable property of the architecture or
+of the attributor, and the answer is more interesting than we expected: both
+are reasonably stable, which is what makes the instability of the
+\emph{relationship} between them hard to see from any of the usual diagnostics.
 
 \ifHasBackboneSweep
 \paragraph{Backbones} Holding the attributor fixed at Integrated Gradients and
@@ -897,13 +910,26 @@ varying the backbone (Figure~\ref{fig:backbone}) gives a spread of
 $\bbIndSpread{}$ AUROC in distribution (\bbIndBest{} $\bbIndBestVal{}$ down to
 \bbIndWorst{} $\bbIndWorstVal{}$) and $\bbShiftSpread{}$ under shift
 (\bbShiftBest{} $\bbShiftBestVal{}$ down to \bbShiftWorst{}
-$\bbShiftWorstVal{}$), comparable to the spread across attributors on the
-same dataset. The two orderings are negatively correlated
-($\rho=\bbRankRho{}$, $\bbRankN{}$ backbones): the architecture that localises
-the motif best in distribution is not the one that does so under shift. The
-attributor ordering is somewhat more robust across the same change of split
-($\rho=\armAttrRankRho{}$ over $\armAttrRankN{}$ attributors) but far from
-preserved.
+$\bbShiftWorstVal{}$), comparable to the spread across attributors on the same
+dataset. Architecture is therefore a first-order factor in how well an
+attribution localises, and a report that omits it is under-specified. The
+ordering, however, is largely preserved across the split
+($\rho=\bbRankRho{}$ on \bbDataset{}\ifHasBackboneArms{};
+$\bbRankRhoMin{}$--$\bbRankRhoMax{}$, median $\bbRankRhoMed{}$, across the
+$\nBbArms{}$ molecular arms carrying all $\bbRankN{}$ backbones, all
+$\nBbArmsPositive{}$ positive\fi{}): the architecture that localises the motif
+best in distribution mostly is the one that does so under shift. The attributor
+ordering is comparably robust ($\rho=\armAttrRankRho{}$ over
+$\armAttrRankN{}$ attributors).
+
+An earlier version of this analysis read this sweep on SynthMotifs and reported
+$\rho=0.100$ --- that the backbone ordering does \emph{not} survive the split.
+SynthMotifs is not molecular, so its ``scaffold'' partition is the arbitrary
+deterministic one described in \S\ref{sec:limits}, and a rank correlation
+across it is not a statement about chemical shift at all. Read on arms whose
+scaffold split is a chemical regime, the conclusion reverses. We record it
+because the error is the one this paper is about, made by us, in the direction
+that flattered the argument.
 \else
 \paragraph{Backbones} The backbone sweep is read at Integrated Gradients, and
 no Integrated Gradients cell completed in the run these numbers come from, so
@@ -1243,7 +1269,7 @@ models.
 \fi
 Across the run, \nHighAccRows{} committed rows report test accuracy $\geq0.95$.
 We report AUC alongside accuracy throughout for this reason, and the lowest-AUC
-cell in the run (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$
+molecular cell in the run (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$
 at accuracy $\worstAucAcc{}$) is where accuracy alone would mislead most.
 
 \paragraph{Two arms that removed our own headline result} We added
@@ -1325,13 +1351,18 @@ from the matrix. (i) Report the cell, not the attributor: on the $\nArms{}$
 families where we can check, the same protocol gives per-arm
 faithfulness--correctness correlations from $\armShiftRhoMin{}$ to
 $+\armShiftRhoMax{}$ under shift, so ``method X is reliable'' is not a claim
-the evidence supports at the level of a method. (ii) Report the backbone: the
-backbone ordering does not survive the change of split ($\rho=\bbRankRho{}$),
-so ``IG on a GNN'' is under-specified. (iii) Report the predictive metrics next
-to the explanation metrics, because the accurate, well-calibrated
-\bestAucDataset{}·\bestAucBackbone{} cell has the most anti-faithful
-attributions in the matrix. (iv) Do not pool: the calibration-linkage
-correlation changes sign between the per-cell and the pooled analysis.
+the evidence supports at the level of a method. (ii) Report the backbone:
+holding the attributor fixed, the choice of architecture moves ground-truth
+localisation by
+\ifHasBackboneArms$\bbSpreadMin{}$--$\bbSpreadMax{}$\else$\bbIndSpread{}$\fi{}
+AUROC, so ``IG on a GNN'' is under-specified --- even though, unlike the
+faithfulness--correctness relationship, the backbone ordering itself is stable
+across the split. (iii) Report the predictive metrics next to the explanation
+metrics, because the accurate, well-calibrated
+\bestAucDataset{}·\bestAucBackbone{} cell carries anti-faithful attributions
+($\rho=\bestAucOcc{}$ at ROC-AUC $\bestAucAuc{}$). (iv) Do not pool: the
+calibration-linkage correlation attenuates from a per-cell median of
+$\medCalibRho{}$ to $\pooledCalibRho{}$ when cells are pooled.
 
 \paragraph{Why reliability is regime-, backbone- and dataset-dependent} A
 faithfulness metric asks about the model; a ground-truth metric asks about the
@@ -1686,11 +1717,6 @@ What Matters: Faithfulness in Molecular Deep Learning. \emph{ChemRxiv}, 2026.
 to ground truth is wrong: on evaluating GNN explanation methods.
 \emph{Proceedings of the 27th ACM SIGKDD Conference on Knowledge Discovery and
 Data Mining (KDD)}, pages 332--341, 2021.
-
-\bibitem{sanchezlengeling} B.~Sanchez-Lengeling, J.~N.~Wei, B.~K.~Lee,
-E.~Reif, P.~Wang, W.~W.~Qian, K.~McCloskey, L.~J.~Colwell, and
-A.~B.~Wiltschko. Evaluating attribution for graph neural networks.
-\emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2020.
 
 \bibitem{sanitychecks} J.~Adebayo, J.~Gilmer, M.~Muelly, I.~Goodfellow,
 M.~Hardt, and B.~Kim. Sanity checks for saliency maps. \emph{Advances in Neural

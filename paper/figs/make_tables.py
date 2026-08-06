@@ -767,8 +767,26 @@ def macros():
     if len(grad) > 1:
         add("mutagGradOccSpread", num(max(grad) - min(grad)))
 
-    # --- backbone sweeps at IG, both splits, on the exact-GT dataset -------
-    bb_ds = "SynthMotifs"
+    # --- backbone sweeps at IG, both splits, on a MOLECULAR ground-truth arm
+    # Read on SynthMotifs until now, which made the conclusion unsupportable:
+    # SynthMotifs is not molecular, so its "scaffold" split is an arbitrary
+    # deterministic partition -- the paper says so itself -- and a rank
+    # correlation across it says nothing about chemical shift. It gave
+    # rho = +0.100 and the prose called the ordering unstable. On the three
+    # molecular arms that carry all five backbones the same computation gives
+    # +0.70 to +0.90: the ordering is largely PRESERVED. The claim reversed
+    # because the arm was wrong, so the arm is now required to be molecular.
+    _bb_cands = [d for d in D.MOLECULAR_GT
+                 if len({r["backbone"] for r in CLS if r["dataset"] == d
+                         and r["attributor"] == "IntegratedGradients"
+                         and r["gt_auroc"] is not None
+                         and r["split"] == "scaffold"}) >= 4]
+    bb_ds = "MolMotifHard" if "MolMotifHard" in _bb_cands else (
+        _bb_cands[0] if _bb_cands else "MolMotifHard")
+    assert bb_ds not in D.SYNTHETIC, (
+        f"the backbone sweep must be read on a molecular arm, not {bb_ds}: a "
+        "non-molecular scaffold split is a deterministic partition and cannot "
+        "support a claim about shift")
     add("bbDataset", bb_ds)
     bb_sweep_ok = True
     for sp, pre in (("scaffold", "bbShift"), ("random", "bbInd")):
@@ -802,6 +820,46 @@ def macros():
     rho, _ = D.spearman([Ab[k] for k in sh], [Bb[k] for k in sh])
     add("bbRankRho", num(rho))
     add("bbRankN", len(sh))
+
+    # The same correlation on every molecular arm carrying the full backbone
+    # sweep, so the claim rests on all of them rather than on whichever one the
+    # figure happens to draw.
+    _bb_rhos = {}
+    for ds in _bb_cands:
+        A = {r["backbone"]: r["gt_auroc"] for r in CLS
+             if r["dataset"] == ds and r["split"] == "random"
+             and r["attributor"] == "IntegratedGradients"
+             and r["gt_auroc"] is not None}
+        B = {r["backbone"]: r["gt_auroc"] for r in CLS
+             if r["dataset"] == ds and r["split"] == "scaffold"
+             and r["attributor"] == "IntegratedGradients"
+             and r["gt_auroc"] is not None}
+        k = sorted(set(A) & set(B))
+        if len(k) >= 4:
+            _bb_rhos[ds] = D.spearman([A[x] for x in k], [B[x] for x in k])[0]
+    add_flag("HasBackboneArms", len(_bb_rhos) >= 2)
+    if _bb_rhos:
+        _v = sorted(_bb_rhos.values())
+        add("nBbArms", len(_bb_rhos))
+        add("bbRankRhoMin", num(_v[0]))
+        add("bbRankRhoMax", num(_v[-1]))
+        add("bbRankRhoMed", num(_v[len(_v) // 2]))
+        add("nBbArmsPositive", sum(1 for x in _v if x > 0))
+        # Spread of localisation across backbones, which is the reportable
+        # backbone effect now that the ordering turns out to be stable.
+        _spreads = []
+        for ds in _bb_rhos:
+            for sp in ("random", "scaffold"):
+                g = [r["gt_auroc"] for r in CLS if r["dataset"] == ds
+                     and r["split"] == sp
+                     and r["attributor"] == "IntegratedGradients"
+                     and r["gt_auroc"] is not None]
+                if len(g) >= 4:
+                    _spreads.append(max(g) - min(g))
+        if _spreads:
+            _spreads.sort()
+            add("bbSpreadMin", num(_spreads[0]))
+            add("bbSpreadMax", num(_spreads[-1]))
 
     # --- regression --------------------------------------------------------
     rvals = [r for r in REG if r["occ_spearman"] is not None]
@@ -915,6 +973,12 @@ def macros():
     hi = [r for r in CLS if r["acc"] is not None and r["acc"] >= 0.95
           and r["auc"] is not None]
     add("nHighAccRows", len(hi))
+    # Audited molecules per cell. Typed as "20--120" for several sweeps after
+    # the test fold grew and the caps changed; it is now 50--200.
+    _n = sorted({r["n_mol"] for r in list(CLS) + list(REG) if r.get("n_mol")})
+    if _n:
+        add("nMolMin", f"{_n[0]:.0f}")
+        add("nMolMax", f"{_n[-1]:.0f}")
     add("minHighAccAuc", num(min(r["auc"] for r in hi)))
     tox = [r for r in CLS if r["dataset"] == "Tox21" and r["auc"] is not None]
     add_flag("HasTox", bool(tox))

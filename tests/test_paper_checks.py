@@ -544,3 +544,82 @@ def test_no_direction_word_contradicts_the_macro_it_describes():
 
     assert not problems, "a direction word contradicts its macro:\n  " + \
         "\n  ".join(problems)
+
+
+def test_no_shift_claim_is_read_off_a_degenerate_split():
+    """A scaffold-split comparison is only a shift comparison on molecules.
+
+    The backbone sweep was read on SynthMotifs for several revisions. The
+    paper states in three places that SynthMotifs has no Bemis-Murcko scaffold
+    and that its "scaffold" partition is an arbitrary deterministic one -- and
+    then used a rank correlation across exactly that partition to conclude the
+    backbone ordering "does not survive the change of split". It gave
+    rho = +0.100. On the three molecular arms carrying all five backbones the
+    same computation gives +0.70 to +0.90: the ordering is largely preserved,
+    and the published claim was an artefact of the arm.
+
+    So: any dataset a split-contrast macro is computed on must be molecular.
+    """
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper tables not generated")
+    sys.path.insert(0, str(FIGS))
+    D = pytest.importorskip("msdata")
+    spec = importlib.util.spec_from_file_location(
+        "make_tables", root / "figs" / "make_tables.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    import re
+    M = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}",
+                        (root / "generated" / "macros.tex").read_text()))
+    bad = []
+    # Every dataset named by a macro that a split contrast is drawn from.
+    for macro in ("bbDataset", "armShiftRhoMinDataset", "armShiftRhoMaxDataset"):
+        ds = M.get(macro)
+        if ds and ds in D.SYNTHETIC:
+            bad.append(f"\\{macro} = {ds}, which has no Bemis-Murcko scaffold")
+    for ds, _, _ in mod.ARMS:
+        if ds in D.SYNTHETIC:
+            bad.append(f"{ds} is a selection-test arm but is not molecular")
+    for ds in mod.MOLECULAR_GT:
+        if ds in D.SYNTHETIC:
+            bad.append(f"{ds} is in the pooled shift estimate but is not molecular")
+    assert not bad, ("a shift claim rests on a non-molecular split:\n  "
+                     + "\n  ".join(bad))
+
+
+def test_the_bibliography_has_no_duplicate_entry():
+    """Two keys for one paper is two numbers for one reference.
+
+    sanchez2020 and sanchezlengeling were the same NeurIPS paper, cited under
+    both keys, and appeared twice in the reference list under [9] and [15].
+    """
+    import re
+    from collections import Counter
+
+    body = (Path(__file__).resolve().parents[1] / "paper" / "body.tex").read_text()
+    items = re.findall(r"\\bibitem\{(\w+)\}(.*?)(?=\\bibitem\{|\\end\{thebibliography\})",
+                       body, flags=re.S)
+    keys = Counter(k for k, _ in items)
+    assert not [k for k, n in keys.items() if n > 1], \
+        f"duplicate bibitem keys: {[k for k, n in keys.items() if n > 1]}"
+
+    def sig(text):
+        """Author surnames plus the title's first words -- enough to match two
+        renderings of one paper that differ only in how initials are set."""
+        t = " ".join(text.split())
+        t = re.sub(r"\\emph\{[^}]*\}", " ", t)
+        t = re.sub(r"[^A-Za-z ]", " ", t).lower()
+        return tuple(w for w in t.split() if len(w) > 3)[:14]
+
+    seen = {}
+    dupes = []
+    for k, text in items:
+        s = sig(text)
+        if s in seen:
+            dupes.append(f"{seen[s]} and {k} are the same reference")
+        seen[s] = k
+    assert not dupes, "duplicate references:\n  " + "\n  ".join(dupes)

@@ -788,20 +788,27 @@ def fig_lead(out: Path):
 
 # ---------------------------------------------------------------- figure 0
 def fig_overview(out: Path):
-    """What the audit does, before any notation.
+    """What the audit measures, before any notation.
 
     The manuscript went from related work straight into notation, which asks a
     reader to hold the whole design in their head before being shown its shape.
-    This is the shape: one cell is audited on axes that describe the model, and
-    -- only where per-atom labels exist -- on one axis that describes the
-    chemistry. The asymmetry between those two columns is the paper.
 
-    Drawn from the results rather than annotated by hand: the cell counts, the
-    ground-truth coverage and the selection tally are read off the same
-    artifacts every other figure uses, so this cannot describe a different run
-    from the one reported.
+    The shape is an asymmetry, and the figure is built to put it on one line of
+    sight: the two question panels are the same width and the same
+    construction, stacked, so the only thing that differs is the coverage band
+    at the foot of each -- every cell against three-quarters of them. One
+    accent per side, no fill competing with the text, one type scale.
+
+    Geometry is derived from the content rather than typed. Hard-coded panel
+    heights put the coverage band on top of the body text the first time a
+    panel gained a line, so ``question`` measures its own lines and returns the
+    height it used, and the caller stacks from that. The axes are equal-aspect
+    so rounded corners and arrowheads are not sheared by the frame.
+
+    Counts are read from the same artifacts as every other figure, so this
+    cannot describe a different run from the one reported.
     """
-    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
     n_cells = len({(r["dataset"], r["backbone"], r["attributor"], r["split"])
                    for r in ROWS})
@@ -810,6 +817,7 @@ def fig_overview(out: Path):
     n_ds = len({r["dataset"] for r in ROWS})
     n_bb = len({r["backbone"] for r in ROWS})
     n_at = len({r["attributor"] for r in ROWS})
+    n_sp = len({r["split"] for r in ROWS})
     sel_total = sel_bad = 0
     for ds, bb in ARMS:
         for sp in ("random", "scaffold"):
@@ -819,76 +827,128 @@ def fig_overview(out: Path):
             sel_total += len(sel["selections"])
             sel_bad += sum(1 for x in sel["selections"] if x["mismatch"])
 
-    MODEL_C, CHEM_C = "#0072B2", "#CC79A7"
-    fig, ax = plt.subplots(figsize=(7.1, 2.62))
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 42)
+    MODEL_C, CHEM_C = "#1F6FB2", "#B0559A"
+    RULE = "#c7ced7"
+    FS_TITLE, FS_BODY, FS_META = 7.2, 6.4, 6.0
+    PAD, LEAD = 2.6, 3.3            # inset from every edge; body line pitch
+
+    W, HIN = 100.0, 3.55
+    H = HIN * (W / 7.1)             # equal aspect: same units per inch
+    fig, ax = plt.subplots(figsize=(7.1, HIN))
+    ax.set_xlim(0, W)
+    ax.set_ylim(H, 0)               # lay out downward, in reading order
+    ax.set_aspect("equal")
     ax.axis("off")
 
-    def box(x, y, w, h, fc, ec, lw=0.9, r=1.6):
+    def panel(x, y, w, h, ec, fc):
         ax.add_patch(FancyBboxPatch(
-            (x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}",
-            fc=fc, ec=ec, lw=lw, zorder=2))
+            (x, y), w, h, boxstyle="round,pad=0,rounding_size=1.2",
+            fc=fc, ec=ec, lw=0.85, zorder=2))
 
-    def arrow(x0, y0, x1, y1, c=MUTED):
+    def arrow(x0, y0, x1, y1, c):
         ax.add_patch(FancyArrowPatch(
-            (x0, y0), (x1, y1), arrowstyle="-|>", mutation_scale=7,
-            lw=0.8, color=c, shrinkA=0, shrinkB=0, zorder=3))
+            (x0, y0), (x1, y1), lw=0.9, color=c, zorder=3, shrinkA=0, shrinkB=0,
+            arrowstyle="-|>,head_length=2.2,head_width=1.3", mutation_scale=1))
 
-    # --- the sweep, and the unit it produces -------------------------------
-    box(0.5, 8, 20, 26, "#f6f7f9", GRID)
-    ax.text(10.5, 31.4, "the sweep", ha="center", fontsize=7.4, color=INK,
-            style="italic")
-    for i, (n, what) in enumerate([(n_ds, "datasets"), (n_bb, "backbones"),
-                                   (n_at, "attributors"), (2, "splits")]):
-        ax.text(3.0, 26.6 - 4.6 * i, f"{n}", ha="right", fontsize=8.6,
-                color=ACCENT, weight="bold")
-        ax.text(4.0, 26.6 - 4.6 * i, what, ha="left", fontsize=7.2, color=INK)
-    ax.text(10.5, 10.0, "random  ·  scaffold\n(Bemis–Murcko)", ha="center",
-            va="center", fontsize=5.9, color=MUTED, linespacing=1.35)
+    # ---- right: the two questions ----------------------------------------
+    # Built first: it is the tallest element, and the left of the figure is
+    # centred on it rather than the other way round.
+    RX, RW = 52.0, 48.0
 
-    box(25, 14, 20, 14, "white", ACCENT, lw=1.1)
-    ax.text(35, 24.0, "one cell", ha="center", fontsize=7.8, color=ACCENT,
-            weight="bold")
-    ax.text(35, 20.4, "(dataset, backbone,\nattributor, split)", ha="center",
-            va="center", fontsize=6.5, color=INK, linespacing=1.3)
-    ax.text(35, 15.4, f"{n_cells} audited", ha="center", fontsize=6.5,
-            color=MUTED)
-    arrow(20.9, 21, 24.6, 21)
+    fitted = []                     # (artist, right edge it must stay inside)
 
-    # --- the two questions, and the fact that only one is always askable ----
-    ax.text(74.75, 38.6, "each cell is scored on two kinds of question",
-            ha="center", fontsize=7.4, color=INK, style="italic")
+    def question(y, colour, title, lines, band):
+        h = PAD + 4.0 + LEAD * len(lines) + 1.4 + 4.6
+        panel(RX, y, RW, h, colour, "white")
+        fitted.append((ax.text(RX + PAD, y + PAD + 1.6, title,
+                               fontsize=FS_TITLE, color=colour, weight="bold",
+                               va="center", zorder=4), RX + RW - PAD))
+        for j, s in enumerate(lines):
+            fitted.append((ax.text(RX + PAD, y + PAD + 5.6 + LEAD * j, s,
+                                   fontsize=FS_BODY, color=INK, va="center",
+                                   zorder=4), RX + RW - PAD))
+        by = y + h - 4.6            # coverage band, flush to the lower edge
+        ax.add_patch(Rectangle((RX + 0.55, by), RW - 1.1, 4.05, fc=colour,
+                               ec="none", alpha=0.09, zorder=2.5))
+        fitted.append((ax.text(RX + PAD, by + 2.0, band, fontsize=FS_META,
+                               color=colour, va="center", zorder=4),
+                       RX + RW - PAD))
+        return h
 
-    box(50, 20.5, 49.5, 15.5, "#f2f7fb", MODEL_C, lw=1.0)
-    ax.text(52.2, 32.8, "Does the attribution describe the MODEL?",
-            fontsize=7.2, color=MODEL_C, weight="bold")
-    ax.text(52.2, 29.0,
-            "occlusion faithfulness  ·  coherence  ·  stability\n"
-            "calibration linkage  ·  confidence/correctness regime\n"
-            "Fidelity±, sparsity, characterisation score",
-            fontsize=6.3, color=INK, linespacing=1.45, va="center")
-    ax.text(97.3, 21.9, f"measurable on all {n_cells} cells", ha="right",
-            fontsize=6.2, color=MODEL_C)
+    top = 1.6
+    h1 = question(
+        top, MODEL_C, "Does the attribution describe the model?",
+        ["occlusion faithfulness, motif coherence, checkpoint stability,",
+         "calibration linkage, regime stratification, Fidelity+/−"],
+        f"measurable on every one of the {n_cells} cells")
+    y2 = top + h1 + 3.0
+    h2 = question(
+        y2, CHEM_C, "Does it describe the chemistry?",
+        ["ground-truth localisation against the labelled substructure,",
+         "decomposed into RDKit motifs"],
+        f"measurable on {n_gt} cells  ·  no per-atom labels for the other {n_nogt}")
+    bottom = y2 + h2
+    mid = (top + bottom) / 2
 
-    box(50, 5.0, 49.5, 12.5, "#fbf3f7", CHEM_C, lw=1.0)
-    ax.text(52.2, 14.4, "Does it describe the CHEMISTRY?",
-            fontsize=7.2, color=CHEM_C, weight="bold")
-    ax.text(52.2, 10.9, "ground-truth localisation against the labelled\n"
-                        "substructure (motif-native, RDKit)",
-            fontsize=6.3, color=INK, linespacing=1.45, va="center")
-    ax.text(97.3, 6.4, f"measurable on {n_gt}  ·  unmeasurable on {n_nogt}",
-            ha="right", fontsize=6.2, color=CHEM_C)
+    # ---- middle: the unit every claim in the paper is made about ----------
+    CW, CH = 20.0, 17.5
+    CX, CY = 27.0, mid - CH / 2
+    panel(CX, CY, CW, CH, ACCENT, "white")
+    ax.text(CX + CW / 2, CY + 5.0, "one cell", ha="center", va="center",
+            fontsize=8.0, color=ACCENT, weight="bold")
+    ax.text(CX + CW / 2, CY + 9.6, "(dataset, backbone,\nattributor, split)",
+            ha="center", va="center", fontsize=FS_META, color=INK,
+            linespacing=1.5)
+    ax.text(CX + CW / 2, CY + 14.6, f"{n_cells} audited", ha="center",
+            va="center", fontsize=5.8, color=MUTED)
 
-    arrow(45.4, 23, 49.6, 28.2, MODEL_C)
-    arrow(45.4, 19, 49.6, 11.2, CHEM_C)
+    # ---- left: the matrix the sweep enumerates ---------------------------
+    # Height derived from the rows plus the split note, for the same reason
+    # the question panels are: a fixed height put the note on top of the last
+    # row as soon as the wording needed two lines.
+    ROWS_ = [(n_ds, "datasets"), (n_bb, "backbones"), (n_at, "attributors"),
+             (n_sp, "splits")]
+    LW = 21.0
+    LH = PAD + 8.0 + 4.6 * (len(ROWS_) - 1) + 4.6 + 4.0 + PAD
+    LX, LY = 0.0, mid - LH / 2
+    panel(LX, LY, LW, LH, RULE, "#f5f7f9")
+    ax.text(LX + PAD, LY + PAD + 1.2, " ".join("THE SWEEP"), fontsize=5.3,
+            color=MUTED, va="center", zorder=4)
+    for i, (n, what) in enumerate(ROWS_):
+        y = LY + PAD + 8.0 + 4.6 * i
+        ax.text(LX + PAD + 4.4, y, f"{n}", ha="right", va="center",
+                fontsize=8.6, color=ACCENT, zorder=4)
+        ax.text(LX + PAD + 5.8, y, what, ha="left", va="center",
+                fontsize=FS_BODY, color=INK, zorder=4)
+    ax.text(LX + PAD, LY + LH - PAD - 2.4, "random  ·  scaffold\n(Bemis–Murcko)",
+            ha="left", va="center", fontsize=5.3, color=MUTED, zorder=4,
+            linespacing=1.5)
 
-    # --- the finding that connects them ------------------------------------
-    ax.text(50, 1.4,
-            f"The two come apart: ranking attributors by a model-side score "
-            f"picks the wrong one in {sel_bad} of {sel_total} tests.",
-            ha="center", fontsize=6.9, color=INK)
-    ax.plot([2, 98], [3.4, 3.4], lw=0.5, color=GRID, zorder=1)
+    arrow(LX + LW + 1.6, mid, CX - 1.6, mid, "#8a919b")
+    arrow(CX + CW + 1.6, mid - 2.2, RX - 1.6, top + h1 * 0.62, MODEL_C)
+    arrow(CX + CW + 1.6, mid + 2.2, RX - 1.6, y2 + h2 * 0.38, CHEM_C)
+
+    # ---- the finding that connects them ----------------------------------
+    ry = bottom + 3.4
+    ax.plot([0, W], [ry, ry], lw=0.6, color=RULE, zorder=1)
+    ax.text(W / 2, ry + 3.0,
+            f"The two answers disagree: ranking attributors by a model-side "
+            f"score picks the wrong one in {sel_bad} of {sel_total} tests.",
+            ha="center", va="center", fontsize=FS_BODY, color=INK)
+
+    # Text that runs past its panel is the classic schematic defect, and it is
+    # invisible in the source: the string looks short enough. Measure instead.
+    fig.canvas.draw()
+    inv = ax.transData.inverted()
+    over = []
+    for artist, limit in fitted:
+        x1 = inv.transform((artist.get_window_extent(
+            fig.canvas.get_renderer()).x1, 0))[0]
+        if x1 > limit + 0.35:
+            over.append(f"{artist.get_text()[:44]!r} overruns by {x1 - limit:.1f}")
+    if over:
+        raise ValueError("fig_overview: text does not fit its panel:\n  "
+                         + "\n  ".join(over))
 
     save(fig, out)
 

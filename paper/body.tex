@@ -1399,6 +1399,16 @@ device count (\runDevices{} device visible), and is committed alongside the
 results. Seeds are set for Python, NumPy and torch before every stage; splits
 are deterministic functions of the dataset and seed, not of iteration order.
 
+\paragraph{How to reproduce} The sweep is a single unattended entry point,
+\texttt{python -m molsanity.run\_\-all -{}-config configs/full.yaml}, with a
+minutes-long \texttt{configs/smoke.yaml} for a smoke test; neither prompts for
+input. \texttt{make -C paper} then regenerates every figure, table and quoted
+statistic in this manuscript from the results directory and fails the build if
+the prose quotes a macro the current results do not define. Datasets download
+on first use and are checksummed against the committed manifest. No step
+requires credentials, and the credential-gated resources named in
+Section~\nameref{sec:setup} are out of scope and were never accessed.
+
 \paragraph{Resumability and caching} Each cell-run writes a marker keyed to a
 content hash of its own configuration --- cell, split, budget, model, training
 schedule and seed --- so re-invoking the sweep re-executes exactly the cells
@@ -1429,17 +1439,30 @@ that changed if a run resumed at a different point. Seeding per molecule from
 (run seed, graph id) makes each attribution a function of the molecule alone,
 which is both order-independent and resume-safe.
 
-\paragraph{Cost} \ifHasCompute{}The sweep was run as a sequence of resumed
-invocations, so the figures below are the final one --- \computeWall{} minutes
-of wall clock, re-executing \nComputeFresh{} cell-runs and reusing
-\nComputeCached{} from cache --- rather than a cold end-to-end total, which
-this run never paid and which we therefore do not quote. What generalises is
-the per-unit cost. Median training time for a (dataset, backbone, split, seed)
-checkpoint is \ifHasTrainMedian\trainMedian{}~s\else under a
-minute\fi{}. Attribution is where the cost lives, and it is not spread evenly:
-the median SubgraphX cell-run takes \cellSgxMin{}~minutes\ifHasCostRatio{}
-against \cellIgMin{} for Integrated Gradients, a factor of
-$\cellCostRatio{}$ at equal sample size\fi{}.
+\paragraph{Cost} \ifHasCompute{}The committed log covers one invocation,
+\computeStart{} to \computeEnd{}: \computeWallH{}~hours of wall clock over
+\nComputeCellRuns{} cell-runs, of which \nComputeFresh{} were executed and
+\nComputeCached{} served from cache. Because the sweep resumed onto a partly
+populated cache, that figure is \emph{not} what a cold run costs, and we do not
+present it as one.
+
+For a reader starting from an empty cache we give an estimate rather than a
+measurement, and label it as such:\ifHasColdEstimate{} pricing every one of the
+\nComputeCellRuns{} planned cell-runs at the median observed in this log for
+its own attributor gives roughly \computeColdEstH{}~hours on a single
+GPU\fi{}. The audit is embarrassingly parallel across cells and resumable at
+cell granularity, so that is a serial upper bound rather than a required
+sitting.
+
+The per-unit costs are what generalise. Median training time for a (dataset,
+backbone, split, seed) checkpoint is
+\ifHasTrainMedian\trainMedian{}~s\else under a minute\fi{}; training is
+negligible next to attribution. Attribution cost is concentrated rather than
+spread: the median SubgraphX cell-run takes
+\cellSgxMin{}~minutes\ifHasCostRatio{} against \cellIgMin{} for Integrated
+Gradients, a factor of $\cellCostRatio{}$ at equal sample size\fi{}, and the
+\nCellSgx{} SubgraphX cell-runs alone account for $\sgxComputeShare{}\%$ of the
+\computeFreshH{}~hours of attribution compute in this log.
 
 We report that ratio as a finding rather than as housekeeping. Compute cost is
 a selection pressure on which attributors get benchmarked at all, and it pushes
@@ -1462,14 +1485,12 @@ methods it audits rather than reimplementing them, and would not be possible
 without the authors of those packages releasing them openly. Compute for the
 reported sweep was provided by Google Colab.
 
-\paragraph{Generative AI disclosure} A large language model (Anthropic Claude)
-was used as a coding and drafting assistant in implementing MolSanity and
-preparing this manuscript. It was not used to generate, select or interpret
-results. Every experimental number in this paper is computed by the released
-code from the committed artifacts, and every figure and table is generated from
-those artifacts rather than transcribed (\S\ref{sec:repro}), so no reported
-value depends on a language model having produced it. The authors designed the
-study, verified the analyses, and take full responsibility for the content.
+\paragraph{Generative AI disclosure} An AI coding assistant was used during
+software development and manuscript preparation. It was not used to generate,
+select or interpret results: every number, figure and table is computed by the
+released code from the committed artifacts (\S\ref{sec:repro}). The authors
+designed the study, verified the analyses and take full responsibility for the
+content.
 
 \section{Data and code availability}
 \label{sec:availability}

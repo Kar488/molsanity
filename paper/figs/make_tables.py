@@ -355,11 +355,18 @@ def macros():
     if logs:
         lines = Path(logs[-1]).read_text().splitlines()
         stamp = lambda l: _dt.datetime.strptime(l[:19], "%Y-%m-%d %H:%M:%S")
-        add("computeWall", f"{(stamp(lines[-1]) - stamp(lines[0])).total_seconds() / 60:.0f}")
+        _t0, _t1 = stamp(lines[0]), stamp(lines[-1])
+        _wall = (_t1 - _t0).total_seconds()
+        add("computeWall", f"{_wall / 60:.0f}")
+        add("computeWallH", f"{_wall / 3600:.1f}")
+        add("computeStart", _t0.strftime("%Y-%m-%d %H:%M"))
+        add("computeEnd", _t1.strftime("%Y-%m-%d %H:%M"))
+        add("nComputeLogs", len(logs))
         n_done = sum(1 for l in lines if "] DONE" in l)
         n_cached = sum(1 for l in lines if "[cached]" in l)
         add("nComputeCached", n_cached)
         add("nComputeFresh", n_done - n_cached)
+        add("nComputeCellRuns", n_done)
         # NB: never bind `m` here -- add() closes over the accumulator list of
         # that name, and a loop variable called `m` silently replaces it with a
         # regex match, so every later add() raises on a NoneType.
@@ -390,6 +397,31 @@ def macros():
             a = sorted(by["SubgraphX"])[len(by["SubgraphX"]) // 2]
             b = sorted(by["IntegratedGradients"])[len(by["IntegratedGradients"]) // 2]
             add("cellCostRatio", f"{a / b:.0f}")
+        # What a reader who starts from an empty cache should budget. The
+        # committed invocation reused part of its matrix, so its wall clock is
+        # not that number; this prices every planned cell-run at the median
+        # observed for its own attributor in this same log. Reported as an
+        # estimate, and labelled as one -- a cold total is not something this
+        # run ever paid, and quoting a measured-looking figure for it would be
+        # inventing a measurement.
+        _med = {a: sorted(v)[len(v) // 2] for a, v in by.items() if v}
+        _planned = {}
+        for l in lines:
+            hit = _re.search(r"\[cell (\S+?)\] DONE", l)
+            if hit:
+                a = hit.group(1).split("__")[2]
+                _planned[a] = _planned.get(a, 0) + 1
+        add_flag("HasColdEstimate", bool(_med) and set(_planned) <= set(_med))
+        if _med and set(_planned) <= set(_med):
+            add("computeColdEstH",
+                f"{sum(n * _med[a] for a, n in _planned.items()) / 3600:.0f}")
+        # Total fresh compute in the log, and how much of it one attributor
+        # took, which is the cost-as-selection-pressure argument in one number.
+        _fresh_s = sum(sum(v) for v in by.values())
+        if _fresh_s:
+            add("computeFreshH", f"{_fresh_s / 3600:.1f}")
+            if by.get("SubgraphX"):
+                add("sgxComputeShare", f"{100 * sum(by['SubgraphX']) / _fresh_s:.0f}")
         trains, last = [], None
         for l in lines:
             dated = _re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", l)

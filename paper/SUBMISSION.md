@@ -94,12 +94,13 @@ regenerates from the committed artifacts.
 > be possible without the authors of those packages releasing them openly.
 > Compute for the reported sweep was provided by Google Colab.
 >
-> **Generative AI disclosure.** The software, experiments and manuscript were
-> developed with the assistance of a large language model (Anthropic Claude)
-> used as a coding and drafting tool. All experimental results were produced by
-> the released code, and all reported numbers are generated from the committed
-> artifacts rather than written by hand; the authors verified the analyses and
-> take full responsibility for the content.
+> **Generative AI disclosure.** An AI coding assistant was used during
+> software development and manuscript preparation. It was not used to
+> generate, select or interpret results: all experimental results were
+> produced by the released code, and every reported number, figure and table
+> is generated from the committed artifacts rather than written by hand. The
+> authors designed the study, verified the analyses and take full
+> responsibility for the content.
 
 Three things to check before pasting:
 

@@ -68,20 +68,20 @@ One folder per audited cell (`dataset__backbone__attributor__split`), each with 
 | [`cells/BBBP__MPNN__IntegratedGradients__random/`](cells/BBBP__MPNN__IntegratedGradients__random/) | case_molecule, gt_validation |
 | [`cells/BBBP__MPNN__IntegratedGradients__scaffold/`](cells/BBBP__MPNN__IntegratedGradients__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__GNNExplainer__random/`](cells/Benzene__GINE__GNNExplainer__random/) | gt_validation |
-| [`cells/Benzene__GINE__GNNExplainer__scaffold/`](cells/Benzene__GINE__GNNExplainer__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__GNNExplainer__scaffold/`](cells/Benzene__GINE__GNNExplainer__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__GuidedBackprop__random/`](cells/Benzene__GINE__GuidedBackprop__random/) | gt_validation |
-| [`cells/Benzene__GINE__GuidedBackprop__scaffold/`](cells/Benzene__GINE__GuidedBackprop__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__GuidedBackprop__scaffold/`](cells/Benzene__GINE__GuidedBackprop__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__InputXGradient__random/`](cells/Benzene__GINE__InputXGradient__random/) | gt_validation |
-| [`cells/Benzene__GINE__InputXGradient__scaffold/`](cells/Benzene__GINE__InputXGradient__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__InputXGradient__scaffold/`](cells/Benzene__GINE__InputXGradient__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__IntegratedGradients__random/`](cells/Benzene__GINE__IntegratedGradients__random/) | gt_validation |
-| [`cells/Benzene__GINE__IntegratedGradients__scaffold/`](cells/Benzene__GINE__IntegratedGradients__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__IntegratedGradients__scaffold/`](cells/Benzene__GINE__IntegratedGradients__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__PGExplainer__random/`](cells/Benzene__GINE__PGExplainer__random/) | gt_validation |
-| [`cells/Benzene__GINE__PGExplainer__scaffold/`](cells/Benzene__GINE__PGExplainer__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__PGExplainer__scaffold/`](cells/Benzene__GINE__PGExplainer__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__PGExplainer__scaffold (1)/`](cells/Benzene__GINE__PGExplainer__scaffold (1)/) | gt_validation |
 | [`cells/Benzene__GINE__Saliency__random/`](cells/Benzene__GINE__Saliency__random/) | gt_validation |
-| [`cells/Benzene__GINE__Saliency__scaffold/`](cells/Benzene__GINE__Saliency__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__Saliency__scaffold/`](cells/Benzene__GINE__Saliency__scaffold/) | case_molecule, gt_validation |
 | [`cells/Benzene__GINE__SubgraphX__random/`](cells/Benzene__GINE__SubgraphX__random/) | gt_validation |
-| [`cells/Benzene__GINE__SubgraphX__scaffold/`](cells/Benzene__GINE__SubgraphX__scaffold/) | gt_validation |
+| [`cells/Benzene__GINE__SubgraphX__scaffold/`](cells/Benzene__GINE__SubgraphX__scaffold/) | case_molecule, gt_validation |
 | [`cells/ClinTox__GINE__GNNExplainer__random/`](cells/ClinTox__GINE__GNNExplainer__random/) | case_molecule, gt_validation |
 | [`cells/ClinTox__GINE__GNNExplainer__scaffold/`](cells/ClinTox__GINE__GNNExplainer__scaffold/) | case_molecule, gt_validation |
 | [`cells/ClinTox__GINE__IntegratedGradients__random/`](cells/ClinTox__GINE__IntegratedGradients__random/) | case_molecule, gt_validation |
@@ -97,19 +97,19 @@ One folder per audited cell (`dataset__backbone__attributor__split`), each with 
 | [`cells/ESOL__GINE__IntegratedGradients__random/`](cells/ESOL__GINE__IntegratedGradients__random/) | case_molecule, gt_validation |
 | [`cells/ESOL__GINE__IntegratedGradients__scaffold/`](cells/ESOL__GINE__IntegratedGradients__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__GNNExplainer__random/`](cells/FluorideCarbonyl__GINE__GNNExplainer__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__GNNExplainer__scaffold/`](cells/FluorideCarbonyl__GINE__GNNExplainer__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__GNNExplainer__scaffold/`](cells/FluorideCarbonyl__GINE__GNNExplainer__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__GuidedBackprop__random/`](cells/FluorideCarbonyl__GINE__GuidedBackprop__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__GuidedBackprop__scaffold/`](cells/FluorideCarbonyl__GINE__GuidedBackprop__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__GuidedBackprop__scaffold/`](cells/FluorideCarbonyl__GINE__GuidedBackprop__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__InputXGradient__random/`](cells/FluorideCarbonyl__GINE__InputXGradient__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__InputXGradient__scaffold/`](cells/FluorideCarbonyl__GINE__InputXGradient__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__InputXGradient__scaffold/`](cells/FluorideCarbonyl__GINE__InputXGradient__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__IntegratedGradients__random/`](cells/FluorideCarbonyl__GINE__IntegratedGradients__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__IntegratedGradients__scaffold/`](cells/FluorideCarbonyl__GINE__IntegratedGradients__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__IntegratedGradients__scaffold/`](cells/FluorideCarbonyl__GINE__IntegratedGradients__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__PGExplainer__random/`](cells/FluorideCarbonyl__GINE__PGExplainer__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__PGExplainer__scaffold/`](cells/FluorideCarbonyl__GINE__PGExplainer__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__PGExplainer__scaffold/`](cells/FluorideCarbonyl__GINE__PGExplainer__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__Saliency__random/`](cells/FluorideCarbonyl__GINE__Saliency__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__Saliency__scaffold/`](cells/FluorideCarbonyl__GINE__Saliency__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__Saliency__scaffold/`](cells/FluorideCarbonyl__GINE__Saliency__scaffold/) | case_molecule, gt_validation |
 | [`cells/FluorideCarbonyl__GINE__SubgraphX__random/`](cells/FluorideCarbonyl__GINE__SubgraphX__random/) | gt_validation |
-| [`cells/FluorideCarbonyl__GINE__SubgraphX__scaffold/`](cells/FluorideCarbonyl__GINE__SubgraphX__scaffold/) | gt_validation |
+| [`cells/FluorideCarbonyl__GINE__SubgraphX__scaffold/`](cells/FluorideCarbonyl__GINE__SubgraphX__scaffold/) | case_molecule, gt_validation |
 | [`cells/FreeSolv__GINE__IntegratedGradients__random/`](cells/FreeSolv__GINE__IntegratedGradients__random/) | case_molecule, gt_validation |
 | [`cells/FreeSolv__GINE__IntegratedGradients__scaffold/`](cells/FreeSolv__GINE__IntegratedGradients__scaffold/) | case_molecule, gt_validation |
 | [`cells/Lipophilicity__GINE__IntegratedGradients__random/`](cells/Lipophilicity__GINE__IntegratedGradients__random/) | case_molecule, gt_validation |

@@ -6,14 +6,14 @@ low GT AUROC would then be a fact about the model, not the explanation.
 This is testable. Occlude the ground-truth substructure; if the
 prediction collapses, the model *is* using it.
 
-- molecules where the model reads the ground truth: **7311**
-- molecules where it does not (Faber applies): **8452**
-- mean GT AUROC when the model reads it: **0.778**
-- mean GT AUROC when it does not: **0.721**
+- molecules where the model reads the ground truth: **7524**
+- molecules where it does not (Faber applies): **8085**
+- mean GT AUROC when the model reads it: **0.781**
+- mean GT AUROC when it does not: **0.719**
 
 ## The number that answers the objection
 
-**1374** molecules (0.188 of those the model
+**1395** molecules (0.185 of those the model
 demonstrably reads the ground truth from) still receive an attribution
 anti-aligned with it. On those, no appeal to an alternative rationale
 explains the result: the attribution misdescribes a model that is

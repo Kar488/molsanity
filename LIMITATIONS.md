@@ -41,8 +41,25 @@ current alongside RESULTS.md.
   `frac_grouped = 0.000, degenerate = True` on all three — every graph in its own
   bucket. Their "scaffold" partition is deterministic and reproducible but is not
   a chemical shift, and they are excluded from the shift analysis and reported as
-  random-split evidence only. The shift contrast rests on the molecular arms:
-  MUTAG (proxy ground truth) and MolMotif (exact ground truth by construction).
+  random-split evidence only. The shift contrast rests on the five molecular
+  arms: MUTAG (proxy ground truth), MolMotif and MolMotifHard (exact by our own
+  construction), and Benzene and FluorideCarbonyl (per-atom rationales published
+  by Sanchez-Lengeling et al., repackaged by GraphXAI — the only two we neither
+  designed nor labelled).
+- **The pooled shift effect did not survive the two new arms, and that is now
+  the reported result.** Restricted to MUTAG/MolMotif/MolMotifHard the pooled
+  faithfulness–correctness correlation runs +0.009 (p = 0.962) → −0.356
+  (p = 0.042) over 33 cells. Over all five arms and 47 cells it is +0.222
+  (p = 0.134) → −0.124 (p = 0.405): no effect in either regime. Both figures are
+  recomputed from the same run by restricting the arm set. Per-arm values under
+  shift span −0.564 (MUTAG) to +0.786 (FluorideCarbonyl), so no pooled
+  coefficient describes any single arm. The paper reports the five-arm result
+  and records the supersession explicitly.
+- **Benzene and FluorideCarbonyl are single-functional-group detection tasks.**
+  They are the only externally labelled molecular arms and are weighted
+  accordingly, but a rationale that is one functional group is an easier
+  localisation problem than the multi-centre rationales behind most real ADMET
+  endpoints. They widen the evidence; they do not make it representative.
 - **CPU-only development environment.** All defaults are CPU-tractable. The
   overnight full matrix assumes a single modern GPU; without one, use `--budget`
   to run a reduced-but-honest subset (clearly labelled in reports).

@@ -314,3 +314,112 @@ def test_split_tables_lose_no_rows():
     n_gt = sum(1 for r in rows if r.get("gt_auroc") is not None)
     assert emitted("tab_tier1_*.tex") == n_gt, (
         "ground-truth floats emit a different number of rows than the data has")
+
+
+def test_no_selection_verdict_is_asserted_by_hand():
+    """A verdict about a selection test must come from the record, not prose.
+
+    This is the error that survived eight regenerations of the macro set. The
+    manuscript said, of MUTAG on the random split, that occlusion rho and
+    Fidelity+ "both select GuidedBP, which is also the ground-truth-best" --
+    while the very table on the facing page, built from the same JSON, recorded
+    all three metrics as mismatches, the occlusion pick at GT AUROC 0.037
+    against GNNExplainer's 0.858, median paired gap 0.978, p < 0.001. Every
+    *number* in the sentence was a generated macro and every number was right.
+    The word that made it a claim -- "also" -- was typed, so nothing checked it,
+    and the paper's headline ("in distribution it mostly does not") was built on
+    top of it.
+
+    A verdict phrase is only safe if it is derived. So: forbid the phrasings
+    that assert agreement between a faithfulness pick and the ground truth, and
+    require any such claim to be spelled with the mismatch-count macros, which
+    are recomputed from the records on every build.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = " ".join((root / "body.tex").read_text().split())
+    body += " " + " ".join((root / "abstract.tex").read_text().split())
+    banned = [
+        r"which is also the ground-?truth-?best",
+        r"correctly (?:selects|picks|identifies) the ground-?truth-?best",
+        r"(?:selects|picks) the ground-?truth-?best attributor",
+        r"agrees with the ground truth on (?:all|every)",
+        r"harmless in distribution",
+        r"in distribution it mostly does not",
+    ]
+    hits = [p for p in banned if re.search(p, body, re.I)]
+    assert not hits, (
+        "the prose asserts a selection verdict instead of deriving it: "
+        + "; ".join(hits)
+        + "\nUse \\nSelMismatch/\\nSelMismatchInd/\\nSelMismatchShift, which are "
+          "recomputed from the selection records on every build.")
+
+
+def test_every_arm_the_prose_names_is_in_the_pooled_arm_set():
+    """An arm excluded from the pool must not be argued from in the pool.
+
+    Benzene and FluorideCarbonyl were audited for one reported sweep while
+    sitting outside MOLECULAR_GT, because a loader bug made their scaffold
+    splits degenerate. That exclusion was correct then and wrong the moment the
+    loader was fixed -- an exclusion criterion that outlives its justification
+    is a criterion applied to the result. This asserts the two lists agree: any
+    dataset the selection table treats as a molecular ground-truth arm is also
+    an arm the pooled estimate is computed over.
+    """
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper tables not generated")
+    sys.path.insert(0, str(FIGS))
+    pytest.importorskip("msdata")
+    spec = importlib.util.spec_from_file_location(
+        "make_tables", root / "figs" / "make_tables.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    arms = {ds for ds, _, _ in mod.ARMS}
+    pooled = set(mod.MOLECULAR_GT) if hasattr(mod, "MOLECULAR_GT") else None
+    if pooled is None:
+        pytest.skip("MOLECULAR_GT is local to build(); checked via macros instead")
+    assert arms <= pooled, (
+        f"arms in the selection table but not the pooled estimate: {sorted(arms - pooled)}")
+
+
+def test_the_pasted_abstract_matches_the_manuscript():
+    """The abstract a reader sees first is the one nothing was checking.
+
+    SUBMISSION.md carried a hand-pasted plain-text abstract for preprint
+    servers and submission forms. It went stale silently -- still quoting a
+    pooled correlation of -0.353 at p = 0.044 over 33 cells after the five-arm
+    run had replaced those numbers -- and unlike the PDF nothing regenerated
+    it. It is now generated from abstract.tex with the committed macros
+    expanded; this asserts the copy on disk is what the generator produces.
+    """
+    import importlib.util
+    import subprocess
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    gen = root / "make_submission_abstract.py"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper macros not generated")
+    r = subprocess.run([sys.executable, str(gen), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_pasted_abstract_carries_no_latex():
+    """A plain-text abstract with a stray \\macro in it is pasted as-is.
+
+    Preprint forms take the text verbatim, so an unexpanded command or a
+    leftover brace ships to readers. Cheap to assert, and the detex pass is
+    regex-based, so it is worth asserting.
+    """
+    root = Path(__file__).resolve().parents[1] / "paper"
+    md = (root / "SUBMISSION.md").read_text()
+    head = "## Abstract (plain text)"
+    if head not in md:
+        pytest.skip("no plain-text abstract section")
+    body = md.split(head, 1)[1].split("\n## ", 1)[0]
+    bad = [tok for tok in ("\\", "{", "}", "$", "~") if tok in body]
+    assert not bad, f"LaTeX leaked into the pasted abstract: {bad}"

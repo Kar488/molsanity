@@ -40,7 +40,8 @@ ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
 # ones whose "scaffold" split is a chemical shift rather than an arbitrary
 # deterministic partition. Panelling a non-molecular arm here would show a
 # shift contrast the data cannot support.
-ARMS = [("MUTAG", "GINE"), ("MolMotifHard", "GINE"), ("MolMotif", "GINE")]
+ARMS = [("MUTAG", "GINE"), ("MolMotifHard", "GINE"), ("MolMotif", "GINE"),
+        ("Benzene", "GINE"), ("FluorideCarbonyl", "GINE")]
 # The backbone sweep is read off the exact-ground-truth arm; must stay in step
 # with ``bb_ds`` in make_tables.py, which defines the \bb* macros quoted in the
 # caption and in the prose.
@@ -178,7 +179,11 @@ def fig_faithfulness_correctness(out: Path):
 def fig_dissociation(out: Path):
     marks = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
              "characterization": "charact."}
-    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, 2.35 * len(ARMS)))
+    # One row per arm. Five arms at the natural row height overruns the text
+    # block, so rows are compressed to fit a full-page float rather than
+    # dropping an arm from the figure the caption enumerates.
+    row_h = min(2.35, 8.55 / len(ARMS))
+    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, row_h * len(ARMS)))
     for row, (ds, bb) in enumerate(ARMS):
         for col, (sp, title) in enumerate([("random", "in-distribution"),
                                            ("scaffold", "scaffold shift")]):
@@ -224,22 +229,39 @@ def fig_dissociation(out: Path):
                     pv = x["paired_gt_pvalue"]
                     tag += "*" if (pv is not None and pv < 0.05) else "†"
                 picks.setdefault(x["faithfulness_pick"], []).append(tag)
+            # Two metrics can pick adjacent attributors, and a two- or
+            # three-line callout is taller than one bar row, so anchoring each
+            # note at its own row overlaps the note above it. Walk them in row
+            # order, push any that would collide downward, and draw a leader
+            # line so a displaced note still points at the bar it describes.
+            notes = []
             for a, labels in picks.items():
-                i = attrs.index(a)
-                sig = any(t.endswith("*") for t in labels)
                 body = (", ".join(labels[:2]) + ",\n" + ", ".join(labels[2:])
                         if len(labels) > 2 else ", ".join(labels))
-                ax.annotate("← ranked 1st by\n" + body, (1.08, i), fontsize=5.5,
-                            color="#8B1A1A" if sig else MUTED, va="center",
-                            linespacing=1.25)
+                text = "ranked 1st by\n" + body
+                notes.append((attrs.index(a), text, text.count("\n") + 1,
+                              any(t.endswith("*") for t in labels)))
+            y_free = -1e9
+            for i, text, n_lines, sig in sorted(notes):
+                y = max(i, y_free + 0.55 * n_lines)
+                ax.annotate(
+                    text, xy=(1.02, i), xytext=(1.14, y), fontsize=5.5,
+                    color="#8B1A1A" if sig else MUTED, va="center",
+                    linespacing=1.25,
+                    arrowprops=dict(arrowstyle="-", lw=0.5, shrinkA=1, shrinkB=1,
+                                    color="#8B1A1A" if sig else MUTED,
+                                    connectionstyle="arc3,rad=0"))
+                y_free = y + 0.55 * n_lines
             rc = sel["rank_correlation"]
             txt = " · ".join(f"{marks[k]} {v['rho']:+.2f}" for k, v in rc.items())
-            ax.text(0.0, -0.22 if row < len(ARMS) - 1 else -0.42,
+            # The last row carries the x-axis label, so its correlation line
+            # has to clear it; the others only clear the tick labels.
+            ax.text(0.0, -0.24 if row < len(ARMS) - 1 else -0.62,
                     "faithfulness↔truth rank corr.:  " + txt,
                     transform=ax.transAxes, fontsize=5.7, color=INK, va="top")
     for row in range(len(ARMS)):
         panel_label(axes[row][0], "abcdef"[row], dx=-0.26, dy=1.20)
-    axes[-1][1].text(0.0, -0.60,
+    axes[-1][1].text(0.0, -0.84,
                      "*  selected attributor is significantly worse than the "
                      "ground-truth-best  ·  † mismatch, not significant",
                      transform=axes[-1][1].transAxes, ha="left", fontsize=5.7,

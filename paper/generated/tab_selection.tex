@@ -1,6 +1,6 @@
 \begin{table*}[t]
 \centering
-\caption{\textbf{Does a faithfulness-only ranking pick the ground-truth-best attributor?} 3 molecular cell families, each audited on both splits with the same backbone and the same 7 attributors, so within a family only the split changes and the contrast isolates distribution shift rather than confounding it with a change of dataset. Each row ranks the attributors by one faithfulness/fidelity metric and asks whether its top choice is the one the ground truth ranks best. $p$ is a paired Wilcoxon test on per-molecule GT AUROC between the selected and the ground-truth-best attributor, over the molecules both audited, and $q$ its Benjamini--Hochberg adjustment over all 18 selection tests in this table. Because a paired per-molecule test needs the same molecules on both sides and the split is a function of the seed, this table is computed within a single seed rather than across the three; the across-seed spread for the same cells is supplementary material.}
+\caption{\textbf{Does a faithfulness-only ranking pick the ground-truth-best attributor?} 5 molecular cell families, each audited on both splits with the same backbone and the same 7 attributors, so within a family only the split changes and the contrast isolates distribution shift rather than confounding it with a change of dataset. Each row ranks the attributors by one faithfulness/fidelity metric and asks whether its top choice is the one the ground truth ranks best. $p$ is a paired Wilcoxon test on per-molecule GT AUROC between the selected and the ground-truth-best attributor, over the molecules both audited, and $q$ its Benjamini--Hochberg adjustment over all 30 selection tests in this table. Because a paired per-molecule test needs the same molecules on both sides and the split is a function of the seed, this table is computed within a single seed rather than across the three; the across-seed spread for the same cells is supplementary material.}
 \label{tab:selection}
 \small
 \renewcommand{\arraystretch}{1.3}
@@ -14,7 +14,7 @@ MUTAG$\cdot$GINE, $n$=58 & in-distribution & occlusion $\rho$ & GuidedBP & 0.037
  &  & characterisation & SubgraphX & 0.348 & GNNExpl. & 0.858 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.821 \\
 \addlinespace[2pt]
 MUTAG$\cdot$GINE, $n$=53 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.013 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.643 \\
- &  & Fidelity+ & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.107 \\
+ &  & Fidelity+ & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.321 \\
  &  & characterisation & SubgraphX & 0.330 & GNNExpl. & 0.826 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.036 \\
 \addlinespace[2pt]
 MolMotifHard$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & SubgraphX & 0.421 & Saliency & 0.994 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.286 \\
@@ -29,9 +29,25 @@ MolMotif$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & GNNExpl. & 0
  &  & Fidelity+ & GuidedBP & 0.998 & Input$\times$Grad & 0.999 & \textbf{yes} & 0.091 & 0.091 & 0.750 \\
  &  & characterisation & SubgraphX & 0.556 & Input$\times$Grad & 0.999 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.107 \\
 \addlinespace[2pt]
-MolMotif$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & IG & 0.939 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.286 \\
- &  & Fidelity+ & IG & 0.939 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.321 \\
- &  & characterisation & IG & 0.939 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.286 \\
+MolMotif$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & IG & 0.939 & Input$\times$Grad & 0.998 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.071 \\
+ &  & Fidelity+ & IG & 0.939 & Input$\times$Grad & 0.998 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.036 \\
+ &  & characterisation & IG & 0.939 & Input$\times$Grad & 0.998 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.143 \\
+\addlinespace[2pt]
+Benzene$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & GuidedBP & 0.743 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.054 \\
+ &  & Fidelity+ & SubgraphX & 0.457 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & $-$0.432 \\
+ &  & characterisation & SubgraphX & 0.457 & Input$\times$Grad & 1.000 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.126 \\
+\addlinespace[2pt]
+Benzene$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.997 & IG & 0.999 & \textbf{yes} & 0.043 & 0.045 & 0.607 \\
+ &  & Fidelity+ & GuidedBP & 0.997 & IG & 0.999 & \textbf{yes} & 0.043 & 0.045 & 0.893 \\
+ &  & characterisation & SubgraphX & 0.770 & IG & 0.999 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.571 \\
+\addlinespace[2pt]
+FluorideCarbonyl$\cdot$GINE, $n$=200 & in-distribution & occlusion $\rho$ & GuidedBP & 0.881 & GuidedBP & 0.881 & no & --- & --- & 0.786 \\
+ &  & Fidelity+ & SubgraphX & 0.538 & GuidedBP & 0.881 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.000 \\
+ &  & characterisation & SubgraphX & 0.538 & GuidedBP & 0.881 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.250 \\
+\addlinespace[2pt]
+FluorideCarbonyl$\cdot$GINE, $n$=200 & scaffold shift & occlusion $\rho$ & GuidedBP & 0.937 & GuidedBP & 0.937 & no & --- & --- & 0.750 \\
+ &  & Fidelity+ & IG & 0.833 & GuidedBP & 0.937 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.893 \\
+ &  & characterisation & IG & 0.833 & GuidedBP & 0.937 & \textbf{yes} & $<$0.001 & $<$0.001 & 0.893 \\
 \bottomrule
 \end{tabular}}
 \end{table*}

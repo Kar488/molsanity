@@ -52,7 +52,19 @@ ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
 # GT AUROC ~0.99, where ranking attributors is noise around a ceiling; it is
 # reported as a probe that the audit works, not as a second shift contrast.
 ARMS = [("MUTAG", "GINE", "mut"), ("MolMotifHard", "GINE", "hard"),
-        ("MolMotif", "GINE", "mol")]
+        ("MolMotif", "GINE", "mol"), ("Benzene", "GINE", "benz"),
+        ("FluorideCarbonyl", "GINE", "fluor")]
+
+# The arms the pooled faithfulness-correctness estimate is computed over: the
+# molecular ground-truth datasets, the only ones whose "scaffold" split is a
+# chemical shift rather than an arbitrary deterministic partition. Kept at
+# module scope, and kept a superset of ARMS, so a test can assert that an arm
+# the selection table argues from is also an arm the pool is computed over.
+MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard",
+                "Benzene", "FluorideCarbonyl")
+# The subset available to an earlier version of this analysis, recomputed on
+# the same run so the prose can compare the two without quoting either.
+PRIOR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
 ARM = ARMS[0][:2]
 
 
@@ -283,31 +295,54 @@ def macros():
     # -0.353 (p = 0.044). With the median across-seed sd on occlusion rho at
     # 0.146, one seed is not the quantity to correlate, and the two answers sit
     # on opposite sides of every conventional threshold.
-    # Benzene and FluorideCarbonyl are molecular and exactly labelled and are
-    # deliberately NOT here yet. In the 2026-08-05 sweep their loader dropped
-    # the archive's SMILES, so Bemis-Murcko had nothing to work with and all
-    # six of their scaffold splits came back DEGENERATE at 0.0% grouped. Their
-    # "shift" rows are an arbitrary deterministic partition, not a chemical
-    # regime, and pooling them here would put non-shift data into the shift
-    # contrast -- the exact error this paper is about. They join this tuple
-    # when a run with SCAFFOLD_SPLIT_VERSION >= 3 gives them a real partition.
-    MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
-    by_cell = {}
-    for r in CLS:
-        if r["dataset"] not in MOLECULAR_GT:
-            continue
-        g, o = r.get("gt_auroc"), r.get("occ_spearman")
-        if g is None or o is None:
-            continue
-        key = (r["dataset"], r["backbone"], r["attributor"], r["split"])
-        by_cell.setdefault(key, []).append((g, o))
-    per_cell = {}
-    for (ds, bb, at, sp), vals in by_cell.items():
-        per_cell.setdefault((ds, bb, at), {})[sp] = (
-            st.mean(v[0] for v in vals), st.mean(v[1] for v in vals))
+    # Benzene and FluorideCarbonyl sat out one reported sweep. In the
+    # 2026-08-05 run their loader dropped the archive's SMILES, so Bemis-Murcko
+    # had nothing to work with and all six of their scaffold splits came back
+    # DEGENERATE at 0.0% grouped; pooling them then would have put a
+    # deterministic partition into the shift contrast. SCAFFOLD_SPLIT_VERSION 3
+    # carries the SMILES and the 2026-08-06 run gives them real partitions, so
+    # they are in. They are in whatever they do to the pooled estimate: the
+    # exclusion was justified by the degenerate split and by nothing else, and
+    # leaving them out once that reason expired would be selecting arms on
+    # their result.
+    def _paired_cells(arms):
+        """(dataset, backbone, attributor) -> {split: (gt, occ)} over `arms`."""
+        by = {}
+        for r in CLS:
+            if r["dataset"] not in arms:
+                continue
+            g, o = r.get("gt_auroc"), r.get("occ_spearman")
+            if g is None or o is None:
+                continue
+            by.setdefault((r["dataset"], r["backbone"], r["attributor"],
+                           r["split"]), []).append((g, o))
+        out = {}
+        for (ds, bb, at, sp), vals in by.items():
+            out.setdefault((ds, bb, at), {})[sp] = (
+                st.mean(v[0] for v in vals), st.mean(v[1] for v in vals))
+        return {k: v for k, v in out.items() if {"random", "scaffold"} <= set(v)}
+
+    per_cell = _paired_cells(MOLECULAR_GT)
     seeds = [r.get("n_seeds", 1) for r in CLS
              if r["dataset"] in MOLECULAR_GT and r.get("gt_auroc") is not None]
     add("nPooledSeeds", min(seeds) if seeds else 1)
+
+    # The same pooled statistic restricted to the three arms this work reported
+    # before Benzene and FluorideCarbonyl were loadable. Recomputed here, from
+    # this run's artefacts, rather than quoted from the earlier preprint: the
+    # prose compares the two and neither number should be typed by hand.
+    _prior = _paired_cells(PRIOR_GT)
+    add_flag("HasPriorPool", len(_prior) >= 8 and len(_prior) < len(per_cell))
+    if _prior:
+        _pk = sorted(_prior)
+        add("nPooledPriorCells", len(_pk))
+        add("nPooledPriorArms", len({k[0] for k in _pk}))
+        for sp, tag in (("random", "Ind"), ("scaffold", "Shift")):
+            r, pv = D.spearman([_prior[k][sp][1] for k in _pk],
+                               [_prior[k][sp][0] for k in _pk])
+            add(f"pooledPrior{tag}Rho", num(r))
+            add(f"pooledPrior{tag}P",
+                "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
 
     # --- compute cost, parsed from the run log, never typed --------------------
     # JCIM asks for reproduction cost. Timings are derived from the committed
@@ -366,7 +401,7 @@ def macros():
         if trains:
             trains.sort()
             add("trainMedian", f"{trains[len(trains) // 2]:.0f}")
-    paired = {k: v for k, v in per_cell.items() if {"random", "scaffold"} <= set(v)}
+    paired = per_cell          # _paired_cells already keeps only paired cells
     add_flag("HasPooledMolecular", len(paired) >= 8)
     if len(paired) >= 8:
         ks = sorted(paired)
@@ -386,7 +421,10 @@ def macros():
             pv = D.paired_wilcoxon(a, b)["p"]
             add(f"pooledShift{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
         # Per-arm direction, so a contradicting arm cannot hide in the pool.
-        agree = 0
+        # With five arms the spread of the per-arm shift correlation is the
+        # result, not noise around a pooled mean, so the endpoints and the arms
+        # holding them are emitted for the prose to quote.
+        agree, per_arm_shift = 0, {}
         for ds in sorted({k[0] for k in ks}):
             sub = [k for k in ks if k[0] == ds]
             if len(sub) < 4:
@@ -395,10 +433,19 @@ def macros():
                                [paired[k]["random"][0] for k in sub])
             r1, _ = D.spearman([paired[k]["scaffold"][1] for k in sub],
                                [paired[k]["scaffold"][0] for k in sub])
+            per_arm_shift[ds] = r1
             if r1 < r0:
                 agree += 1
         add("nArmsAgree", agree)
         add("nArmsTotal", len({k[0] for k in ks}))
+        if per_arm_shift:
+            lo = min(per_arm_shift, key=per_arm_shift.get)
+            hi = max(per_arm_shift, key=per_arm_shift.get)
+            add("armShiftRhoMin", num(per_arm_shift[lo]))
+            add("armShiftRhoMax", num(per_arm_shift[hi]))
+            add("armShiftRhoMinDataset", lo)
+            add("armShiftRhoMaxDataset", hi)
+            add("nArmsShiftNeg", sum(1 for v in per_arm_shift.values() if v < 0))
 
         # Leave-one-arm-out. The pooled p is the number a reader will quote, so
         # the paper must say how much of it any single arm carries -- the first
@@ -450,6 +497,60 @@ def macros():
             for x in sel["selections"]:
                 _qmap[(ds, bb, sp, x["faithfulness_metric"])] = next(_qvals)
     add("nSelectionTests", len(_pvals))
+
+    # --- how often the selection is wrong, and how much it costs ---------------
+    # Counted over the same tests the table prints, per regime, because the
+    # regime asymmetry is the claim. The cost of a wrong pick is the gap in
+    # ground-truth localisation between the ground-truth-best attributor and
+    # the one the faithfulness metric chose: a mismatch that gives up 0.002
+    # AUROC and one that gives up 0.821 are the same row in the "mismatch"
+    # column and are not the same result, so the gap is reported alongside.
+    _sel_rows = []
+    for ds, bb, arm in ARMS:
+        for sp in ("random", "scaffold"):
+            sel = _sel_cache[(ds, bb, sp)]
+            if sel is None:
+                continue
+            for x in sel["selections"]:
+                _sel_rows.append((ds, sp, x["faithfulness_metric"], x["mismatch"],
+                                  x["gt_best_gt_auroc"] - x["faithfulness_pick_gt_auroc"],
+                                  x["faithfulness_pick_gt_auroc"], x["gt_best_gt_auroc"]))
+    if _sel_rows:
+        add("nSelMismatch", sum(1 for r in _sel_rows if r[3]))
+        add("nSelMatch", sum(1 for r in _sel_rows if not r[3]))
+        # What uniform-random selection among the audited attributors would
+        # have produced, so the handful of agreements is read against a
+        # baseline rather than as a success.
+        _n_attr = {len(_sel_cache[(ds, bb, sp)]["attributors"])
+                   for ds, bb, _ in ARMS for sp in ("random", "scaffold")
+                   if _sel_cache[(ds, bb, sp)] is not None}
+        add_flag("HasSelChance", len(_n_attr) == 1)
+        if len(_n_attr) == 1:
+            add("selMatchChance", f"{len(_sel_rows) / _n_attr.pop():.1f}")
+        for sp, tag in (("random", "Ind"), ("scaffold", "Shift")):
+            sub = [r for r in _sel_rows if r[1] == sp]
+            add(f"nSelMismatch{tag}", sum(1 for r in sub if r[3]))
+            add(f"nSelTests{tag}", len(sub))
+            add(f"selGapMean{tag}", num(st.mean(r[4] for r in sub)))
+            # Which side of the gap moves between regimes: the attributor the
+            # metric picks, or the one the ground truth ranks best.
+            add(f"selPickGtMean{tag}", num(st.mean(r[5] for r in sub)))
+            add(f"selBestGtMean{tag}", num(st.mean(r[6] for r in sub)))
+        gaps = sorted(r[4] for r in _sel_rows if r[3])
+        if gaps:
+            add("selGapMin", num(gaps[0]))
+            add("selGapMed", num(gaps[len(gaps) // 2]))
+            add("selGapMax", num(gaps[-1]))
+        # Paired by (arm, metric) so the two regimes are compared on the same
+        # 15 selections rather than as two independent samples.
+        _ind = {(r[0], r[2]): r[4] for r in _sel_rows if r[1] == "random"}
+        _sh = {(r[0], r[2]): r[4] for r in _sel_rows if r[1] == "scaffold"}
+        _k = sorted(set(_ind) & set(_sh))
+        add_flag("HasSelGapTest", len(_k) >= 6)
+        if len(_k) >= 6:
+            _p = D.paired_wilcoxon([_ind[k] for k in _k], [_sh[k] for k in _k])["p"]
+            add("selGapP", "\\ensuremath{<}0.001" if _p < 0.001 else f"{_p:.3f}")
+            add("nSelGapPaired", len(_k))
 
     for ds, bb, arm in ARMS:
         add(f"{arm}Dataset", ds)

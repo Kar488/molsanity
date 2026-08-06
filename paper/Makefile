@@ -12,7 +12,7 @@
 PY ?= python3
 XELATEX ?= xelatex
 
-.PHONY: all figures tables supplementary pdf fontcheck macrocheck clean
+.PHONY: all figures tables supplementary submission pdf fontcheck macrocheck clean
 
 all: pdf
 
@@ -25,7 +25,12 @@ tables:
 supplementary:
 	$(PY) make_supplementary.py
 
-pdf: figures tables supplementary
+# The plain-text abstract pasted into preprint servers and submission
+# forms. Generated from abstract.tex so it cannot drift from the PDF.
+submission: tables
+	$(PY) make_submission_abstract.py
+
+pdf: figures tables supplementary submission
 	$(XELATEX) -interaction=nonstopmode main.tex
 	$(XELATEX) -interaction=nonstopmode main.tex
 	$(PY) figs/check_macros.py main.log

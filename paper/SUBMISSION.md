@@ -44,44 +44,45 @@ not where it stops being trustworthy under the scaffold shift that
 characterises real drug-discovery workflows. We present MolSanity, a
 reliability-audit framework that wraps canonical attribution implementations
 (Captum, PyTorch Geometric, RDKit) rather than proposing a new attributor, and
-scores every (dataset x backbone x attributor x split) cell on six axes:
+scores every (dataset × backbone × attributor × split) cell on six axes:
 motif-native coherence, occlusion-attribution faithfulness, ground-truth
 localisation where node labels exist, cross-checkpoint stability, calibration
 linkage, and confidence/correctness regime stratification. Our central finding
-is that faithfulness is not correctness, and that the relationship between them
-collapses under shift. Holding dataset, backbone and attributor set fixed and
-changing only the split, all 3 faithfulness metrics we test (our occlusion
-measure, Fidelity+ and the GraphFramEx characterisation score) fail to recover
-the ground-truth-best attributor on MUTAG under a Bemis-Murcko scaffold split.
-The occlusion measure selects GuidedBP, whose agreement with the mutagenic
-nitro motif is GT AUROC 0.013 - near-perfectly anti-aligned, and sixth of the 7
-attributors audited - while the ground truth ranks GNNExplainer best at 0.826
-(median paired gap 0.967 AUROC, Wilcoxon p < 0.001, Benjamini-Hochberg q <
-0.001 over the 18 selection tests). What separates the regimes is the rank
-correlation between faithfulness and correctness. Pooled over all 33 cells of
-the 3 molecular ground-truth arms (each an across-seed mean of 3 seeds), it
-moves from +0.009 in distribution (p = 0.962) to -0.353 under shift (p =
-0.044). We state plainly how much of that pooled figure any one arm carries:
-dropping MUTAG leaves -0.027 (p = 0.907, n = 22 cells), so the effect is MUTAG
-together with corroboration rather than 3 arms independently agreeing. On MUTAG
-alone the contrast is +0.143 to -0.643; 2 of 3 arms move in that direction and
-one does not, and the paper says why rather than pooling the disagreement out
-of sight. We are equally explicit that faithfulness rankings mismatch the
-ground truth in-distribution as well (3 of 3 metrics on MUTAG), so the finding
-is a collapse in rank correlation rather than agreement followed by
-disagreement. Faithfulness itself does not fall under shift - across the same
-33 cells it rises, from 0.028 to 0.132 (p = 0.008), while ground-truth
-localisation does not move (0.641 to 0.631, p = 0.888). The metric therefore
-moves in the reassuring direction in exactly the regime where its relationship
-to correctness breaks, and gives no warning. Using 26185 committed per-molecule
-records we further find that on confidently-wrong predictions ground-truth
-localisation degrades (0.790 to 0.674, n = 257) while their measured
-faithfulness improves (0.126 to 0.330) and their stability is no worse - both
-proxies point away from the failure - and that the calibration-reliability link
-attenuates from a per-cell median of 0.137 to 0.046 when cells are pooled, a
-Simpson's-paradox trap for anyone reporting a single aggregate number. Results
-are the committed full.yaml run: 474 of 474 cell-runs completed. Every number,
-figure and table regenerates from the committed artifacts.
+is that faithfulness is not correctness, and that the two carry no dependable
+relationship in either regime. Across 30 selection tests - 5 molecular ground-
+truth arms × two splits × 3 ranking metrics, with dataset, backbone and
+attributor set held fixed within an arm - a faithfulness-only ranking picks an
+attributor other than the ground-truth-best one in 26, and this is no less
+true in distribution (14 of 15) than under scaffold shift (12 of 15). The
+sharpest case is MUTAG under a Bemis-Murcko scaffold split, where all 3
+metrics miss. The occlusion measure selects GuidedBP, whose agreement with the
+mutagenic nitro motif is GT AUROC 0.013 - near-perfectly anti-aligned, and
+sixth of the 7 attributors audited - while the ground truth ranks GNNExpl.
+best at 0.826 in the audited seed, 0.774+/-0.086 across 3 (median paired gap
+0.967 AUROC, Wilcoxon p<0.001, Benjamini-Hochberg q<0.001 over the 30
+selection tests). Pooled over all 47 cells of the 5 molecular ground-truth
+arms (each an across-seed mean of 3 seeds), the faithfulness-correctness rank
+correlation is +0.222 in distribution (p=0.134) and -0.124 under shift
+(p=0.405) - neither distinguishable from zero. Per arm under shift it runs
+from -0.564 on MUTAG to +0.786 on FluorideCarbonyl, so reliability is a
+property of the (dataset, backbone, attributor, split) cell rather than of the
+attributor, and no pooled coefficient describes any of the arms. We report
+against our own prior result: restricted to the 3 arms of an earlier version
+of this analysis the same computation gives -0.356 at p=0.042, and adding two
+externally authored molecular rationale benchmarks removes the effect.
+Faithfulness itself does not fall under shift - across the same 47 cells it
+rises, from 0.049 to 0.132 (p=0.005), while ground-truth localisation does not
+move (0.660 to 0.658, p=0.539). The metric therefore moves in the reassuring
+direction across a shift that leaves correctness unchanged, and gives no
+warning either way. Using 31785 committed per-molecule records we further find
+that on confidently-wrong predictions ground-truth localisation degrades
+(0.769 to 0.681, n=275) while their measured faithfulness improves (0.142 to
+0.325) and their stability is no worse - both proxies point away from the
+failure - and that the calibration-reliability link attenuates from a per-cell
+median of 0.144 to 0.074 when cells are pooled, a Simpson's-paradox trap for
+anyone reporting a single aggregate number. Results are the committed
+full.yaml run: 558 of 558 cell-runs completed. Every number, figure and table
+regenerates from the committed artifacts.
 
 ## Acknowledgements (paste-ready)
 

@@ -6,17 +6,17 @@ The audit cannot tell a practitioner which attributor to pick without ground tru
 
 | signal | n | GT AUROC @100% | @50% | lift | below chance @100% | @50% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| occ_spearman | 15350 | 0.747 | 0.797 | +0.050 | 0.219 | 0.160 |
-| confidence | 15763 | 0.747 | 0.785 | +0.038 | 0.217 | 0.174 |
-| rationale_reliance | 15763 | 0.747 | 0.778 | +0.030 | 0.217 | 0.189 |
-| stability | 14445 | 0.764 | 0.792 | +0.028 | 0.190 | 0.159 |
-| motif_top1_share | 15763 | 0.747 | 0.645 | -0.103 | 0.217 | 0.351 |
+| occ_spearman | 15201 | 0.748 | 0.804 | +0.056 | 0.216 | 0.151 |
+| confidence | 15609 | 0.749 | 0.793 | +0.044 | 0.214 | 0.168 |
+| rationale_reliance | 15609 | 0.749 | 0.782 | +0.032 | 0.214 | 0.184 |
+| stability | 14316 | 0.764 | 0.784 | +0.021 | 0.191 | 0.166 |
+| motif_top1_share | 15609 | 0.749 | 0.667 | -0.082 | 0.214 | 0.323 |
 
 ## Recommended rule
 
 Rank molecules by **occ_spearman** and abstain on the tail.
-No coverage level gets the below-chance share under 10%. The best achievable is **14.7%** at 28% coverage. Abstention narrows the problem here but does not solve it, and that is the honest reading.
-Mean GT AUROC already exceeds 0.70 at full coverage (0.747), so a rule stated against the mean would be vacuous. The pooled mean hides the tail; the below-chance share does not.
+No coverage level gets the below-chance share under 10%. The best achievable is **14.5%** at 37% coverage. Abstention narrows the problem here but does not solve it, and that is the honest reading.
+Mean GT AUROC already exceeds 0.70 at full coverage (0.748), so a rule stated against the mean would be vacuous. The pooled mean hides the tail; the below-chance share does not.
 
 ---
 

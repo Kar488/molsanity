@@ -46,9 +46,11 @@ def regime_of(dataset: str) -> str:
 # labels are exact, but there is no Bemis-Murcko scaffold and hence no chemical
 # shift contrast.
 GT_EXACT_SYNTH = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen"}
-# Exact node ground truth on real molecules: the label IS the presence of the
-# substructure, so its atoms are the ground truth by construction.
-GT_EXACT_MOL = {"MolMotif", "MolMotifHard"}
+# Exact node ground truth on real molecules. For MolMotif/MolMotifHard the
+# label IS the presence of the substructure, so its atoms are the ground truth
+# by construction; Benzene and FluorideCarbonyl carry the published per-atom
+# rationales of Sanchez-Lengeling et al., which we did not author.
+GT_EXACT_MOL = {"MolMotif", "MolMotifHard", "Benzene", "FluorideCarbonyl"}
 GT_EXACT = GT_EXACT_SYNTH | GT_EXACT_MOL
 GT_PROXY = {"MUTAG"}                          # chemically motivated nitro proxy
 

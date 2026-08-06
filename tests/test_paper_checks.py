@@ -665,3 +665,25 @@ def test_the_manuscript_does_not_narrate_its_own_drafting():
         + "\nState the protocol and the result in the present tense. A "
           "superseded number may be reported; the story of arriving at it "
           "belongs in the repository history.")
+
+
+def test_a_figure_and_its_caption_name_the_same_dataset():
+    """The caption is generated; the panels were not.
+
+    Figure 7's caption is built from \\bbDataset, which make_tables computes.
+    make_figures kept its own BB_DATASET constant. When the backbone sweep
+    moved to a molecular arm only the first changed, so the caption read
+    "across the 5 backbones on MolMotifHard" above two panels titled
+    "SynthMotifs - Integrated Gradients". Both now read one selector in
+    msdata; this asserts they agree.
+    """
+    root = Path(__file__).resolve().parents[1] / "paper"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper macros not generated")
+    sys.path.insert(0, str(FIGS))
+    pytest.importorskip("msdata")
+    mf = pytest.importorskip("make_figures")
+    M = _macros()
+    assert M["bbDataset"] == mf.BB_DATASET, (
+        f"caption says \\bbDataset = {M['bbDataset']}, panels plot "
+        f"{mf.BB_DATASET}")

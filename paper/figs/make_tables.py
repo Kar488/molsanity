@@ -776,13 +776,8 @@ def macros():
     # molecular arms that carry all five backbones the same computation gives
     # +0.70 to +0.90: the ordering is largely PRESERVED. The claim reversed
     # because the arm was wrong, so the arm is now required to be molecular.
-    _bb_cands = [d for d in D.MOLECULAR_GT
-                 if len({r["backbone"] for r in CLS if r["dataset"] == d
-                         and r["attributor"] == "IntegratedGradients"
-                         and r["gt_auroc"] is not None
-                         and r["split"] == "scaffold"}) >= 4]
-    bb_ds = "MolMotifHard" if "MolMotifHard" in _bb_cands else (
-        _bb_cands[0] if _bb_cands else "MolMotifHard")
+    _bb_cands = D.backbone_sweep_arms(CLS)
+    bb_ds = D.backbone_sweep_dataset(CLS) or "MolMotifHard"
     assert bb_ds not in D.SYNTHETIC, (
         f"the backbone sweep must be read on a molecular arm, not {bb_ds}: a "
         "non-molecular scaffold split is a deterministic partition and cannot "

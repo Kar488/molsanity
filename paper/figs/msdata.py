@@ -83,6 +83,38 @@ ARM_COLOR = {"MUTAG": "#D55E00", "MolMotifHard": "#0072B2",
 ARM_MARKER = {"MUTAG": "o", "MolMotifHard": "s", "MolMotif": "^",
               "Benzene": "D", "FluorideCarbonyl": "v"}
 
+
+def backbone_sweep_arms(rows, attributor="IntegratedGradients", min_bb=4):
+    """Molecular arms carrying enough backbones on both splits to compare.
+
+    The backbone comparison is a split contrast, so it is only meaningful on
+    an arm whose scaffold split is a chemical regime. Defined here because it
+    was defined twice: make_tables selected a molecular arm while
+    make_figures kept ``BB_DATASET = "SynthMotifs"``, so the figure plotted a
+    non-molecular arm under a caption naming a molecular one.
+    """
+    out = []
+    for ds in MOLECULAR_GT:
+        per = {}
+        for r in rows:
+            if (r["dataset"] == ds and r["attributor"] == attributor
+                    and r.get("gt_auroc") is not None):
+                per.setdefault(r["split"], set()).add(r["backbone"])
+        shared = per.get("random", set()) & per.get("scaffold", set())
+        if len(shared) >= min_bb:
+            out.append(ds)
+    return out
+
+
+def backbone_sweep_dataset(rows, **kw):
+    """The single arm the backbone figure and its macros are read on."""
+    cands = backbone_sweep_arms(rows, **kw)
+    if not cands:
+        return None
+    # Prefer the exactly-labelled molecular arm built to resist a
+    # single-element shortcut; otherwise take the first available.
+    return "MolMotifHard" if "MolMotifHard" in cands else cands[0]
+
 KEY_COLS = {"dataset", "backbone", "attributor", "split", "method A", "method B"}
 
 

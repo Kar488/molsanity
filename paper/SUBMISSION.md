@@ -19,6 +19,11 @@ Karthik Iyer (corresponding, ORCID 0009-0004-0593-1602), Nasser Sabar.
 Department of Computer Science and Information Technology, La Trobe
 University, Melbourne, Victoria 3086, Australia.
 
+Correspondence: 22557016@students.latrobe.edu.au (institutional);
+karthik.iyer@hotmail.com. Give the institutional address as the primary
+contact — several publishers verify affiliation against the domain, and a
+free-mail-only corresponding address can hold up desk processing.
+
 ## Category
 
 Theoretical and Computational Chemistry — machine learning / cheminformatics.

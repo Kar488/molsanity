@@ -48,10 +48,11 @@ ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
 # shift contrast the data cannot support.
 ARMS = [("MUTAG", "GINE"), ("MolMotifHard", "GINE"), ("MolMotif", "GINE"),
         ("Benzene", "GINE"), ("FluorideCarbonyl", "GINE")]
-# The backbone sweep is read off the exact-ground-truth arm; must stay in step
-# with ``bb_ds`` in make_tables.py, which defines the \bb* macros quoted in the
-# caption and in the prose.
-BB_DATASET = "SynthMotifs"
+# The backbone sweep is a split contrast, so it must be read on a molecular
+# arm. Selected by msdata so the figure and the \bb* macros in its caption
+# cannot name different datasets -- which they did: the caption said
+# MolMotifHard while the panels plotted SynthMotifs.
+BB_DATASET = D.backbone_sweep_dataset(list(CLS) + list(REG)) or "MolMotifHard"
 CARRIED_EDGE = "#4b5563"
 
 

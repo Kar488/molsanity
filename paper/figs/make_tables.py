@@ -55,16 +55,13 @@ ARMS = [("MUTAG", "GINE", "mut"), ("MolMotifHard", "GINE", "hard"),
         ("MolMotif", "GINE", "mol"), ("Benzene", "GINE", "benz"),
         ("FluorideCarbonyl", "GINE", "fluor")]
 
-# The arms the pooled faithfulness-correctness estimate is computed over: the
-# molecular ground-truth datasets, the only ones whose "scaffold" split is a
-# chemical shift rather than an arbitrary deterministic partition. Kept at
-# module scope, and kept a superset of ARMS, so a test can assert that an arm
-# the selection table argues from is also an arm the pool is computed over.
-MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard",
-                "Benzene", "FluorideCarbonyl")
-# The subset available to an earlier version of this analysis, recomputed on
-# the same run so the prose can compare the two without quoting either.
-PRIOR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
+# The arms the pooled estimate is computed over, and the subset an earlier
+# version of this analysis had. Defined in msdata so make_figures reads the
+# same tuple; re-exported here so a test can assert MOLECULAR_GT is a superset
+# of ARMS -- an arm the selection table argues from must also be one the pool
+# is computed over.
+MOLECULAR_GT = D.MOLECULAR_GT
+PRIOR_GT = D.PRIOR_GT
 ARM = ARMS[0][:2]
 
 
@@ -267,13 +264,28 @@ def macros():
         add("nAbstainNeg", sum(1 for r in ranked if r["lift"] <= 0))
         add("abstainFullBelow", num(best["frac_below_chance_full"]))
         add("nAbstainRecords", f"{best['n']:,}")
-        op = risk_operating_point(best["curve"], max_below_chance=0.10)
+        TARGET = 0.10
+        add("abstainTarget", f"{100 * TARGET:.0f}\\%")
+        op = risk_operating_point(best["curve"], max_below_chance=TARGET)
         add_flag("HasAbstainOp", op is not None)
         if op is not None:
             add("abstainCoverage", f"{100 * op['coverage']:.0f}\\%")
             add("abstainBelow", num(op["frac_below_chance"]))
             add("abstainKeptGt", num(op["mean_target"]))
             add("nAbstainKept", f"{op['n_kept']:,}")
+        # The target is not always reachable, and on this run it is not: the
+        # below-chance share bottoms out above it at every coverage. That is a
+        # result, so report the floor rather than let a conditional branch
+        # vanish and leave the paragraph without an operating point at all --
+        # which is exactly what happened, in a shipped preprint.
+        _floor = min(best["curve"], key=lambda c: (c["frac_below_chance"],
+                                                   -c["coverage"]))
+        add_flag("HasAbstainFloor", bool(best["curve"]))
+        add("abstainFloorBelow", num(_floor["frac_below_chance"]))
+        add("abstainFloorCoverage", f"{100 * _floor['coverage']:.0f}\\%")
+        add("abstainFloorGt", num(_floor["mean_target"]))
+        add("nAbstainFloorKept", f"{_floor['n_kept']:,}")
+        add("abstainFullGt", num(best["curve"][0]["mean_target"]))
 
     # --- the within-dataset shift contrasts (only the split changes) --------
     tags = {"IntegratedGradients": "IG", "Saliency": "Sal",
@@ -470,6 +482,32 @@ def macros():
                 agree += 1
         add("nArmsAgree", agree)
         add("nArmsTotal", len({k[0] for k in ks}))
+        # Why do the arms disagree? A reviewer will ask, so we ask first, and
+        # report that five arms cannot answer it. Each candidate is a property
+        # of the arm that could plausibly drive the sign, correlated across
+        # arms with the per-arm shift coefficient. n = 5: this is a screen for
+        # an obvious explanation, not a test, and it is labelled as one.
+        _arm_prop = {}
+        for ds in per_arm_shift:
+            sub = [k for k in ks if k[0] == ds]
+            g = [paired[k]["scaffold"][0] for k in sub]
+            o = [paired[k]["scaffold"][1] for k in sub]
+            _arm_prop[ds] = {"span": max(g) - min(g),
+                             "gt": st.median(g), "occ": st.median(o)}
+        _cands = [("GtSpan", "span"), ("GtLevel", "gt"), ("FaithLevel", "occ")]
+        add_flag("HasHeterogeneityScreen", len(per_arm_shift) >= 4)
+        if len(per_arm_shift) >= 4:
+            _order = sorted(per_arm_shift)
+            _best = None
+            for tag, key in _cands:
+                r, pv = D.spearman([_arm_prop[d][key] for d in _order],
+                                   [per_arm_shift[d] for d in _order])
+                add(f"het{tag}Rho", num(r))
+                add(f"het{tag}P", f"{pv:.3f}")
+                if _best is None or pv < _best[1]:
+                    _best = (tag, pv)
+            add("nHetCandidates", len(_cands))
+            add("hetMinP", f"{_best[1]:.3f}")
         if per_arm_shift:
             lo = min(per_arm_shift, key=per_arm_shift.get)
             hi = max(per_arm_shift, key=per_arm_shift.get)
@@ -600,6 +638,23 @@ def macros():
             add(f"{pre}GtWorstVal", num(min(v["gt_auroc_mean"] for v in pa.values())))
             add(f"{pre}NMismatch", sum(1 for x in sel["selections"] if x["mismatch"]))
             add(f"{pre}NMetrics", len(sel["selections"]))
+            # Where each metric's pick sits in the ground-truth ordering, as an
+            # ordinal. Typing "the worst of the seven" for an attributor that
+            # is sixth is the kind of slip a macro cannot make.
+            _rank = {a: i + 1 for i, a in enumerate(
+                sorted(pa, key=lambda a: -pa[a]["gt_auroc_mean"]))}
+            _ord = {1: "best", 2: "second", 3: "third", 4: "fourth",
+                    5: "fifth", 6: "sixth", 7: "seventh", 8: "eighth"}
+            for x in sel["selections"]:
+                mtag = x["faithfulness_metric"].replace("_", "").capitalize()
+                add(f"{pre}Rank{mtag}",
+                    _ord.get(_rank[x["faithfulness_pick"]],
+                             str(_rank[x["faithfulness_pick"]])))
+            # Whether the faithfulness-truth rank correlation is negative for
+            # every metric on this cell, so the prose branches instead of
+            # asserting it.
+            add_flag(f"Has{pre}AllRhoNeg",
+                     all(v["rho"] < 0 for v in sel["rank_correlation"].values()))
             for a, v in pa.items():
                 add(f"{pre}{tags[a]}Gt", num(v["gt_auroc_mean"]))
                 add(f"{pre}{tags[a]}Occ", num(v["occ_spearman"]))
@@ -836,8 +891,24 @@ def macros():
         add(pre + "Occ", num(r["occ_spearman"]))
         add(pre + "Ece", num(r["ece"]))
 
-    exemplar("bestAuc", max(mol_cur, key=lambda r: r["auc"]))
+    # "A strong model can have anti-faithful attributions" needs the strongest
+    # model that HAS anti-faithful attributions, not the strongest model
+    # outright. Selecting on AUC alone silently made the paragraph false the
+    # moment the best-AUC molecular cell turned out to be positively faithful
+    # (Benzene GNNExplainer, AUC 1.000, occ +0.270) -- the prose still called it
+    # the most anti-faithful cell in the matrix. Select on the condition the
+    # sentence asserts, and the sentence cannot come apart from it.
+    _anti = [r for r in mol_cur if r["occ_spearman"] < 0]
+    add_flag("HasStrongAnti", bool(_anti))
+    if _anti:
+        exemplar("bestAuc", max(_anti, key=lambda r: r["auc"]))
     exemplar("mostFaithful", max(mol_cur, key=lambda r: r["occ_spearman"]))
+    # And the converse claim needs a model that is genuinely weak. Reported
+    # with its AUC so the prose quotes the number rather than an adjective.
+    _weak = [r for r in mol_cur if r["auc"] < 0.65]
+    add_flag("HasWeakFaithful", bool(_weak))
+    if _weak:
+        exemplar("weakFaithful", max(_weak, key=lambda r: r["occ_spearman"]))
     exemplar("mostAnti", min(mol_cur, key=lambda r: r["occ_spearman"]))
     worst = min(mol_cur, key=lambda r: r["auc"])
     exemplar("worstAuc", worst)

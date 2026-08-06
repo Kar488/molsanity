@@ -423,3 +423,124 @@ def test_the_pasted_abstract_carries_no_latex():
     body = md.split(head, 1)[1].split("\n## ", 1)[0]
     bad = [tok for tok in ("\\", "{", "}", "$", "~") if tok in body]
     assert not bad, f"LaTeX leaked into the pasted abstract: {bad}"
+
+
+def test_no_direction_word_contradicts_the_macro_it_describes():
+    """Numbers are generated; the adjectives beside them were not.
+
+    Every number in the manuscript is a macro and cannot drift. The words that
+    say which *way* a number points are typed, and they drifted the moment two
+    new arms changed which cell was extreme:
+
+      - "its attributions are the most anti-faithful ... (rho = 0.270)"  --
+        a positive coefficient described as anti-faithful, because the
+        exemplar was selected on AUC and the sentence asserted the sign.
+      - "ROC-AUC 0.894, barely better than chance."
+      - "the faithfulness-truth rank correlation is negative for every
+        metric: -0.643, -0.321, +0.036."
+      - "GuidedBP at 0.013, the worst of the 7" -- it is sixth; Saliency is
+        lower at 0.002.
+
+    Each passed the macro checker, the hand-typed-statistics test and a human
+    read. So: for a direction word near a macro, assert the macro points that
+    way. Rules are evaluated against the committed macros, so a rule cannot
+    itself go stale -- if the data changes, the assertion changes with it.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    mac = root / "generated" / "macros.tex"
+    if not mac.exists():
+        pytest.skip("paper macros not generated")
+    text = mac.read_text()
+    M = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}", text))
+    flags = dict(re.findall(r"\\(\w+)(true|false)\b", text))
+
+    def rendered(path):
+        """The prose a reader actually sees: false \\if branches removed.
+
+        Without this the scan reads both sides of every conditional and flags
+        text LaTeX never sets -- which it did on its first run, against a
+        sentence correctly guarded by \\ifHasmutShiftAllRhoNeg. A check that
+        cries wolf on correct code gets switched off, so it has to model the
+        conditionals rather than ignore them.
+        """
+        src = path.read_text()
+        out, i = [], 0
+        pat = re.compile(r"\\(if[A-Za-z]\w*)\b|\\else\b|\\fi\b")
+        keep = [True]
+        for m in pat.finditer(src):
+            if keep[-1]:
+                out.append(src[i:m.start()])
+            i = m.end()
+            tok = m.group(0)
+            if m.group(1):
+                name = m.group(1)[2:]           # ifHasFoo -> HasFoo
+                keep.append(keep[-1] and flags.get(name, "true") == "true")
+            elif tok == r"\else" and len(keep) > 1:
+                parent = keep[-2]
+                keep[-1] = parent and not keep[-1]
+            elif tok == r"\fi" and len(keep) > 1:
+                keep.pop()
+        if keep[-1]:
+            out.append(src[i:])
+        return " ".join("".join(out).split())
+
+    body = rendered(root / "body.tex") + " " + rendered(root / "abstract.tex")
+
+    def val(name):
+        return _num(M[name]) if name in M else None
+
+    def near(macro, window=420):
+        """Text around each use of \\macro, where an adjective would sit."""
+        out = []
+        for m in re.finditer(r"\\" + macro + r"(?![A-Za-z])", body):
+            out.append(body[max(0, m.start() - window):m.end() + window])
+        return out
+
+    NEG = re.compile(r"anti-?\s*faith|anti-?\s*aligned|\bnegative\b|reverse "
+                     r"of|below chance", re.I)
+    problems = []
+
+    # A signed coefficient must not be called anti-anything when it is positive.
+    for macro in ("bestAucOcc", "mostFaithfulOcc", "weakFaithfulOcc"):
+        v = val(macro)
+        if v is None or v < 0:
+            continue
+        for ctx in near(macro):
+            if NEG.search(ctx):
+                problems.append(f"\\{macro} = {v:+.3f} but its sentence says "
+                                f"anti-faithful/negative")
+
+    # "negative for every metric" has to be true of every metric.
+    if "negative for every metric" in body:
+        rhos = [val(f"mutShiftRho{t}") for t in
+                ("Occspearman", "Fidelityplus", "Characterization")]
+        if any(r is None or r >= 0 for r in rhos):
+            problems.append(f'"negative for every metric" but the three are '
+                            f'{rhos}')
+
+    # A superlative must match the generated ordinal.
+    for pre, metric in (("mutShift", "Occspearman"), ("mutInd", "Occspearman")):
+        rank = M.get(f"{pre}Rank{metric}")
+        if rank is None:
+            continue
+        for ctx in near(f"{pre}PickGt{metric}"):
+            if re.search(r"\bthe worst of\b", ctx) and rank != "seventh":
+                problems.append(f"{pre} pick is described as the worst but "
+                                f"\\{pre}Rank{metric} is {rank!r}")
+
+    # Adjectives that assert a level, checked against the level.
+    for phrase, macro, ok, why in [
+        ("barely better than chance", "mostFaithfulAuc", lambda v: v < 0.62,
+         "an AUC well above 0.5 is not barely better than chance"),
+        ("barely above chance", "mostFaithfulAuc", lambda v: v < 0.62, ""),
+        ("as low as $\\minHighAccAuc", "minHighAccAuc", lambda v: v < 0.90,
+         "quoting a high AUC as if it were low does not show accuracy misleads"),
+    ]:
+        v = val(macro)
+        if phrase in body and v is not None and not ok(v):
+            problems.append(f"{phrase!r} but \\{macro} = {v}. {why}")
+
+    assert not problems, "a direction word contradicts its macro:\n  " + \
+        "\n  ".join(problems)

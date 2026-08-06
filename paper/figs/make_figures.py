@@ -20,7 +20,7 @@ sys.path.insert(0, str(HERE))
 
 import msdata as D  # noqa: E402
 from style import (ACCENT, ATTRIBUTOR_COLOR, ATTRIBUTOR_MARKER, BACKBONE_COLOR,  # noqa: E402
-                   GT_COLOR, INK, MUTED, REGIME_COLOR, SHORT, despine,
+                   GRID, GT_COLOR, INK, MUTED, REGIME_COLOR, SHORT, despine,
                    panel_label, save, use_style)
 
 use_style()
@@ -31,9 +31,15 @@ BENCH = D.load_benchmark()
 RECS = D.load_records()
 
 DATASET_ORDER = ["SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen",
-                 "MUTAG", "MolMotif", "MolMotifHard", "BBBP", "BACE",
+                 "MUTAG", "MolMotif", "MolMotifHard", "Benzene",
+                 "FluorideCarbonyl", "BBBP", "BACE",
                  "ClinTox", "SIDER", "Tox21", "DILI", "hERG",
                  "ESOL", "FreeSolv", "Lipophilicity"]
+# Figures filter by this list, so a dataset missing from it is silently absent
+# from the heatmap while the ledger still counts it -- which is how Benzene and
+# FluorideCarbonyl were audited, tabulated, and invisible in Figure 5. Anything
+# in the results but not named above is appended rather than dropped.
+DATASET_ORDER += sorted({r["dataset"] for r in ROWS} - set(DATASET_ORDER))
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
               "GuidedBackprop", "GNNExplainer", "PGExplainer", "SubgraphX"]
 # Must mirror ARMS in make_tables.py: the molecular ground-truth arms, the only
@@ -692,12 +698,7 @@ def fig_lead(out: Path):
     collided with data, and the legend is one figure-level row above the
     scatters because both panels are occupied corner to corner.
     """
-    MOL = ("MUTAG", "MolMotif", "MolMotifHard")
-    # Fixed hue order per arm, never cycled. The three-hue set passes all six
-    # checks of the palette validator (worst adjacent CVD dE 11.0, deutan), and
-    # marker shape carries identity too, so it is never colour alone.
-    ARM_COLOR = {"MUTAG": "#D55E00", "MolMotifHard": "#0072B2", "MolMotif": "#009E73"}
-    ARM_MARKER = {"MUTAG": "o", "MolMotifHard": "s", "MolMotif": "^"}
+    MOL, ARM_COLOR, ARM_MARKER = D.MOLECULAR_GT, D.ARM_COLOR, D.ARM_MARKER
 
     cells = {}
     for r in CLS:
@@ -745,9 +746,11 @@ def fig_lead(out: Path):
 
     # (c) leave-one-out: the scope of the claim, beside the claim.
     ax = axes[2]
-    fits = [("all three arms", ks, INK)]
-    for ds in MOL:
+    present = [ds for ds in MOL if any(k[0] == ds for k in ks)]
+    fits = [(f"all {len(present)} arms", ks, INK)]
+    for ds in present:
         fits.append((f"without {ds}", [k for k in ks if k[0] != ds], ARM_COLOR[ds]))
+    drawn = []
     for y, (label, keys, colour) in enumerate(fits):
         if len(keys) < 8:
             continue
@@ -758,13 +761,21 @@ def fig_lead(out: Path):
                 mfc=colour if sig else "white", mec=colour, mew=1.5, zorder=3)
         ax.text(rho, y - 0.3, f"{rho:+.2f}" + ("*" if sig else ""),
                 va="bottom", ha="center", fontsize=6.9, color=INK)
+        drawn.append(rho)
     ax.axvline(0, color=MUTED, lw=0.7, ls=":", zorder=1)
     ax.set_yticks(range(len(fits)))
     ax.set_yticklabels([f[0] for f in fits], fontsize=7.0)
     ax.set_ylim(len(fits) - 0.5, -0.75)
-    ax.set_xlim(-0.72, 0.22)
+    # Limits follow the fits. Hard-coding them clipped a leave-one-out estimate
+    # the moment one turned positive, which is the case a reader most needs to
+    # see: dropping the arm that reverses the sign of the pooled coefficient.
+    if drawn:
+        lo, hi = min(drawn), max(drawn)
+        pad = max(0.12, 0.22 * (hi - lo))
+        ax.set_xlim(lo - pad, hi + pad)
     ax.set_xlabel("scaffold-split $\\rho$   ($*$ $p<0.05$)")
-    ax.set_title("How much any one arm carries", fontsize=7.8, color=INK, pad=5)
+    ax.set_title("What the pooled estimate rests on", fontsize=7.8, color=INK,
+                 pad=5)
     despine(ax)
 
     fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.055, 0.955),
@@ -775,8 +786,116 @@ def fig_lead(out: Path):
     save(fig, out)
 
 
+# ---------------------------------------------------------------- figure 0
+def fig_overview(out: Path):
+    """What the audit does, before any notation.
+
+    The manuscript went from related work straight into notation, which asks a
+    reader to hold the whole design in their head before being shown its shape.
+    This is the shape: one cell is audited on axes that describe the model, and
+    -- only where per-atom labels exist -- on one axis that describes the
+    chemistry. The asymmetry between those two columns is the paper.
+
+    Drawn from the results rather than annotated by hand: the cell counts, the
+    ground-truth coverage and the selection tally are read off the same
+    artifacts every other figure uses, so this cannot describe a different run
+    from the one reported.
+    """
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+
+    n_cells = len({(r["dataset"], r["backbone"], r["attributor"], r["split"])
+                   for r in ROWS})
+    n_gt = sum(1 for r in ROWS if r.get("gt_auroc") is not None)
+    n_nogt = n_cells - n_gt
+    n_ds = len({r["dataset"] for r in ROWS})
+    n_bb = len({r["backbone"] for r in ROWS})
+    n_at = len({r["attributor"] for r in ROWS})
+    sel_total = sel_bad = 0
+    for ds, bb in ARMS:
+        for sp in ("random", "scaffold"):
+            sel = D.selection_test(ds, bb, sp)
+            if sel is None:
+                continue
+            sel_total += len(sel["selections"])
+            sel_bad += sum(1 for x in sel["selections"] if x["mismatch"])
+
+    MODEL_C, CHEM_C = "#0072B2", "#CC79A7"
+    fig, ax = plt.subplots(figsize=(7.1, 2.62))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 42)
+    ax.axis("off")
+
+    def box(x, y, w, h, fc, ec, lw=0.9, r=1.6):
+        ax.add_patch(FancyBboxPatch(
+            (x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}",
+            fc=fc, ec=ec, lw=lw, zorder=2))
+
+    def arrow(x0, y0, x1, y1, c=MUTED):
+        ax.add_patch(FancyArrowPatch(
+            (x0, y0), (x1, y1), arrowstyle="-|>", mutation_scale=7,
+            lw=0.8, color=c, shrinkA=0, shrinkB=0, zorder=3))
+
+    # --- the sweep, and the unit it produces -------------------------------
+    box(0.5, 8, 20, 26, "#f6f7f9", GRID)
+    ax.text(10.5, 31.4, "the sweep", ha="center", fontsize=7.4, color=INK,
+            style="italic")
+    for i, (n, what) in enumerate([(n_ds, "datasets"), (n_bb, "backbones"),
+                                   (n_at, "attributors"), (2, "splits")]):
+        ax.text(3.0, 26.6 - 4.6 * i, f"{n}", ha="right", fontsize=8.6,
+                color=ACCENT, weight="bold")
+        ax.text(4.0, 26.6 - 4.6 * i, what, ha="left", fontsize=7.2, color=INK)
+    ax.text(10.5, 10.0, "random  ·  scaffold\n(Bemis–Murcko)", ha="center",
+            va="center", fontsize=5.9, color=MUTED, linespacing=1.35)
+
+    box(25, 14, 20, 14, "white", ACCENT, lw=1.1)
+    ax.text(35, 24.0, "one cell", ha="center", fontsize=7.8, color=ACCENT,
+            weight="bold")
+    ax.text(35, 20.4, "(dataset, backbone,\nattributor, split)", ha="center",
+            va="center", fontsize=6.5, color=INK, linespacing=1.3)
+    ax.text(35, 15.4, f"{n_cells} audited", ha="center", fontsize=6.5,
+            color=MUTED)
+    arrow(20.9, 21, 24.6, 21)
+
+    # --- the two questions, and the fact that only one is always askable ----
+    ax.text(74.75, 38.6, "each cell is scored on two kinds of question",
+            ha="center", fontsize=7.4, color=INK, style="italic")
+
+    box(50, 20.5, 49.5, 15.5, "#f2f7fb", MODEL_C, lw=1.0)
+    ax.text(52.2, 32.8, "Does the attribution describe the MODEL?",
+            fontsize=7.2, color=MODEL_C, weight="bold")
+    ax.text(52.2, 29.0,
+            "occlusion faithfulness  ·  coherence  ·  stability\n"
+            "calibration linkage  ·  confidence/correctness regime\n"
+            "Fidelity±, sparsity, characterisation score",
+            fontsize=6.3, color=INK, linespacing=1.45, va="center")
+    ax.text(97.3, 21.9, f"measurable on all {n_cells} cells", ha="right",
+            fontsize=6.2, color=MODEL_C)
+
+    box(50, 5.0, 49.5, 12.5, "#fbf3f7", CHEM_C, lw=1.0)
+    ax.text(52.2, 14.4, "Does it describe the CHEMISTRY?",
+            fontsize=7.2, color=CHEM_C, weight="bold")
+    ax.text(52.2, 10.9, "ground-truth localisation against the labelled\n"
+                        "substructure (motif-native, RDKit)",
+            fontsize=6.3, color=INK, linespacing=1.45, va="center")
+    ax.text(97.3, 6.4, f"measurable on {n_gt}  ·  unmeasurable on {n_nogt}",
+            ha="right", fontsize=6.2, color=CHEM_C)
+
+    arrow(45.4, 23, 49.6, 28.2, MODEL_C)
+    arrow(45.4, 19, 49.6, 11.2, CHEM_C)
+
+    # --- the finding that connects them ------------------------------------
+    ax.text(50, 1.4,
+            f"The two come apart: ranking attributors by a model-side score "
+            f"picks the wrong one in {sel_bad} of {sel_total} tests.",
+            ha="center", fontsize=6.9, color=INK)
+    ax.plot([2, 98], [3.4, 3.4], lw=0.5, color=GRID, zorder=1)
+
+    save(fig, out)
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
+    fig_overview(HERE / "fig_overview.pdf")
     fig_lead(HERE / "fig_lead.pdf")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
     fig_dissociation(HERE / "fig_dissociation.pdf")

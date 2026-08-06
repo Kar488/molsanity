@@ -109,19 +109,18 @@ RDKit~\cite{rdkit}) and audits them. Specifically:
   vs.\ $\nCalibSigNeg{}$ negative) but \emph{attenuates to
   $\pooledCalibRho{}$} when cells are pooled, a Simpson's-paradox trap for
   anyone reporting a single aggregate number.
-\item We report the negatives with the positives, including one that cost us a
-  published result: adding two externally authored molecular rationale
-  benchmarks took the pooled shift correlation from
+\item We report the negatives with the positives, including one that removes a
+  result we had previously published: adding two externally authored molecular
+  rationale benchmarks takes the pooled shift correlation from
   $\pooledPriorShiftRho{}$ ($p=\pooledPriorShiftP{}$) over
   $\nPooledPriorArms{}$ arms to $\pooledShiftRho{}$
-  ($p=\pooledShiftP{}$) over $\nPooledArms{}$, and we report the larger
-  analysis. Also here: a regression faithfulness operator we mis-specified,
-  diagnosed and corrected; non-molecular ground-truth arms whose scaffold split
-  is degenerate and are therefore excluded from the shift contrast rather than
-  counted toward it; an exactly-labelled molecular arm too saturated to
-  adjudicate anything on its own; and the \nNoGtCells{} cells where the
-  correctness axis simply does not exist and is marked as such rather than
-  scored.
+  ($p=\pooledShiftP{}$) over $\nPooledArms{}$. Also here: an occlusion
+  operator that is mis-specified on regression in a way that mimics a finding;
+  non-molecular ground-truth arms whose scaffold split is degenerate and are
+  therefore excluded from the shift contrast rather than counted toward it; an
+  exactly-labelled molecular arm too saturated to adjudicate anything on its
+  own; and the \nNoGtCells{} cells where the correctness axis does not exist
+  and is marked as such rather than scored.
 \end{itemize}
 
 \section{Related work}
@@ -756,12 +755,11 @@ cell-specific effects that do not share a direction.
 \fi
 
 \ifHasPriorPool
-Restricted to the $\nPooledPriorArms{}$ arms available to an earlier version of
-this analysis, the same computation gives $\pooledPriorShiftRho{}$ at
+Restricted to the $\nPooledPriorArms{}$ arms that predate the two externally
+authored benchmarks, the same computation gives $\pooledPriorShiftRho{}$ at
 $p=\pooledPriorShiftP{}$ over $\nPooledPriorCells{}$ cells --- a significant
-collapse. Adding two independent, externally authored molecular arms removes
-it. We treat the $\nPooledArms{}$-arm result as the reported one and record the
-supersession in \S\ref{sec:negative}.
+collapse. Adding those two arms removes it (\S\ref{sec:negative}). The
+$\nPooledArms{}$-arm result is the reported one.
 \fi
 The structural reason the per-arm coefficients are so
 unstable is visible in the rankings themselves: on MUTAG
@@ -840,9 +838,8 @@ an attributor's reliability as the wrong shape of statement rather than merely
 an imprecise one.
 
 \ifHasHeterogeneityScreen
-\paragraph{When is the relationship positive?} The obvious follow-up is
-whether the arms that come out positive share something the negative ones lack,
-and we would rather report the screen we ran than leave the question hanging.
+\paragraph{When is the relationship positive?} The natural follow-up is
+whether the arms that come out positive share something the negative ones lack.
 Correlating the per-arm shift coefficient across the $\nArmsTotal{}$ arms
 against $\nHetCandidates{}$ properties of the arm gives: spread of ground-truth
 localisation within the arm, $\hetGtSpanRho{}$ ($p=\hetGtSpanP{}$); its median
@@ -922,14 +919,14 @@ best in distribution mostly is the one that does so under shift. The attributor
 ordering is comparably robust ($\rho=\armAttrRankRho{}$ over
 $\armAttrRankN{}$ attributors).
 
-An earlier version of this analysis read this sweep on SynthMotifs and reported
-$\rho=0.100$ --- that the backbone ordering does \emph{not} survive the split.
-SynthMotifs is not molecular, so its ``scaffold'' partition is the arbitrary
-deterministic one described in \S\ref{sec:limits}, and a rank correlation
-across it is not a statement about chemical shift at all. Read on arms whose
-scaffold split is a chemical regime, the conclusion reverses. We record it
-because the error is the one this paper is about, made by us, in the direction
-that flattered the argument.
+The choice of arm decides this result, which is worth stating because the
+arms are not interchangeable. Computed on SynthMotifs --- exactly labelled, but
+not molecular, so its ``scaffold'' partition is the arbitrary deterministic one
+of \S\ref{sec:limits} --- the same correlation is $\rho=0.100$, and would
+support the opposite conclusion. A rank correlation taken across a partition
+that is not a chemical regime is not evidence about shift, whatever it
+evaluates to, and we restrict this comparison to molecular arms for that
+reason.
 \else
 \paragraph{Backbones} The backbone sweep is read at Integrated Gradients, and
 no Integrated Gradients cell completed in the run these numbers come from, so
@@ -942,9 +939,8 @@ attributors), far from preserved.
 scaffold shift simply made attributions less faithful. It does not. Across the
 $\nSplitPairs{}$ cells this run audited on both splits, occlusion faithfulness
 falls under the scaffold split in $\nSplitOccDrop{}$ of them, roughly half, with
-a median change of $\medSplitOccDelta{}$ (Figure~\ref{fig:distributions}b).
-We reported the opposite trend in an earlier, partial version of this matrix;
-with the grid complete it does not hold. Ground-truth localisation is equally
+a median change of $\medSplitOccDelta{}$ (Figure~\ref{fig:distributions}b) ---
+a coin flip, on the complete grid. Ground-truth localisation is equally
 unmoved across the split ($\pooledIndGt{}$ to $\pooledShiftGt{}$,
 $p=\pooledShiftGtP{}$). Both levels survive the shift; what neither level
 reveals is that they were never coupled to begin with
@@ -1013,9 +1009,9 @@ of retained molecules whose attribution is \emph{below chance} from
 $\abstainFullBelow{}$ to $\abstainBelow{}$, with mean localisation
 $\abstainKeptGt{}$ over the $\nAbstainKept{}$ retained.
 \else
-We set out to state an operating point at which at most $\abstainTarget{}$ of
-retained molecules carry a below-chance attribution. \emph{No coverage on this
-curve reaches it.}\ifHasAbstainFloor{} The below-chance share starts at
+The rule worth stating would be an operating point at which at most
+$\abstainTarget{}$ of retained molecules carry a below-chance attribution.
+\emph{No coverage on this curve reaches it.}\ifHasAbstainFloor{} The below-chance share starts at
 $\abstainFullBelow{}$ at full coverage and bottoms out at
 $\abstainFloorBelow{}$ at \abstainFloorCoverage{} coverage
 ($\nAbstainFloorKept{}$ molecules retained, mean localisation
@@ -1162,28 +1158,25 @@ Tables~\ref{tab:regression}, \ref{tab:molecular} and~\ref{tab:molecularb} give
 every audited combination on a real molecular dataset. Three cross-task
 patterns hold, and one apparent pattern turns out to be an artefact.
 
-\paragraph{A mis-specified regression operator, found and corrected} An
-earlier sweep reported negative occlusion faithfulness on most of the
-\nRegCells{} regression combinations, on cells whose predictive performance was
-well behaved ($R^2$ from $\esolRtwoMin{}$ to $\esolRtwoMax{}$ on ESOL). We did
-not interpret that pattern, and on inspection it was an artefact of our own
-operator rather than a property of the attributions. The operator compared two
-different quantities: the attribution was clipped at zero, keeping only atoms
-that push the prediction \emph{up}, while the occlusion effect kept its sign. A
-motif driving a solubility prediction strongly down therefore scored as
-unimportant on the attribution side and dominant on the occlusion side, which
-is sufficient on its own to produce a systematic negative correlation.
+\paragraph{Occlusion faithfulness needs a different operator on regression}
+The obvious extension of the classification operator to regression is
+mis-specified, and it fails in a way that mimics a finding. If the attribution
+is clipped at zero --- keeping only atoms that push the prediction \emph{up}
+--- while the occlusion effect keeps its sign, the two sides are no longer
+measuring the same quantity. A motif driving a solubility prediction strongly
+down then scores as unimportant on the attribution side and dominant on the
+occlusion side, which alone is enough to produce systematic negative
+faithfulness on cells whose predictive performance is perfectly well behaved
+($R^2$ from $\esolRtwoMin{}$ to $\esolRtwoMax{}$ on ESOL). We flag it because
+a uniformly negative column invites a substantive reading, and the substantive
+reading would be wrong.
 
-The corrected operator ranks by magnitude on both sides, reports the
+The operator used here ranks by magnitude on both sides, reports the
 GraphFramEx characterisation score as undefined rather than clipping a
 standard-deviation-space shift into $[0,1]$, and adds a bounded statistic
 giving the share of the total occlusion effect carried by the salient atoms.
-The sweep reported here uses it, and the pathology is gone: $\nRegNeg{}$ of the
-$\nRegCells{}$ regression cells now show negative occlusion faithfulness, with
-median $\medRegOcc{}$. We report the original error alongside the correction
-because a systematic negative result that turns out to be an artefact of the
-measuring instrument is the failure mode this whole paper is about, and we were
-not exempt from it.
+Under it the pathology is absent: $\nRegNeg{}$ of the $\nRegCells{}$ regression
+cells show negative occlusion faithfulness, with median $\medRegOcc{}$.
 
 \paragraph{Coherence is high nearly everywhere, and says little} Motif top-1
 share lies between $\motifTopMin{}$ and $\motifTopMax{}$ across the
@@ -1209,25 +1202,22 @@ Section~\nameref{sec:selection}, computed from the per-molecule records.
 
 We record what did not work alongside what did.
 
-\paragraph{Ground truth that was not being read} BA-2Motifs is a synthetic
-benchmark whose whole purpose is to carry exact node labels. It trains in this
-run and produces $2\times100$ audited molecules, but both its cells sit in the
-no-ground-truth block, because the loader found no node labels to read. The
-cause was ours rather than the dataset's: PyG's \texttt{BA2MotifDataset}
-exposes only node features, an edge index and a graph-level label, and our
-extractor looked for a per-node field that is never populated. The labels are
-recoverable from the released node ordering, in which the injected motif is
-appended after the Barab\'asi--Albert base. That recovery is now implemented and
-verified structurally, by requiring the induced subgraph on those nodes to be a
-house or a five-cycle before the mask is used, and cross-checked against a
-generator that produces the same construction with independent labels. It is
-refused rather than guessed when the check fails, so a reordered loader
-degrades to the behaviour reported here rather than inventing a mask. The
-recovery is in the sweep reported here: BA-2Motifs carries node-level ground
-truth throughout and appears in Table~\ref{tab:tier1} as a ground-truth arm. It
-is not a molecular one, so it takes no part in the shift contrast for the same
-reason SynthMotifs and ShapeGGen do not, but the correctness axis is now
-measured on it rather than reported as missing.
+\paragraph{A benchmark whose node labels are not where a loader looks for them}
+BA-2Motifs exists to carry exact node labels, but PyG's
+\texttt{BA2MotifDataset} exposes only node features, an edge index and a
+graph-level label: any extractor reading a per-node field finds nothing, and
+the arm silently lands in the no-ground-truth block despite being a
+ground-truth benchmark. The labels are recoverable from the released node
+ordering, in which the injected motif is appended after the
+Barab\'asi--Albert base. We recover them and verify the recovery structurally,
+requiring the induced subgraph on those nodes to be a house or a five-cycle
+before the mask is used, cross-checked against a generator producing the same
+construction with independent labels. The mask is refused rather than guessed
+when the check fails, so a loader that changes the ordering degrades to
+no-ground-truth rather than inventing one. BA-2Motifs accordingly carries
+node-level ground truth throughout and appears in Table~\ref{tab:tier1} as a
+ground-truth arm. It is not molecular, so it takes no part in the shift
+contrast for the same reason SynthMotifs and ShapeGGen do not.
 
 \ifHasDegenerateCells
 \paragraph{Degenerate ground truth} $\nDegenerateGtCells{}$ ground-truth cells
@@ -1272,60 +1262,52 @@ We report AUC alongside accuracy throughout for this reason, and the lowest-AUC
 molecular cell in the run (\worstAucDataset{}·\worstAucBackbone{}, AUC $\worstAucAuc{}$
 at accuracy $\worstAucAcc{}$) is where accuracy alone would mislead most.
 
-\paragraph{Two arms that removed our own headline result} We added
+\paragraph{Two arms that remove the pooled shift effect} We added
 \textbf{Benzene} and \textbf{FluorideCarbonyl}, the Sanchez-Lengeling
 et al.~\cite{sanchez2020} attribution tasks as repackaged by
 GraphXAI~\cite{graphxai}, precisely because they are molecular, exactly
-labelled, and \emph{not constructed by us} --- the corroboration a three-arm
-analysis lacked. They cost us the result they were added to corroborate, and
-that is the finding.
+labelled, and \emph{not constructed by us} --- corroboration the three
+self-built or proxy arms could not provide. They removed the effect they were
+added to corroborate.
 
 \ifHasPriorPool
-Restricted to the $\nPooledPriorArms{}$ arms available before, the pooled
+Restricted to the $\nPooledPriorArms{}$ arms that predate them, the pooled
 faithfulness--correctness correlation over $\nPooledPriorCells{}$ cells runs
 from $+\pooledPriorIndRho{}$ in distribution ($p=\pooledPriorIndP{}$) to
-$\pooledPriorShiftRho{}$ under scaffold shift ($p=\pooledPriorShiftP{}$): a
-significant collapse, and the result this work previously
-reported.\footnote{Both figures are recomputed here from the artefacts of the
-single run described in \S\ref{sec:repro}, by restricting the arm set, rather
-than quoted from the earlier analysis; the two differ only in which arms enter,
-not in which cells were run.} Adding the two new arms takes the same
-computation over $\nPooledCells{}$ cells to $\pooledShiftRho{}$ at
-$p=\pooledShiftP{}$. The effect did not shrink; it stopped having a direction.
-Benzene and FluorideCarbonyl both come out \emph{positive} under shift, which
-is the sign the $\nPooledPriorArms{}$-arm story did not predict, and neither is
-an arm we designed or labelled.
+$\pooledPriorShiftRho{}$ under scaffold shift ($p=\pooledPriorShiftP{}$) --- a
+significant collapse. Over all $\nPooledArms{}$ arms and $\nPooledCells{}$
+cells the same computation gives $\pooledShiftRho{}$ at $p=\pooledShiftP{}$.
+The effect does not shrink; it stops having a direction, because Benzene and
+FluorideCarbonyl both come out \emph{positive} under shift. Both figures are
+computed from the same run by restricting the arm set, so they differ in which
+arms enter and in nothing else. A preprint of this work reported the
+$\nPooledPriorArms{}$-arm figure; the $\nPooledArms{}$-arm figure supersedes
+it.
 \fi
 
-The exclusion had a legitimate reason for exactly one sweep. Our loader first
-read the graphs out of the published archives without carrying the SMILES they
-also contain, so a Bemis--Murcko scaffold was undefined for every molecule and
-all six of their scaffold splits came back degenerate --- a deterministic
-partition, not a chemical regime --- and pooling them then would have been the
-precise error this paper is about. The audit's own splitter flagged it. Once
-the loader was fixed and the splits were real, the arms went into the pool
-whatever they did to it: an exclusion criterion that survives the expiry of its
-justification is a criterion applied to the result rather than to the data. We
-record the sequence here because a reader who finds the earlier version has a
-right to know which analysis superseded which, and why.
+An exclusion criterion is only as good as its reason, and it must be discarded
+when the reason expires. These two arms are molecular but reach the audit as
+graph archives, and a loader that does not carry the SMILES the archives also
+contain leaves Bemis--Murcko with nothing to work on: the scaffold split then
+comes back degenerate, every molecule in its own bucket, and pooling it into a
+shift analysis would inject a deterministic partition into a regime contrast.
+The splitter reports \texttt{frac\_grouped} for exactly this reason and flags
+the condition. Once the SMILES are carried and the partitions are real, the
+only justification for holding the arms out is gone, and holding them out
+anyway would be selecting arms on their result.
 
-\paragraph{Blocked, re-examined, and now populated} An earlier run recorded
-SubgraphX (via DIG) and ShapeGGen (via GraphXAI) as uninstallable, on the
-grounds that they need the compiled
-\texttt{torch\_\-sparse}/\texttt{torch\_\-scatter} extensions for which no wheel
-exists at the pinned torch version. That diagnosis was wrong in both cases:
+\paragraph{Two dependencies that are harder to install than to use} SubgraphX
+(via DIG) and ShapeGGen (via GraphXAI) both require the compiled
+\texttt{torch\_\-sparse}/\texttt{torch\_\-scatter} extensions, for which no
+wheel exists at the pinned torch version. Neither is genuinely unavailable:
 the extensions build from source, DIG then installs, and GraphXAI installs from
-a source checkout rather than a release. Both are integrated in the sweep
-reported here. SubgraphX contributes a full attributor column on every
-ground-truth arm and ShapeGGen contributes its own cells, so neither is a gap
-in the tables any more.
+a source checkout rather than from a release. Both are integrated here ---
+SubgraphX as a full attributor column on every ground-truth arm, ShapeGGen as
+its own cells. We note the build path because a missing wheel is easily read as
+a hard block, and a search-family attributor or a benchmark dropped on those
+grounds is a coverage gap that no reader of the resulting table can see.
 
-We keep the record of the wrong diagnosis because it cost real coverage for two
-sweeps, and because a dependency declared impossible is rarely re-examined once
-it is written down. The instructive part is that nothing about the environment
-changed between the two judgements --- only how hard we looked.
-
-Two limitations survive the fix rather than being resolved by it. SubgraphX is
+Two limitations survive that fix rather than being resolved by it. SubgraphX is
 two to three orders of magnitude more expensive per molecule than the gradient
 family, which is a selection pressure on which attributors get benchmarked at
 all and which we discuss in \S\ref{sec:limits}. ShapeGGen is a
@@ -1595,10 +1577,10 @@ We report that ratio as a finding rather than as housekeeping. Compute cost is
 a selection pressure on which attributors get benchmarked at all, and it pushes
 the literature toward cheap ones; a benchmark that silently caps the expensive
 attributor's $n$ to fit a budget buys its coverage with exactly the small-sample
-weakness the field criticises. Our own first instinct was to do that. We kept
-SubgraphX at the full per-cell sample and reduced the number of cells instead,
-which makes the coverage limit explicit (\S\ref{sec:limits}) rather than hiding
-it inside a confidence interval.\fi{}
+weakness the field criticises. SubgraphX is therefore held at the full
+per-cell sample and the number of cells reduced instead, which makes the
+coverage limit explicit (\S\ref{sec:limits}) rather than hiding it inside a
+confidence interval.\fi{}
 
 \section{Acknowledgements}
 

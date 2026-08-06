@@ -623,3 +623,45 @@ def test_the_bibliography_has_no_duplicate_entry():
             dupes.append(f"{seen[s]} and {k} are the same reference")
         seen[s] = k
     assert not dupes, "duplicate references:\n  " + "\n  ".join(dupes)
+
+
+def test_the_manuscript_does_not_narrate_its_own_drafting():
+    """Negative results belong in the paper; the story of writing it does not.
+
+    Reporting a superseded claim is good practice and stays. Narrating the
+    revision history around it is not the same thing, and the manuscript had
+    drifted into it: "an earlier version of this analysis read this sweep on
+    SynthMotifs", "we did not interpret that pattern", "our own first instinct
+    was to do that", "we keep the record of the wrong diagnosis ... only how
+    hard we looked". Each of those describes the authors rather than the
+    method, and belongs in the repository history, a cover letter or a
+    response to reviewers.
+
+    The distinction this enforces: state what the protocol does and what the
+    data shows, in the present tense. A superseded *number* may be reported --
+    the macros for it exist and are used -- but not as an anecdote.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = " ".join((root / "body.tex").read_text().split())
+    body += " " + " ".join((root / "abstract.tex").read_text().split())
+    banned = [
+        r"an earlier (?:version|sweep|run|draft) of (?:this|the) (?:analysis|paper|matrix)",
+        r"we (?:did not|didn't) interpret",
+        r"our own first instinct",
+        r"we record (?:it|the sequence) (?:here )?because",
+        r"we keep the record of",
+        r"only how hard we looked",
+        r"we were not exempt",
+        r"rather than quietly fixing",
+        r"the wrong diagnosis",
+        r"in the direction that flattered",
+        r"we would rather report",
+    ]
+    hits = [p for p in banned if re.search(p, body, re.I)]
+    assert not hits, (
+        "the manuscript narrates its own drafting: " + "; ".join(hits)
+        + "\nState the protocol and the result in the present tense. A "
+          "superseded number may be reported; the story of arriving at it "
+          "belongs in the repository history.")

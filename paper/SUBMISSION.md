@@ -66,10 +66,10 @@ correlation is +0.222 in distribution (p=0.134) and -0.124 under shift
 (p=0.405) - neither distinguishable from zero. Per arm under shift it runs
 from -0.564 on MUTAG to +0.786 on FluorideCarbonyl, so reliability is a
 property of the (dataset, backbone, attributor, split) cell rather than of the
-attributor, and no pooled coefficient describes any of the arms. We report
-against our own prior result: restricted to the 3 arms of an earlier version
-of this analysis the same computation gives -0.356 at p=0.042, and adding two
-externally authored molecular rationale benchmarks removes the effect.
+attributor, and no pooled coefficient describes any of the arms. Restricted to
+the 3 arms that predate two externally authored molecular rationale
+benchmarks, the same computation gives -0.356 at p=0.042; adding those
+benchmarks removes the effect, and the 5-arm figure is the one we report.
 Faithfulness itself does not fall under shift - across the same 47 cells it
 rises, from 0.049 to 0.132 (p=0.005), while ground-truth localisation does not
 move (0.660 to 0.658, p=0.539). The metric therefore moves in the reassuring

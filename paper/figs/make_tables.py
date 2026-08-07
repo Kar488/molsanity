@@ -52,7 +52,16 @@ ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
 # GT AUROC ~0.99, where ranking attributors is noise around a ceiling; it is
 # reported as a probe that the audit works, not as a second shift contrast.
 ARMS = [("MUTAG", "GINE", "mut"), ("MolMotifHard", "GINE", "hard"),
-        ("MolMotif", "GINE", "mol")]
+        ("MolMotif", "GINE", "mol"), ("Benzene", "GINE", "benz"),
+        ("FluorideCarbonyl", "GINE", "fluor")]
+
+# The arms the pooled estimate is computed over, and the subset an earlier
+# version of this analysis had. Defined in msdata so make_figures reads the
+# same tuple; re-exported here so a test can assert MOLECULAR_GT is a superset
+# of ARMS -- an arm the selection table argues from must also be one the pool
+# is computed over.
+MOLECULAR_GT = D.MOLECULAR_GT
+PRIOR_GT = D.PRIOR_GT
 ARM = ARMS[0][:2]
 
 
@@ -255,13 +264,28 @@ def macros():
         add("nAbstainNeg", sum(1 for r in ranked if r["lift"] <= 0))
         add("abstainFullBelow", num(best["frac_below_chance_full"]))
         add("nAbstainRecords", f"{best['n']:,}")
-        op = risk_operating_point(best["curve"], max_below_chance=0.10)
+        TARGET = 0.10
+        add("abstainTarget", f"{100 * TARGET:.0f}\\%")
+        op = risk_operating_point(best["curve"], max_below_chance=TARGET)
         add_flag("HasAbstainOp", op is not None)
         if op is not None:
             add("abstainCoverage", f"{100 * op['coverage']:.0f}\\%")
             add("abstainBelow", num(op["frac_below_chance"]))
             add("abstainKeptGt", num(op["mean_target"]))
             add("nAbstainKept", f"{op['n_kept']:,}")
+        # The target is not always reachable, and on this run it is not: the
+        # below-chance share bottoms out above it at every coverage. That is a
+        # result, so report the floor rather than let a conditional branch
+        # vanish and leave the paragraph without an operating point at all --
+        # which is exactly what happened, in a shipped preprint.
+        _floor = min(best["curve"], key=lambda c: (c["frac_below_chance"],
+                                                   -c["coverage"]))
+        add_flag("HasAbstainFloor", bool(best["curve"]))
+        add("abstainFloorBelow", num(_floor["frac_below_chance"]))
+        add("abstainFloorCoverage", f"{100 * _floor['coverage']:.0f}\\%")
+        add("abstainFloorGt", num(_floor["mean_target"]))
+        add("nAbstainFloorKept", f"{_floor['n_kept']:,}")
+        add("abstainFullGt", num(best["curve"][0]["mean_target"]))
 
     # --- the within-dataset shift contrasts (only the split changes) --------
     tags = {"IntegratedGradients": "IG", "Saliency": "Sal",
@@ -283,31 +307,54 @@ def macros():
     # -0.353 (p = 0.044). With the median across-seed sd on occlusion rho at
     # 0.146, one seed is not the quantity to correlate, and the two answers sit
     # on opposite sides of every conventional threshold.
-    # Benzene and FluorideCarbonyl are molecular and exactly labelled and are
-    # deliberately NOT here yet. In the 2026-08-05 sweep their loader dropped
-    # the archive's SMILES, so Bemis-Murcko had nothing to work with and all
-    # six of their scaffold splits came back DEGENERATE at 0.0% grouped. Their
-    # "shift" rows are an arbitrary deterministic partition, not a chemical
-    # regime, and pooling them here would put non-shift data into the shift
-    # contrast -- the exact error this paper is about. They join this tuple
-    # when a run with SCAFFOLD_SPLIT_VERSION >= 3 gives them a real partition.
-    MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
-    by_cell = {}
-    for r in CLS:
-        if r["dataset"] not in MOLECULAR_GT:
-            continue
-        g, o = r.get("gt_auroc"), r.get("occ_spearman")
-        if g is None or o is None:
-            continue
-        key = (r["dataset"], r["backbone"], r["attributor"], r["split"])
-        by_cell.setdefault(key, []).append((g, o))
-    per_cell = {}
-    for (ds, bb, at, sp), vals in by_cell.items():
-        per_cell.setdefault((ds, bb, at), {})[sp] = (
-            st.mean(v[0] for v in vals), st.mean(v[1] for v in vals))
+    # Benzene and FluorideCarbonyl sat out one reported sweep. In the
+    # 2026-08-05 run their loader dropped the archive's SMILES, so Bemis-Murcko
+    # had nothing to work with and all six of their scaffold splits came back
+    # DEGENERATE at 0.0% grouped; pooling them then would have put a
+    # deterministic partition into the shift contrast. SCAFFOLD_SPLIT_VERSION 3
+    # carries the SMILES and the 2026-08-06 run gives them real partitions, so
+    # they are in. They are in whatever they do to the pooled estimate: the
+    # exclusion was justified by the degenerate split and by nothing else, and
+    # leaving them out once that reason expired would be selecting arms on
+    # their result.
+    def _paired_cells(arms):
+        """(dataset, backbone, attributor) -> {split: (gt, occ)} over `arms`."""
+        by = {}
+        for r in CLS:
+            if r["dataset"] not in arms:
+                continue
+            g, o = r.get("gt_auroc"), r.get("occ_spearman")
+            if g is None or o is None:
+                continue
+            by.setdefault((r["dataset"], r["backbone"], r["attributor"],
+                           r["split"]), []).append((g, o))
+        out = {}
+        for (ds, bb, at, sp), vals in by.items():
+            out.setdefault((ds, bb, at), {})[sp] = (
+                st.mean(v[0] for v in vals), st.mean(v[1] for v in vals))
+        return {k: v for k, v in out.items() if {"random", "scaffold"} <= set(v)}
+
+    per_cell = _paired_cells(MOLECULAR_GT)
     seeds = [r.get("n_seeds", 1) for r in CLS
              if r["dataset"] in MOLECULAR_GT and r.get("gt_auroc") is not None]
     add("nPooledSeeds", min(seeds) if seeds else 1)
+
+    # The same pooled statistic restricted to the three arms this work reported
+    # before Benzene and FluorideCarbonyl were loadable. Recomputed here, from
+    # this run's artefacts, rather than quoted from the earlier preprint: the
+    # prose compares the two and neither number should be typed by hand.
+    _prior = _paired_cells(PRIOR_GT)
+    add_flag("HasPriorPool", len(_prior) >= 8 and len(_prior) < len(per_cell))
+    if _prior:
+        _pk = sorted(_prior)
+        add("nPooledPriorCells", len(_pk))
+        add("nPooledPriorArms", len({k[0] for k in _pk}))
+        for sp, tag in (("random", "Ind"), ("scaffold", "Shift")):
+            r, pv = D.spearman([_prior[k][sp][1] for k in _pk],
+                               [_prior[k][sp][0] for k in _pk])
+            add(f"pooledPrior{tag}Rho", num(r))
+            add(f"pooledPrior{tag}P",
+                "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
 
     # --- compute cost, parsed from the run log, never typed --------------------
     # JCIM asks for reproduction cost. Timings are derived from the committed
@@ -320,11 +367,18 @@ def macros():
     if logs:
         lines = Path(logs[-1]).read_text().splitlines()
         stamp = lambda l: _dt.datetime.strptime(l[:19], "%Y-%m-%d %H:%M:%S")
-        add("computeWall", f"{(stamp(lines[-1]) - stamp(lines[0])).total_seconds() / 60:.0f}")
+        _t0, _t1 = stamp(lines[0]), stamp(lines[-1])
+        _wall = (_t1 - _t0).total_seconds()
+        add("computeWall", f"{_wall / 60:.0f}")
+        add("computeWallH", f"{_wall / 3600:.1f}")
+        add("computeStart", _t0.strftime("%Y-%m-%d %H:%M"))
+        add("computeEnd", _t1.strftime("%Y-%m-%d %H:%M"))
+        add("nComputeLogs", len(logs))
         n_done = sum(1 for l in lines if "] DONE" in l)
         n_cached = sum(1 for l in lines if "[cached]" in l)
         add("nComputeCached", n_cached)
         add("nComputeFresh", n_done - n_cached)
+        add("nComputeCellRuns", n_done)
         # NB: never bind `m` here -- add() closes over the accumulator list of
         # that name, and a loop variable called `m` silently replaces it with a
         # regex match, so every later add() raises on a NoneType.
@@ -355,6 +409,31 @@ def macros():
             a = sorted(by["SubgraphX"])[len(by["SubgraphX"]) // 2]
             b = sorted(by["IntegratedGradients"])[len(by["IntegratedGradients"]) // 2]
             add("cellCostRatio", f"{a / b:.0f}")
+        # What a reader who starts from an empty cache should budget. The
+        # committed invocation reused part of its matrix, so its wall clock is
+        # not that number; this prices every planned cell-run at the median
+        # observed for its own attributor in this same log. Reported as an
+        # estimate, and labelled as one -- a cold total is not something this
+        # run ever paid, and quoting a measured-looking figure for it would be
+        # inventing a measurement.
+        _med = {a: sorted(v)[len(v) // 2] for a, v in by.items() if v}
+        _planned = {}
+        for l in lines:
+            hit = _re.search(r"\[cell (\S+?)\] DONE", l)
+            if hit:
+                a = hit.group(1).split("__")[2]
+                _planned[a] = _planned.get(a, 0) + 1
+        add_flag("HasColdEstimate", bool(_med) and set(_planned) <= set(_med))
+        if _med and set(_planned) <= set(_med):
+            add("computeColdEstH",
+                f"{sum(n * _med[a] for a, n in _planned.items()) / 3600:.0f}")
+        # Total fresh compute in the log, and how much of it one attributor
+        # took, which is the cost-as-selection-pressure argument in one number.
+        _fresh_s = sum(sum(v) for v in by.values())
+        if _fresh_s:
+            add("computeFreshH", f"{_fresh_s / 3600:.1f}")
+            if by.get("SubgraphX"):
+                add("sgxComputeShare", f"{100 * sum(by['SubgraphX']) / _fresh_s:.0f}")
         trains, last = [], None
         for l in lines:
             dated = _re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", l)
@@ -366,7 +445,7 @@ def macros():
         if trains:
             trains.sort()
             add("trainMedian", f"{trains[len(trains) // 2]:.0f}")
-    paired = {k: v for k, v in per_cell.items() if {"random", "scaffold"} <= set(v)}
+    paired = per_cell          # _paired_cells already keeps only paired cells
     add_flag("HasPooledMolecular", len(paired) >= 8)
     if len(paired) >= 8:
         ks = sorted(paired)
@@ -386,7 +465,10 @@ def macros():
             pv = D.paired_wilcoxon(a, b)["p"]
             add(f"pooledShift{tag}P", "\\ensuremath{<}0.001" if pv < 0.001 else f"{pv:.3f}")
         # Per-arm direction, so a contradicting arm cannot hide in the pool.
-        agree = 0
+        # With five arms the spread of the per-arm shift correlation is the
+        # result, not noise around a pooled mean, so the endpoints and the arms
+        # holding them are emitted for the prose to quote.
+        agree, per_arm_shift = 0, {}
         for ds in sorted({k[0] for k in ks}):
             sub = [k for k in ks if k[0] == ds]
             if len(sub) < 4:
@@ -395,10 +477,45 @@ def macros():
                                [paired[k]["random"][0] for k in sub])
             r1, _ = D.spearman([paired[k]["scaffold"][1] for k in sub],
                                [paired[k]["scaffold"][0] for k in sub])
+            per_arm_shift[ds] = r1
             if r1 < r0:
                 agree += 1
         add("nArmsAgree", agree)
         add("nArmsTotal", len({k[0] for k in ks}))
+        # Why do the arms disagree? A reviewer will ask, so we ask first, and
+        # report that five arms cannot answer it. Each candidate is a property
+        # of the arm that could plausibly drive the sign, correlated across
+        # arms with the per-arm shift coefficient. n = 5: this is a screen for
+        # an obvious explanation, not a test, and it is labelled as one.
+        _arm_prop = {}
+        for ds in per_arm_shift:
+            sub = [k for k in ks if k[0] == ds]
+            g = [paired[k]["scaffold"][0] for k in sub]
+            o = [paired[k]["scaffold"][1] for k in sub]
+            _arm_prop[ds] = {"span": max(g) - min(g),
+                             "gt": st.median(g), "occ": st.median(o)}
+        _cands = [("GtSpan", "span"), ("GtLevel", "gt"), ("FaithLevel", "occ")]
+        add_flag("HasHeterogeneityScreen", len(per_arm_shift) >= 4)
+        if len(per_arm_shift) >= 4:
+            _order = sorted(per_arm_shift)
+            _best = None
+            for tag, key in _cands:
+                r, pv = D.spearman([_arm_prop[d][key] for d in _order],
+                                   [per_arm_shift[d] for d in _order])
+                add(f"het{tag}Rho", num(r))
+                add(f"het{tag}P", f"{pv:.3f}")
+                if _best is None or pv < _best[1]:
+                    _best = (tag, pv)
+            add("nHetCandidates", len(_cands))
+            add("hetMinP", f"{_best[1]:.3f}")
+        if per_arm_shift:
+            lo = min(per_arm_shift, key=per_arm_shift.get)
+            hi = max(per_arm_shift, key=per_arm_shift.get)
+            add("armShiftRhoMin", num(per_arm_shift[lo]))
+            add("armShiftRhoMax", num(per_arm_shift[hi]))
+            add("armShiftRhoMinDataset", lo)
+            add("armShiftRhoMaxDataset", hi)
+            add("nArmsShiftNeg", sum(1 for v in per_arm_shift.values() if v < 0))
 
         # Leave-one-arm-out. The pooled p is the number a reader will quote, so
         # the paper must say how much of it any single arm carries -- the first
@@ -451,6 +568,60 @@ def macros():
                 _qmap[(ds, bb, sp, x["faithfulness_metric"])] = next(_qvals)
     add("nSelectionTests", len(_pvals))
 
+    # --- how often the selection is wrong, and how much it costs ---------------
+    # Counted over the same tests the table prints, per regime, because the
+    # regime asymmetry is the claim. The cost of a wrong pick is the gap in
+    # ground-truth localisation between the ground-truth-best attributor and
+    # the one the faithfulness metric chose: a mismatch that gives up 0.002
+    # AUROC and one that gives up 0.821 are the same row in the "mismatch"
+    # column and are not the same result, so the gap is reported alongside.
+    _sel_rows = []
+    for ds, bb, arm in ARMS:
+        for sp in ("random", "scaffold"):
+            sel = _sel_cache[(ds, bb, sp)]
+            if sel is None:
+                continue
+            for x in sel["selections"]:
+                _sel_rows.append((ds, sp, x["faithfulness_metric"], x["mismatch"],
+                                  x["gt_best_gt_auroc"] - x["faithfulness_pick_gt_auroc"],
+                                  x["faithfulness_pick_gt_auroc"], x["gt_best_gt_auroc"]))
+    if _sel_rows:
+        add("nSelMismatch", sum(1 for r in _sel_rows if r[3]))
+        add("nSelMatch", sum(1 for r in _sel_rows if not r[3]))
+        # What uniform-random selection among the audited attributors would
+        # have produced, so the handful of agreements is read against a
+        # baseline rather than as a success.
+        _n_attr = {len(_sel_cache[(ds, bb, sp)]["attributors"])
+                   for ds, bb, _ in ARMS for sp in ("random", "scaffold")
+                   if _sel_cache[(ds, bb, sp)] is not None}
+        add_flag("HasSelChance", len(_n_attr) == 1)
+        if len(_n_attr) == 1:
+            add("selMatchChance", f"{len(_sel_rows) / _n_attr.pop():.1f}")
+        for sp, tag in (("random", "Ind"), ("scaffold", "Shift")):
+            sub = [r for r in _sel_rows if r[1] == sp]
+            add(f"nSelMismatch{tag}", sum(1 for r in sub if r[3]))
+            add(f"nSelTests{tag}", len(sub))
+            add(f"selGapMean{tag}", num(st.mean(r[4] for r in sub)))
+            # Which side of the gap moves between regimes: the attributor the
+            # metric picks, or the one the ground truth ranks best.
+            add(f"selPickGtMean{tag}", num(st.mean(r[5] for r in sub)))
+            add(f"selBestGtMean{tag}", num(st.mean(r[6] for r in sub)))
+        gaps = sorted(r[4] for r in _sel_rows if r[3])
+        if gaps:
+            add("selGapMin", num(gaps[0]))
+            add("selGapMed", num(gaps[len(gaps) // 2]))
+            add("selGapMax", num(gaps[-1]))
+        # Paired by (arm, metric) so the two regimes are compared on the same
+        # 15 selections rather than as two independent samples.
+        _ind = {(r[0], r[2]): r[4] for r in _sel_rows if r[1] == "random"}
+        _sh = {(r[0], r[2]): r[4] for r in _sel_rows if r[1] == "scaffold"}
+        _k = sorted(set(_ind) & set(_sh))
+        add_flag("HasSelGapTest", len(_k) >= 6)
+        if len(_k) >= 6:
+            _p = D.paired_wilcoxon([_ind[k] for k in _k], [_sh[k] for k in _k])["p"]
+            add("selGapP", "\\ensuremath{<}0.001" if _p < 0.001 else f"{_p:.3f}")
+            add("nSelGapPaired", len(_k))
+
     for ds, bb, arm in ARMS:
         add(f"{arm}Dataset", ds)
         add(f"{arm}Backbone", bb)
@@ -467,6 +638,23 @@ def macros():
             add(f"{pre}GtWorstVal", num(min(v["gt_auroc_mean"] for v in pa.values())))
             add(f"{pre}NMismatch", sum(1 for x in sel["selections"] if x["mismatch"]))
             add(f"{pre}NMetrics", len(sel["selections"]))
+            # Where each metric's pick sits in the ground-truth ordering, as an
+            # ordinal. Typing "the worst of the seven" for an attributor that
+            # is sixth is the kind of slip a macro cannot make.
+            _rank = {a: i + 1 for i, a in enumerate(
+                sorted(pa, key=lambda a: -pa[a]["gt_auroc_mean"]))}
+            _ord = {1: "best", 2: "second", 3: "third", 4: "fourth",
+                    5: "fifth", 6: "sixth", 7: "seventh", 8: "eighth"}
+            for x in sel["selections"]:
+                mtag = x["faithfulness_metric"].replace("_", "").capitalize()
+                add(f"{pre}Rank{mtag}",
+                    _ord.get(_rank[x["faithfulness_pick"]],
+                             str(_rank[x["faithfulness_pick"]])))
+            # Whether the faithfulness-truth rank correlation is negative for
+            # every metric on this cell, so the prose branches instead of
+            # asserting it.
+            add_flag(f"Has{pre}AllRhoNeg",
+                     all(v["rho"] < 0 for v in sel["rank_correlation"].values()))
             for a, v in pa.items():
                 add(f"{pre}{tags[a]}Gt", num(v["gt_auroc_mean"]))
                 add(f"{pre}{tags[a]}Occ", num(v["occ_spearman"]))
@@ -579,8 +767,21 @@ def macros():
     if len(grad) > 1:
         add("mutagGradOccSpread", num(max(grad) - min(grad)))
 
-    # --- backbone sweeps at IG, both splits, on the exact-GT dataset -------
-    bb_ds = "SynthMotifs"
+    # --- backbone sweeps at IG, both splits, on a MOLECULAR ground-truth arm
+    # Read on SynthMotifs until now, which made the conclusion unsupportable:
+    # SynthMotifs is not molecular, so its "scaffold" split is an arbitrary
+    # deterministic partition -- the paper says so itself -- and a rank
+    # correlation across it says nothing about chemical shift. It gave
+    # rho = +0.100 and the prose called the ordering unstable. On the three
+    # molecular arms that carry all five backbones the same computation gives
+    # +0.70 to +0.90: the ordering is largely PRESERVED. The claim reversed
+    # because the arm was wrong, so the arm is now required to be molecular.
+    _bb_cands = D.backbone_sweep_arms(CLS)
+    bb_ds = D.backbone_sweep_dataset(CLS) or "MolMotifHard"
+    assert bb_ds not in D.SYNTHETIC, (
+        f"the backbone sweep must be read on a molecular arm, not {bb_ds}: a "
+        "non-molecular scaffold split is a deterministic partition and cannot "
+        "support a claim about shift")
     add("bbDataset", bb_ds)
     bb_sweep_ok = True
     for sp, pre in (("scaffold", "bbShift"), ("random", "bbInd")):
@@ -614,6 +815,46 @@ def macros():
     rho, _ = D.spearman([Ab[k] for k in sh], [Bb[k] for k in sh])
     add("bbRankRho", num(rho))
     add("bbRankN", len(sh))
+
+    # The same correlation on every molecular arm carrying the full backbone
+    # sweep, so the claim rests on all of them rather than on whichever one the
+    # figure happens to draw.
+    _bb_rhos = {}
+    for ds in _bb_cands:
+        A = {r["backbone"]: r["gt_auroc"] for r in CLS
+             if r["dataset"] == ds and r["split"] == "random"
+             and r["attributor"] == "IntegratedGradients"
+             and r["gt_auroc"] is not None}
+        B = {r["backbone"]: r["gt_auroc"] for r in CLS
+             if r["dataset"] == ds and r["split"] == "scaffold"
+             and r["attributor"] == "IntegratedGradients"
+             and r["gt_auroc"] is not None}
+        k = sorted(set(A) & set(B))
+        if len(k) >= 4:
+            _bb_rhos[ds] = D.spearman([A[x] for x in k], [B[x] for x in k])[0]
+    add_flag("HasBackboneArms", len(_bb_rhos) >= 2)
+    if _bb_rhos:
+        _v = sorted(_bb_rhos.values())
+        add("nBbArms", len(_bb_rhos))
+        add("bbRankRhoMin", num(_v[0]))
+        add("bbRankRhoMax", num(_v[-1]))
+        add("bbRankRhoMed", num(_v[len(_v) // 2]))
+        add("nBbArmsPositive", sum(1 for x in _v if x > 0))
+        # Spread of localisation across backbones, which is the reportable
+        # backbone effect now that the ordering turns out to be stable.
+        _spreads = []
+        for ds in _bb_rhos:
+            for sp in ("random", "scaffold"):
+                g = [r["gt_auroc"] for r in CLS if r["dataset"] == ds
+                     and r["split"] == sp
+                     and r["attributor"] == "IntegratedGradients"
+                     and r["gt_auroc"] is not None]
+                if len(g) >= 4:
+                    _spreads.append(max(g) - min(g))
+        if _spreads:
+            _spreads.sort()
+            add("bbSpreadMin", num(_spreads[0]))
+            add("bbSpreadMax", num(_spreads[-1]))
 
     # --- regression --------------------------------------------------------
     rvals = [r for r in REG if r["occ_spearman"] is not None]
@@ -703,14 +944,36 @@ def macros():
         add(pre + "Occ", num(r["occ_spearman"]))
         add(pre + "Ece", num(r["ece"]))
 
-    exemplar("bestAuc", max(mol_cur, key=lambda r: r["auc"]))
+    # "A strong model can have anti-faithful attributions" needs the strongest
+    # model that HAS anti-faithful attributions, not the strongest model
+    # outright. Selecting on AUC alone silently made the paragraph false the
+    # moment the best-AUC molecular cell turned out to be positively faithful
+    # (Benzene GNNExplainer, AUC 1.000, occ +0.270) -- the prose still called it
+    # the most anti-faithful cell in the matrix. Select on the condition the
+    # sentence asserts, and the sentence cannot come apart from it.
+    _anti = [r for r in mol_cur if r["occ_spearman"] < 0]
+    add_flag("HasStrongAnti", bool(_anti))
+    if _anti:
+        exemplar("bestAuc", max(_anti, key=lambda r: r["auc"]))
     exemplar("mostFaithful", max(mol_cur, key=lambda r: r["occ_spearman"]))
+    # And the converse claim needs a model that is genuinely weak. Reported
+    # with its AUC so the prose quotes the number rather than an adjective.
+    _weak = [r for r in mol_cur if r["auc"] < 0.65]
+    add_flag("HasWeakFaithful", bool(_weak))
+    if _weak:
+        exemplar("weakFaithful", max(_weak, key=lambda r: r["occ_spearman"]))
     exemplar("mostAnti", min(mol_cur, key=lambda r: r["occ_spearman"]))
     worst = min(mol_cur, key=lambda r: r["auc"])
     exemplar("worstAuc", worst)
     hi = [r for r in CLS if r["acc"] is not None and r["acc"] >= 0.95
           and r["auc"] is not None]
     add("nHighAccRows", len(hi))
+    # Audited molecules per cell. Typed as "20--120" for several sweeps after
+    # the test fold grew and the caps changed; it is now 50--200.
+    _n = sorted({r["n_mol"] for r in list(CLS) + list(REG) if r.get("n_mol")})
+    if _n:
+        add("nMolMin", f"{_n[0]:.0f}")
+        add("nMolMax", f"{_n[-1]:.0f}")
     add("minHighAccAuc", num(min(r["auc"] for r in hi)))
     tox = [r for r in CLS if r["dataset"] == "Tox21" and r["auc"] is not None]
     add_flag("HasTox", bool(tox))

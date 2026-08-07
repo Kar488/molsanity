@@ -20,7 +20,7 @@ sys.path.insert(0, str(HERE))
 
 import msdata as D  # noqa: E402
 from style import (ACCENT, ATTRIBUTOR_COLOR, ATTRIBUTOR_MARKER, BACKBONE_COLOR,  # noqa: E402
-                   GT_COLOR, INK, MUTED, REGIME_COLOR, SHORT, despine,
+                   GRID, GT_COLOR, INK, MUTED, REGIME_COLOR, SHORT, despine,
                    panel_label, save, use_style)
 
 use_style()
@@ -31,20 +31,28 @@ BENCH = D.load_benchmark()
 RECS = D.load_records()
 
 DATASET_ORDER = ["SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen",
-                 "MUTAG", "MolMotif", "MolMotifHard", "BBBP", "BACE",
+                 "MUTAG", "MolMotif", "MolMotifHard", "Benzene",
+                 "FluorideCarbonyl", "BBBP", "BACE",
                  "ClinTox", "SIDER", "Tox21", "DILI", "hERG",
                  "ESOL", "FreeSolv", "Lipophilicity"]
+# Figures filter by this list, so a dataset missing from it is silently absent
+# from the heatmap while the ledger still counts it -- which is how Benzene and
+# FluorideCarbonyl were audited, tabulated, and invisible in Figure 5. Anything
+# in the results but not named above is appended rather than dropped.
+DATASET_ORDER += sorted({r["dataset"] for r in ROWS} - set(DATASET_ORDER))
 ATTR_ORDER = ["IntegratedGradients", "Saliency", "InputXGradient",
               "GuidedBackprop", "GNNExplainer", "PGExplainer", "SubgraphX"]
 # Must mirror ARMS in make_tables.py: the molecular ground-truth arms, the only
 # ones whose "scaffold" split is a chemical shift rather than an arbitrary
 # deterministic partition. Panelling a non-molecular arm here would show a
 # shift contrast the data cannot support.
-ARMS = [("MUTAG", "GINE"), ("MolMotifHard", "GINE"), ("MolMotif", "GINE")]
-# The backbone sweep is read off the exact-ground-truth arm; must stay in step
-# with ``bb_ds`` in make_tables.py, which defines the \bb* macros quoted in the
-# caption and in the prose.
-BB_DATASET = "SynthMotifs"
+ARMS = [("MUTAG", "GINE"), ("MolMotifHard", "GINE"), ("MolMotif", "GINE"),
+        ("Benzene", "GINE"), ("FluorideCarbonyl", "GINE")]
+# The backbone sweep is a split contrast, so it must be read on a molecular
+# arm. Selected by msdata so the figure and the \bb* macros in its caption
+# cannot name different datasets -- which they did: the caption said
+# MolMotifHard while the panels plotted SynthMotifs.
+BB_DATASET = D.backbone_sweep_dataset(list(CLS) + list(REG)) or "MolMotifHard"
 CARRIED_EDGE = "#4b5563"
 
 
@@ -178,7 +186,11 @@ def fig_faithfulness_correctness(out: Path):
 def fig_dissociation(out: Path):
     marks = {"occ_spearman": "occlusion $\\rho$", "fidelity_plus": "Fidelity+",
              "characterization": "charact."}
-    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, 2.35 * len(ARMS)))
+    # One row per arm. Five arms at the natural row height overruns the text
+    # block, so rows are compressed to fit a full-page float rather than
+    # dropping an arm from the figure the caption enumerates.
+    row_h = min(2.35, 8.55 / len(ARMS))
+    fig, axes = plt.subplots(len(ARMS), 2, figsize=(7.1, row_h * len(ARMS)))
     for row, (ds, bb) in enumerate(ARMS):
         for col, (sp, title) in enumerate([("random", "in-distribution"),
                                            ("scaffold", "scaffold shift")]):
@@ -224,22 +236,39 @@ def fig_dissociation(out: Path):
                     pv = x["paired_gt_pvalue"]
                     tag += "*" if (pv is not None and pv < 0.05) else "†"
                 picks.setdefault(x["faithfulness_pick"], []).append(tag)
+            # Two metrics can pick adjacent attributors, and a two- or
+            # three-line callout is taller than one bar row, so anchoring each
+            # note at its own row overlaps the note above it. Walk them in row
+            # order, push any that would collide downward, and draw a leader
+            # line so a displaced note still points at the bar it describes.
+            notes = []
             for a, labels in picks.items():
-                i = attrs.index(a)
-                sig = any(t.endswith("*") for t in labels)
                 body = (", ".join(labels[:2]) + ",\n" + ", ".join(labels[2:])
                         if len(labels) > 2 else ", ".join(labels))
-                ax.annotate("← ranked 1st by\n" + body, (1.08, i), fontsize=5.5,
-                            color="#8B1A1A" if sig else MUTED, va="center",
-                            linespacing=1.25)
+                text = "ranked 1st by\n" + body
+                notes.append((attrs.index(a), text, text.count("\n") + 1,
+                              any(t.endswith("*") for t in labels)))
+            y_free = -1e9
+            for i, text, n_lines, sig in sorted(notes):
+                y = max(i, y_free + 0.55 * n_lines)
+                ax.annotate(
+                    text, xy=(1.02, i), xytext=(1.14, y), fontsize=5.5,
+                    color="#8B1A1A" if sig else MUTED, va="center",
+                    linespacing=1.25,
+                    arrowprops=dict(arrowstyle="-", lw=0.5, shrinkA=1, shrinkB=1,
+                                    color="#8B1A1A" if sig else MUTED,
+                                    connectionstyle="arc3,rad=0"))
+                y_free = y + 0.55 * n_lines
             rc = sel["rank_correlation"]
             txt = " · ".join(f"{marks[k]} {v['rho']:+.2f}" for k, v in rc.items())
-            ax.text(0.0, -0.22 if row < len(ARMS) - 1 else -0.42,
+            # The last row carries the x-axis label, so its correlation line
+            # has to clear it; the others only clear the tick labels.
+            ax.text(0.0, -0.24 if row < len(ARMS) - 1 else -0.62,
                     "faithfulness↔truth rank corr.:  " + txt,
                     transform=ax.transAxes, fontsize=5.7, color=INK, va="top")
     for row in range(len(ARMS)):
         panel_label(axes[row][0], "abcdef"[row], dx=-0.26, dy=1.20)
-    axes[-1][1].text(0.0, -0.60,
+    axes[-1][1].text(0.0, -0.84,
                      "*  selected attributor is significantly worse than the "
                      "ground-truth-best  ·  † mismatch, not significant",
                      transform=axes[-1][1].transAxes, ha="left", fontsize=5.7,
@@ -670,12 +699,7 @@ def fig_lead(out: Path):
     collided with data, and the legend is one figure-level row above the
     scatters because both panels are occupied corner to corner.
     """
-    MOL = ("MUTAG", "MolMotif", "MolMotifHard")
-    # Fixed hue order per arm, never cycled. The three-hue set passes all six
-    # checks of the palette validator (worst adjacent CVD dE 11.0, deutan), and
-    # marker shape carries identity too, so it is never colour alone.
-    ARM_COLOR = {"MUTAG": "#D55E00", "MolMotifHard": "#0072B2", "MolMotif": "#009E73"}
-    ARM_MARKER = {"MUTAG": "o", "MolMotifHard": "s", "MolMotif": "^"}
+    MOL, ARM_COLOR, ARM_MARKER = D.MOLECULAR_GT, D.ARM_COLOR, D.ARM_MARKER
 
     cells = {}
     for r in CLS:
@@ -723,9 +747,11 @@ def fig_lead(out: Path):
 
     # (c) leave-one-out: the scope of the claim, beside the claim.
     ax = axes[2]
-    fits = [("all three arms", ks, INK)]
-    for ds in MOL:
+    present = [ds for ds in MOL if any(k[0] == ds for k in ks)]
+    fits = [(f"all {len(present)} arms", ks, INK)]
+    for ds in present:
         fits.append((f"without {ds}", [k for k in ks if k[0] != ds], ARM_COLOR[ds]))
+    drawn = []
     for y, (label, keys, colour) in enumerate(fits):
         if len(keys) < 8:
             continue
@@ -736,13 +762,21 @@ def fig_lead(out: Path):
                 mfc=colour if sig else "white", mec=colour, mew=1.5, zorder=3)
         ax.text(rho, y - 0.3, f"{rho:+.2f}" + ("*" if sig else ""),
                 va="bottom", ha="center", fontsize=6.9, color=INK)
+        drawn.append(rho)
     ax.axvline(0, color=MUTED, lw=0.7, ls=":", zorder=1)
     ax.set_yticks(range(len(fits)))
     ax.set_yticklabels([f[0] for f in fits], fontsize=7.0)
     ax.set_ylim(len(fits) - 0.5, -0.75)
-    ax.set_xlim(-0.72, 0.22)
+    # Limits follow the fits. Hard-coding them clipped a leave-one-out estimate
+    # the moment one turned positive, which is the case a reader most needs to
+    # see: dropping the arm that reverses the sign of the pooled coefficient.
+    if drawn:
+        lo, hi = min(drawn), max(drawn)
+        pad = max(0.12, 0.22 * (hi - lo))
+        ax.set_xlim(lo - pad, hi + pad)
     ax.set_xlabel("scaffold-split $\\rho$   ($*$ $p<0.05$)")
-    ax.set_title("How much any one arm carries", fontsize=7.8, color=INK, pad=5)
+    ax.set_title("What the pooled estimate rests on", fontsize=7.8, color=INK,
+                 pad=5)
     despine(ax)
 
     fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.055, 0.955),
@@ -753,8 +787,176 @@ def fig_lead(out: Path):
     save(fig, out)
 
 
+# ---------------------------------------------------------------- figure 0
+def fig_overview(out: Path):
+    """What the audit measures, before any notation.
+
+    The manuscript went from related work straight into notation, which asks a
+    reader to hold the whole design in their head before being shown its shape.
+
+    The shape is an asymmetry, and the figure is built to put it on one line of
+    sight: the two question panels are the same width and the same
+    construction, stacked, so the only thing that differs is the coverage band
+    at the foot of each -- every cell against three-quarters of them. One
+    accent per side, no fill competing with the text, one type scale.
+
+    Geometry is derived from the content rather than typed. Hard-coded panel
+    heights put the coverage band on top of the body text the first time a
+    panel gained a line, so ``question`` measures its own lines and returns the
+    height it used, and the caller stacks from that. The axes are equal-aspect
+    so rounded corners and arrowheads are not sheared by the frame.
+
+    Counts are read from the same artifacts as every other figure, so this
+    cannot describe a different run from the one reported.
+    """
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+
+    n_cells = len({(r["dataset"], r["backbone"], r["attributor"], r["split"])
+                   for r in ROWS})
+    n_gt = sum(1 for r in ROWS if r.get("gt_auroc") is not None)
+    n_nogt = n_cells - n_gt
+    n_ds = len({r["dataset"] for r in ROWS})
+    n_bb = len({r["backbone"] for r in ROWS})
+    n_at = len({r["attributor"] for r in ROWS})
+    n_sp = len({r["split"] for r in ROWS})
+    sel_total = sel_bad = 0
+    for ds, bb in ARMS:
+        for sp in ("random", "scaffold"):
+            sel = D.selection_test(ds, bb, sp)
+            if sel is None:
+                continue
+            sel_total += len(sel["selections"])
+            sel_bad += sum(1 for x in sel["selections"] if x["mismatch"])
+
+    MODEL_C, CHEM_C = "#1F6FB2", "#B0559A"
+    RULE = "#c7ced7"
+    FS_TITLE, FS_BODY, FS_META = 7.2, 6.4, 6.0
+    PAD, LEAD = 2.6, 3.3            # inset from every edge; body line pitch
+
+    W, HIN = 100.0, 3.55
+    H = HIN * (W / 7.1)             # equal aspect: same units per inch
+    fig, ax = plt.subplots(figsize=(7.1, HIN))
+    ax.set_xlim(0, W)
+    ax.set_ylim(H, 0)               # lay out downward, in reading order
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    def panel(x, y, w, h, ec, fc):
+        ax.add_patch(FancyBboxPatch(
+            (x, y), w, h, boxstyle="round,pad=0,rounding_size=1.2",
+            fc=fc, ec=ec, lw=0.85, zorder=2))
+
+    def arrow(x0, y0, x1, y1, c):
+        ax.add_patch(FancyArrowPatch(
+            (x0, y0), (x1, y1), lw=0.9, color=c, zorder=3, shrinkA=0, shrinkB=0,
+            arrowstyle="-|>,head_length=2.2,head_width=1.3", mutation_scale=1))
+
+    # ---- right: the two questions ----------------------------------------
+    # Built first: it is the tallest element, and the left of the figure is
+    # centred on it rather than the other way round.
+    RX, RW = 52.0, 48.0
+
+    fitted = []                     # (artist, right edge it must stay inside)
+
+    def question(y, colour, title, lines, band):
+        h = PAD + 4.0 + LEAD * len(lines) + 1.4 + 4.6
+        panel(RX, y, RW, h, colour, "white")
+        fitted.append((ax.text(RX + PAD, y + PAD + 1.6, title,
+                               fontsize=FS_TITLE, color=colour, weight="bold",
+                               va="center", zorder=4), RX + RW - PAD))
+        for j, s in enumerate(lines):
+            fitted.append((ax.text(RX + PAD, y + PAD + 5.6 + LEAD * j, s,
+                                   fontsize=FS_BODY, color=INK, va="center",
+                                   zorder=4), RX + RW - PAD))
+        by = y + h - 4.6            # coverage band, flush to the lower edge
+        ax.add_patch(Rectangle((RX + 0.55, by), RW - 1.1, 4.05, fc=colour,
+                               ec="none", alpha=0.09, zorder=2.5))
+        fitted.append((ax.text(RX + PAD, by + 2.0, band, fontsize=FS_META,
+                               color=colour, va="center", zorder=4),
+                       RX + RW - PAD))
+        return h
+
+    top = 1.6
+    h1 = question(
+        top, MODEL_C, "Does the attribution describe the model?",
+        ["occlusion faithfulness, motif coherence, checkpoint stability,",
+         "calibration linkage, regime stratification, Fidelity+/−"],
+        f"measurable on every one of the {n_cells} cells")
+    y2 = top + h1 + 3.0
+    h2 = question(
+        y2, CHEM_C, "Does it describe the chemistry?",
+        ["ground-truth localisation against the labelled substructure,",
+         "decomposed into RDKit motifs"],
+        f"measurable on {n_gt} cells  ·  no per-atom labels for the other {n_nogt}")
+    bottom = y2 + h2
+    mid = (top + bottom) / 2
+
+    # ---- middle: the unit every claim in the paper is made about ----------
+    CW, CH = 20.0, 17.5
+    CX, CY = 27.0, mid - CH / 2
+    panel(CX, CY, CW, CH, ACCENT, "white")
+    ax.text(CX + CW / 2, CY + 5.0, "one cell", ha="center", va="center",
+            fontsize=8.0, color=ACCENT, weight="bold")
+    ax.text(CX + CW / 2, CY + 9.6, "(dataset, backbone,\nattributor, split)",
+            ha="center", va="center", fontsize=FS_META, color=INK,
+            linespacing=1.5)
+    ax.text(CX + CW / 2, CY + 14.6, f"{n_cells} audited", ha="center",
+            va="center", fontsize=5.8, color=MUTED)
+
+    # ---- left: the matrix the sweep enumerates ---------------------------
+    # Height derived from the rows plus the split note, for the same reason
+    # the question panels are: a fixed height put the note on top of the last
+    # row as soon as the wording needed two lines.
+    ROWS_ = [(n_ds, "datasets"), (n_bb, "backbones"), (n_at, "attributors"),
+             (n_sp, "splits")]
+    LW = 21.0
+    LH = PAD + 8.0 + 4.6 * (len(ROWS_) - 1) + 4.6 + 4.0 + PAD
+    LX, LY = 0.0, mid - LH / 2
+    panel(LX, LY, LW, LH, RULE, "#f5f7f9")
+    ax.text(LX + PAD, LY + PAD + 1.2, " ".join("THE SWEEP"), fontsize=5.3,
+            color=MUTED, va="center", zorder=4)
+    for i, (n, what) in enumerate(ROWS_):
+        y = LY + PAD + 8.0 + 4.6 * i
+        ax.text(LX + PAD + 4.4, y, f"{n}", ha="right", va="center",
+                fontsize=8.6, color=ACCENT, zorder=4)
+        ax.text(LX + PAD + 5.8, y, what, ha="left", va="center",
+                fontsize=FS_BODY, color=INK, zorder=4)
+    ax.text(LX + PAD, LY + LH - PAD - 2.4, "random  ·  scaffold\n(Bemis–Murcko)",
+            ha="left", va="center", fontsize=5.3, color=MUTED, zorder=4,
+            linespacing=1.5)
+
+    arrow(LX + LW + 1.6, mid, CX - 1.6, mid, "#8a919b")
+    arrow(CX + CW + 1.6, mid - 2.2, RX - 1.6, top + h1 * 0.62, MODEL_C)
+    arrow(CX + CW + 1.6, mid + 2.2, RX - 1.6, y2 + h2 * 0.38, CHEM_C)
+
+    # ---- the finding that connects them ----------------------------------
+    ry = bottom + 3.4
+    ax.plot([0, W], [ry, ry], lw=0.6, color=RULE, zorder=1)
+    ax.text(W / 2, ry + 3.0,
+            f"The two answers disagree: ranking attributors by a model-side "
+            f"score picks the wrong one in {sel_bad} of {sel_total} tests.",
+            ha="center", va="center", fontsize=FS_BODY, color=INK)
+
+    # Text that runs past its panel is the classic schematic defect, and it is
+    # invisible in the source: the string looks short enough. Measure instead.
+    fig.canvas.draw()
+    inv = ax.transData.inverted()
+    over = []
+    for artist, limit in fitted:
+        x1 = inv.transform((artist.get_window_extent(
+            fig.canvas.get_renderer()).x1, 0))[0]
+        if x1 > limit + 0.35:
+            over.append(f"{artist.get_text()[:44]!r} overruns by {x1 - limit:.1f}")
+    if over:
+        raise ValueError("fig_overview: text does not fit its panel:\n  "
+                         + "\n  ".join(over))
+
+    save(fig, out)
+
+
 if __name__ == "__main__":
     print("Generating figures from results/ …")
+    fig_overview(HERE / "fig_overview.pdf")
     fig_lead(HERE / "fig_lead.pdf")
     fig_faithfulness_correctness(HERE / "fig_faith_correct.pdf")
     fig_dissociation(HERE / "fig_dissociation.pdf")

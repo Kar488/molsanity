@@ -30,7 +30,11 @@ RES = REPO / "results"
 AUDIT = RES / "artifacts" / "audit"
 
 # --- dataset regimes -------------------------------------------------------
-SYNTHETIC = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs"}
+# Generated graphs, not molecules. ShapeGGen belongs here and was missing, so
+# every "the most X molecular cell" exemplar could be filled by a ShapeGGen
+# cell -- and the weakest-model exemplar was. Kept in step with GT_EXACT_SYNTH
+# below by the assertion at the end of this block.
+SYNTHETIC = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen"}
 REGRESSION = {"ESOL", "FreeSolv", "Lipophilicity"}
 
 
@@ -46,11 +50,70 @@ def regime_of(dataset: str) -> str:
 # labels are exact, but there is no Bemis-Murcko scaffold and hence no chemical
 # shift contrast.
 GT_EXACT_SYNTH = {"SynthMotifs", "SynthMotifsXL", "BA-2Motifs", "ShapeGGen"}
-# Exact node ground truth on real molecules: the label IS the presence of the
-# substructure, so its atoms are the ground truth by construction.
-GT_EXACT_MOL = {"MolMotif", "MolMotifHard"}
+assert GT_EXACT_SYNTH <= SYNTHETIC, (
+    "a dataset with exact synthetic node labels that SYNTHETIC does not know "
+    "about will be selected as a 'molecular' exemplar: " +
+    ", ".join(sorted(GT_EXACT_SYNTH - SYNTHETIC)))
+# Exact node ground truth on real molecules. For MolMotif/MolMotifHard the
+# label IS the presence of the substructure, so its atoms are the ground truth
+# by construction; Benzene and FluorideCarbonyl carry the published per-atom
+# rationales of Sanchez-Lengeling et al., which we did not author.
+GT_EXACT_MOL = {"MolMotif", "MolMotifHard", "Benzene", "FluorideCarbonyl"}
 GT_EXACT = GT_EXACT_SYNTH | GT_EXACT_MOL
 GT_PROXY = {"MUTAG"}                          # chemically motivated nitro proxy
+
+# The molecular ground-truth arms: the only datasets whose "scaffold" split is
+# a chemical shift rather than an arbitrary deterministic partition, and so the
+# only ones that may enter a shift contrast. Defined once, here, because it was
+# defined twice: make_tables carried the five-arm tuple while fig_lead kept a
+# local three-arm one, so the lead figure plotted 33 cells under a caption that
+# said 47. Both modules read this now.
+MOLECULAR_GT = ("MUTAG", "MolMotif", "MolMotifHard", "Benzene",
+                "FluorideCarbonyl")
+# The subset available before the GraphXAI loader carried SMILES. Recomputed on
+# the same run so the prose can compare against the earlier reported result
+# without quoting it.
+PRIOR_GT = ("MUTAG", "MolMotif", "MolMotifHard")
+# Fixed hue and marker per arm, never cycled, so an arm keeps its identity
+# across figures. Okabe-Ito, and shape carries identity too, so it is never
+# colour alone.
+ARM_COLOR = {"MUTAG": "#D55E00", "MolMotifHard": "#0072B2",
+             "MolMotif": "#009E73", "Benzene": "#CC79A7",
+             "FluorideCarbonyl": "#000000"}
+ARM_MARKER = {"MUTAG": "o", "MolMotifHard": "s", "MolMotif": "^",
+              "Benzene": "D", "FluorideCarbonyl": "v"}
+
+
+def backbone_sweep_arms(rows, attributor="IntegratedGradients", min_bb=4):
+    """Molecular arms carrying enough backbones on both splits to compare.
+
+    The backbone comparison is a split contrast, so it is only meaningful on
+    an arm whose scaffold split is a chemical regime. Defined here because it
+    was defined twice: make_tables selected a molecular arm while
+    make_figures kept ``BB_DATASET = "SynthMotifs"``, so the figure plotted a
+    non-molecular arm under a caption naming a molecular one.
+    """
+    out = []
+    for ds in MOLECULAR_GT:
+        per = {}
+        for r in rows:
+            if (r["dataset"] == ds and r["attributor"] == attributor
+                    and r.get("gt_auroc") is not None):
+                per.setdefault(r["split"], set()).add(r["backbone"])
+        shared = per.get("random", set()) & per.get("scaffold", set())
+        if len(shared) >= min_bb:
+            out.append(ds)
+    return out
+
+
+def backbone_sweep_dataset(rows, **kw):
+    """The single arm the backbone figure and its macros are read on."""
+    cands = backbone_sweep_arms(rows, **kw)
+    if not cands:
+        return None
+    # Prefer the exactly-labelled molecular arm built to resist a
+    # single-element shortcut; otherwise take the first available.
+    return "MolMotifHard" if "MolMotifHard" in cands else cands[0]
 
 KEY_COLS = {"dataset", "backbone", "attributor", "split", "method A", "method B"}
 

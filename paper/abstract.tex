@@ -2,59 +2,41 @@
 \textbf{Abstract.}
 Feature attributions are routinely used to justify molecular graph neural
 network (GNN) predictions to chemists, yet they are almost never audited for
-\emph{reliability}: existing evaluation frameworks ask whether an explanation
-is faithful to the model, not whether the model's explanation can be trusted,
-and not where it stops being trustworthy under the scaffold shift that
-characterises real drug-discovery workflows. We present \textbf{MolSanity}, a
-reliability-audit framework that wraps canonical attribution implementations
-(Captum, PyTorch Geometric, RDKit) rather than proposing a new attributor, and
-scores every (dataset × backbone × attributor × split) cell on six axes:
-motif-native coherence, occlusion--attribution faithfulness, ground-truth
+\emph{reliability}: existing frameworks ask whether an explanation is faithful
+to the model, not whether it identifies the chemistry that determines the
+property, nor where it stops being trustworthy under scaffold shift.
+\textbf{MolSanity} is a reliability-audit framework that wraps canonical
+implementations (Captum, PyTorch Geometric, RDKit) rather than proposing a new
+attributor, scoring every (dataset × backbone × attributor × split) cell on six
+axes: motif-native coherence, occlusion--attribution faithfulness, ground-truth
 localisation where node labels exist, cross-checkpoint stability, calibration
-linkage, and confidence/correctness regime stratification. Our central finding
-is that \emph{faithfulness is not correctness}, and that the relationship
-between them collapses under shift. Holding dataset, backbone and attributor
-set fixed and changing only the split, all $\mutShiftNMetrics{}$ faithfulness
-metrics we test (our occlusion measure, Fidelity+ and the GraphFramEx
-characterisation score) fail to recover the ground-truth-best attributor on
-MUTAG under a Bemis--Murcko scaffold split. The occlusion measure selects
-\mutShiftPickOccspearman{}, whose agreement with the mutagenic nitro motif is
-GT AUROC $\mutShiftPickGtOccspearman{}$ --- near-perfectly \emph{anti}-aligned,
-and sixth of the $\mutShiftNAttr{}$ attributors audited --- while the ground
-truth ranks \mutShiftGtBest{} best at $\mutShiftGtBestVal{}$ in the audited
-seed, $\mutShiftGtBestSeedMean{}\pm\mutShiftGtBestSeedSd{}$ across
-$\nPooledSeeds{}$ (median paired gap
-$\mutShiftGapOccspearman{}$ AUROC, Wilcoxon $p\mutShiftPOccspearman{}$,
-Benjamini--Hochberg $q\mutShiftQOccspearman{}$ over the $\nSelectionTests{}$
-selection tests). What separates the regimes is the rank correlation between
-faithfulness and correctness. Pooled over all $\nPooledCells{}$ cells of the
-$\nPooledArms{}$ molecular ground-truth arms (each an across-seed mean of
-$\nPooledSeeds{}$ seeds), it moves from $+\pooledIndRho{}$ in distribution
-($p=\pooledIndP{}$) to $\pooledShiftRho{}$ under shift
-($p=\pooledShiftP{}$). We state plainly how much of that
-pooled figure any one arm carries: dropping MUTAG leaves $\looMutRho{}$
-($p=\looMutP{}$, $n=\nLooMut{}$ cells), so the effect is MUTAG together with
-corroboration rather than $\nArmsTotal{}$ arms independently agreeing. On
-MUTAG alone the contrast is $+\mutIndRhoOccspearman{}$ to
-$\mutShiftRhoOccspearman{}$; $\nArmsAgree{}$ of $\nArmsTotal{}$ arms move in
-that direction and one does not, and \S\ref{sec:selection} says why rather
-than pooling the disagreement out of sight. We are equally explicit that faithfulness rankings
-mismatch the ground truth in-distribution as well ($\mutIndNMismatch{}$ of
-$\mutShiftNMetrics{}$ metrics on MUTAG), so the finding is a collapse in rank
-correlation rather than agreement followed by disagreement. Faithfulness itself does not fall under shift --- across the
-same $\nPooledCells{}$ cells it \emph{rises}, from $\pooledIndFaith{}$ to
-$\pooledShiftFaith{}$ ($p=\pooledShiftFaithP{}$), while ground-truth
-localisation does not move ($\pooledIndGt{}$ to $\pooledShiftGt{}$,
-$p=\pooledShiftGtP{}$). The metric therefore moves in the reassuring direction
-in exactly the regime where its relationship to correctness breaks, and gives
-no warning. Using \nRecords{} committed
-per-molecule records we further find that on confidently-wrong predictions
-ground-truth localisation degrades ($\regCCGt{}$ to $\regCEGt{}$, $n=\nRegCEGt{}$)
-while their measured faithfulness \emph{improves} ($\regCCOcc{}$ to
-$\regCEOcc{}$) and their stability is no worse --- both proxies point away from
-the failure --- and that the calibration--reliability link attenuates from a
+linkage, and confidence/correctness regime stratification.
+Our central finding is that \emph{faithfulness is not correctness}, and that
+the two carry no dependable relationship in either regime. Across
+$\nSelectionTests{}$ selection tests --- $\nArms{}$ molecular ground-truth arms
+$\times$ two splits $\times$ $\mutShiftNMetrics{}$ ranking metrics --- a
+faithfulness-only ranking picks an attributor other than the ground-truth-best
+one in $\nSelMismatch{}$, and this is no less true in distribution
+($\nSelMismatchInd{}$ of $\nSelTestsInd{}$) than under scaffold shift
+($\nSelMismatchShift{}$ of $\nSelTestsShift{}$); on MUTAG under shift it
+prefers an attributor anti-aligned with the nitro motif (GT AUROC
+$\mutShiftPickGtOccspearman{}$) over one at $\mutShiftGtBestVal{}$. Pooled over
+$\nPooledCells{}$ cells the
+faithfulness--correctness rank correlation is $+\pooledIndRho{}$ in
+distribution ($p=\pooledIndP{}$) and $\pooledShiftRho{}$ under shift
+($p=\pooledShiftP{}$), neither distinguishable from zero, while per arm under
+shift it runs from $\armShiftRhoMin{}$ to $+\armShiftRhoMax{}$: reliability is
+a property of the individual (dataset, backbone, attributor, split) cell rather
+than of the attributor. Restricted to the $\nPooledPriorArms{}$ arms of an
+earlier analysis it gives $\pooledPriorShiftRho{}$
+($p=\pooledPriorShiftP{}$); two externally authored rationale benchmarks remove
+the effect, and we report the $\nPooledArms{}$-arm result.
+Faithfulness itself does not fall under shift --- it \emph{rises}, from
+$\pooledIndFaith{}$ to $\pooledShiftFaith{}$, while ground-truth localisation
+does not move --- so the metric gives no warning either way. Over \nRecords{}
+per-molecule records, localisation degrades on confidently-wrong predictions
+($\regCCGt{}$ to $\regCEGt{}$) while their measured faithfulness
+\emph{improves}, and the calibration--reliability link attenuates from a
 per-cell median of $\medCalibRho{}$ to $\pooledCalibRho{}$ when cells are
-pooled, a Simpson's-paradox trap for anyone reporting a single aggregate
-number. Results are the committed \texttt{\runConfig{}} run: \nDone{} of
-\nAttempted{} cell-runs completed. Every number, figure and table regenerates
-from the committed artifacts.
+pooled. Every number, figure and table regenerates from the committed
+artifacts.

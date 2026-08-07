@@ -285,25 +285,31 @@ def test_split_tables_lose_no_rows():
     """Splitting a table across floats is where rows go missing quietly.
 
     The ground-truth matrix was one oversized landscape float until it was
-    split into three, and the molecular matrix into two. A reviewer reading
-    the PDF reported the last table looked truncated -- it was not, but the
-    only way to be sure is to count. Every row in the data must appear in
-    exactly one float.
+    split into four, and the molecular matrix into two. This counted rows in
+    the generated files and passed -- while body.tex only \\input the first
+    three, so 22 of the 142 ground-truth cells were generated, counted, and
+    never printed. Counting the generator proves the generator; the manuscript
+    is what a reviewer reads, so count what the manuscript includes.
     """
     import re
 
-    gen = Path(__file__).resolve().parents[1] / "paper" / "generated"
+    root = Path(__file__).resolve().parents[1] / "paper"
+    gen = root / "generated"
     if not (gen / "macros.tex").exists():
         pytest.skip("paper tables not generated")
     sys.path.insert(0, str(FIGS))
     D = pytest.importorskip("msdata")
     cls, reg = D.load_results()
     rows = list(cls) + list(reg)
+    included = set(re.findall(r"\\input\{generated/([a-z0-9_]+)\}",
+                              (root / "body.tex").read_text()))
 
-    def emitted(pattern):
+    def emitted(prefix):
         n = 0
-        for f in sorted(gen.glob(pattern)):
-            t = f.read_text()
+        for stem in sorted(included):
+            if not stem.startswith(prefix):
+                continue
+            t = (gen / f"{stem}.tex").read_text()
             if "\\midrule" not in t:
                 continue
             body = t.split("\\midrule", 1)[1].split("\\bottomrule")[0]
@@ -312,5 +318,411 @@ def test_split_tables_lose_no_rows():
         return n
 
     n_gt = sum(1 for r in rows if r.get("gt_auroc") is not None)
-    assert emitted("tab_tier1_*.tex") == n_gt, (
-        "ground-truth floats emit a different number of rows than the data has")
+    assert emitted("tab_tier1_") == n_gt, (
+        f"the manuscript prints {emitted('tab_tier1_')} ground-truth rows but "
+        f"the data has {n_gt}; a split float is generated and not \\input")
+
+
+def test_every_generated_table_is_used_or_declared_unused():
+    """A generated float nobody includes is invisible until someone counts.
+
+    tab_tier1_4 sat in generated/ for several revisions, complete and correct
+    and absent from the PDF. Generation is not inclusion, so every table the
+    generator writes must either be \\input by the manuscript or named here as
+    deliberately unused, with the reason.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    gen = root / "generated"
+    if not gen.exists():
+        pytest.skip("paper tables not generated")
+    # Deliberately not in the manuscript, and why.
+    UNUSED = {
+        # The same data is shown as Figure 8 with the numbers quoted from
+        # macros in the prose; the table would duplicate it.
+        "tab_regime",
+    }
+    included = set(re.findall(r"\\input\{generated/([a-z0-9_]+)\}",
+                              (root / "body.tex").read_text()))
+    built = {f.stem for f in gen.glob("tab_*.tex")}
+    orphaned = built - included - UNUSED
+    assert not orphaned, (
+        f"generated but never included in the manuscript: {sorted(orphaned)}. "
+        "Add an \\input, or add it to UNUSED with the reason.")
+    stale = UNUSED & included
+    assert not stale, f"listed as unused but actually included: {sorted(stale)}"
+
+
+
+def test_no_selection_verdict_is_asserted_by_hand():
+    """A verdict about a selection test must come from the record, not prose.
+
+    This is the error that survived eight regenerations of the macro set. The
+    manuscript said, of MUTAG on the random split, that occlusion rho and
+    Fidelity+ "both select GuidedBP, which is also the ground-truth-best" --
+    while the very table on the facing page, built from the same JSON, recorded
+    all three metrics as mismatches, the occlusion pick at GT AUROC 0.037
+    against GNNExplainer's 0.858, median paired gap 0.978, p < 0.001. Every
+    *number* in the sentence was a generated macro and every number was right.
+    The word that made it a claim -- "also" -- was typed, so nothing checked it,
+    and the paper's headline ("in distribution it mostly does not") was built on
+    top of it.
+
+    A verdict phrase is only safe if it is derived. So: forbid the phrasings
+    that assert agreement between a faithfulness pick and the ground truth, and
+    require any such claim to be spelled with the mismatch-count macros, which
+    are recomputed from the records on every build.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = " ".join((root / "body.tex").read_text().split())
+    body += " " + " ".join((root / "abstract.tex").read_text().split())
+    banned = [
+        r"which is also the ground-?truth-?best",
+        r"correctly (?:selects|picks|identifies) the ground-?truth-?best",
+        r"(?:selects|picks) the ground-?truth-?best attributor",
+        r"agrees with the ground truth on (?:all|every)",
+        r"harmless in distribution",
+        r"in distribution it mostly does not",
+    ]
+    hits = [p for p in banned if re.search(p, body, re.I)]
+    assert not hits, (
+        "the prose asserts a selection verdict instead of deriving it: "
+        + "; ".join(hits)
+        + "\nUse \\nSelMismatch/\\nSelMismatchInd/\\nSelMismatchShift, which are "
+          "recomputed from the selection records on every build.")
+
+
+def test_every_arm_the_prose_names_is_in_the_pooled_arm_set():
+    """An arm excluded from the pool must not be argued from in the pool.
+
+    Benzene and FluorideCarbonyl were audited for one reported sweep while
+    sitting outside MOLECULAR_GT, because a loader bug made their scaffold
+    splits degenerate. That exclusion was correct then and wrong the moment the
+    loader was fixed -- an exclusion criterion that outlives its justification
+    is a criterion applied to the result. This asserts the two lists agree: any
+    dataset the selection table treats as a molecular ground-truth arm is also
+    an arm the pooled estimate is computed over.
+    """
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper tables not generated")
+    sys.path.insert(0, str(FIGS))
+    pytest.importorskip("msdata")
+    spec = importlib.util.spec_from_file_location(
+        "make_tables", root / "figs" / "make_tables.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    arms = {ds for ds, _, _ in mod.ARMS}
+    pooled = set(mod.MOLECULAR_GT) if hasattr(mod, "MOLECULAR_GT") else None
+    if pooled is None:
+        pytest.skip("MOLECULAR_GT is local to build(); checked via macros instead")
+    assert arms <= pooled, (
+        f"arms in the selection table but not the pooled estimate: {sorted(arms - pooled)}")
+
+
+def test_the_pasted_abstract_matches_the_manuscript():
+    """The abstract a reader sees first is the one nothing was checking.
+
+    SUBMISSION.md carried a hand-pasted plain-text abstract for preprint
+    servers and submission forms. It went stale silently -- still quoting a
+    pooled correlation of -0.353 at p = 0.044 over 33 cells after the five-arm
+    run had replaced those numbers -- and unlike the PDF nothing regenerated
+    it. It is now generated from abstract.tex with the committed macros
+    expanded; this asserts the copy on disk is what the generator produces.
+    """
+    import importlib.util
+    import subprocess
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    gen = root / "make_submission_abstract.py"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper macros not generated")
+    r = subprocess.run([sys.executable, str(gen), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_pasted_abstract_carries_no_latex():
+    """A plain-text abstract with a stray \\macro in it is pasted as-is.
+
+    Preprint forms take the text verbatim, so an unexpanded command or a
+    leftover brace ships to readers. Cheap to assert, and the detex pass is
+    regex-based, so it is worth asserting.
+    """
+    root = Path(__file__).resolve().parents[1] / "paper"
+    md = (root / "SUBMISSION.md").read_text()
+    head = "## Abstract (plain text)"
+    if head not in md:
+        pytest.skip("no plain-text abstract section")
+    body = md.split(head, 1)[1].split("\n## ", 1)[0]
+    bad = [tok for tok in ("\\", "{", "}", "$", "~") if tok in body]
+    assert not bad, f"LaTeX leaked into the pasted abstract: {bad}"
+
+
+def test_no_direction_word_contradicts_the_macro_it_describes():
+    """Numbers are generated; the adjectives beside them were not.
+
+    Every number in the manuscript is a macro and cannot drift. The words that
+    say which *way* a number points are typed, and they drifted the moment two
+    new arms changed which cell was extreme:
+
+      - "its attributions are the most anti-faithful ... (rho = 0.270)"  --
+        a positive coefficient described as anti-faithful, because the
+        exemplar was selected on AUC and the sentence asserted the sign.
+      - "ROC-AUC 0.894, barely better than chance."
+      - "the faithfulness-truth rank correlation is negative for every
+        metric: -0.643, -0.321, +0.036."
+      - "GuidedBP at 0.013, the worst of the 7" -- it is sixth; Saliency is
+        lower at 0.002.
+
+    Each passed the macro checker, the hand-typed-statistics test and a human
+    read. So: for a direction word near a macro, assert the macro points that
+    way. Rules are evaluated against the committed macros, so a rule cannot
+    itself go stale -- if the data changes, the assertion changes with it.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    mac = root / "generated" / "macros.tex"
+    if not mac.exists():
+        pytest.skip("paper macros not generated")
+    text = mac.read_text()
+    M = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}", text))
+    flags = dict(re.findall(r"\\(\w+)(true|false)\b", text))
+
+    def rendered(path):
+        """The prose a reader actually sees: false \\if branches removed.
+
+        Without this the scan reads both sides of every conditional and flags
+        text LaTeX never sets -- which it did on its first run, against a
+        sentence correctly guarded by \\ifHasmutShiftAllRhoNeg. A check that
+        cries wolf on correct code gets switched off, so it has to model the
+        conditionals rather than ignore them.
+        """
+        src = path.read_text()
+        out, i = [], 0
+        pat = re.compile(r"\\(if[A-Za-z]\w*)\b|\\else\b|\\fi\b")
+        keep = [True]
+        for m in pat.finditer(src):
+            if keep[-1]:
+                out.append(src[i:m.start()])
+            i = m.end()
+            tok = m.group(0)
+            if m.group(1):
+                name = m.group(1)[2:]           # ifHasFoo -> HasFoo
+                keep.append(keep[-1] and flags.get(name, "true") == "true")
+            elif tok == r"\else" and len(keep) > 1:
+                parent = keep[-2]
+                keep[-1] = parent and not keep[-1]
+            elif tok == r"\fi" and len(keep) > 1:
+                keep.pop()
+        if keep[-1]:
+            out.append(src[i:])
+        return " ".join("".join(out).split())
+
+    body = rendered(root / "body.tex") + " " + rendered(root / "abstract.tex")
+
+    def val(name):
+        return _num(M[name]) if name in M else None
+
+    def near(macro, window=420):
+        """Text around each use of \\macro, where an adjective would sit."""
+        out = []
+        for m in re.finditer(r"\\" + macro + r"(?![A-Za-z])", body):
+            out.append(body[max(0, m.start() - window):m.end() + window])
+        return out
+
+    NEG = re.compile(r"anti-?\s*faith|anti-?\s*aligned|\bnegative\b|reverse "
+                     r"of|below chance", re.I)
+    problems = []
+
+    # A signed coefficient must not be called anti-anything when it is positive.
+    for macro in ("bestAucOcc", "mostFaithfulOcc", "weakFaithfulOcc"):
+        v = val(macro)
+        if v is None or v < 0:
+            continue
+        for ctx in near(macro):
+            if NEG.search(ctx):
+                problems.append(f"\\{macro} = {v:+.3f} but its sentence says "
+                                f"anti-faithful/negative")
+
+    # "negative for every metric" has to be true of every metric.
+    if "negative for every metric" in body:
+        rhos = [val(f"mutShiftRho{t}") for t in
+                ("Occspearman", "Fidelityplus", "Characterization")]
+        if any(r is None or r >= 0 for r in rhos):
+            problems.append(f'"negative for every metric" but the three are '
+                            f'{rhos}')
+
+    # A superlative must match the generated ordinal.
+    for pre, metric in (("mutShift", "Occspearman"), ("mutInd", "Occspearman")):
+        rank = M.get(f"{pre}Rank{metric}")
+        if rank is None:
+            continue
+        for ctx in near(f"{pre}PickGt{metric}"):
+            if re.search(r"\bthe worst of\b", ctx) and rank != "seventh":
+                problems.append(f"{pre} pick is described as the worst but "
+                                f"\\{pre}Rank{metric} is {rank!r}")
+
+    # Adjectives that assert a level, checked against the level.
+    for phrase, macro, ok, why in [
+        ("barely better than chance", "mostFaithfulAuc", lambda v: v < 0.62,
+         "an AUC well above 0.5 is not barely better than chance"),
+        ("barely above chance", "mostFaithfulAuc", lambda v: v < 0.62, ""),
+        ("as low as $\\minHighAccAuc", "minHighAccAuc", lambda v: v < 0.90,
+         "quoting a high AUC as if it were low does not show accuracy misleads"),
+    ]:
+        v = val(macro)
+        if phrase in body and v is not None and not ok(v):
+            problems.append(f"{phrase!r} but \\{macro} = {v}. {why}")
+
+    assert not problems, "a direction word contradicts its macro:\n  " + \
+        "\n  ".join(problems)
+
+
+def test_no_shift_claim_is_read_off_a_degenerate_split():
+    """A scaffold-split comparison is only a shift comparison on molecules.
+
+    The backbone sweep was read on SynthMotifs for several revisions. The
+    paper states in three places that SynthMotifs has no Bemis-Murcko scaffold
+    and that its "scaffold" partition is an arbitrary deterministic one -- and
+    then used a rank correlation across exactly that partition to conclude the
+    backbone ordering "does not survive the change of split". It gave
+    rho = +0.100. On the three molecular arms carrying all five backbones the
+    same computation gives +0.70 to +0.90: the ordering is largely preserved,
+    and the published claim was an artefact of the arm.
+
+    So: any dataset a split-contrast macro is computed on must be molecular.
+    """
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper tables not generated")
+    sys.path.insert(0, str(FIGS))
+    D = pytest.importorskip("msdata")
+    spec = importlib.util.spec_from_file_location(
+        "make_tables", root / "figs" / "make_tables.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    import re
+    M = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{(.*)\}",
+                        (root / "generated" / "macros.tex").read_text()))
+    bad = []
+    # Every dataset named by a macro that a split contrast is drawn from.
+    for macro in ("bbDataset", "armShiftRhoMinDataset", "armShiftRhoMaxDataset"):
+        ds = M.get(macro)
+        if ds and ds in D.SYNTHETIC:
+            bad.append(f"\\{macro} = {ds}, which has no Bemis-Murcko scaffold")
+    for ds, _, _ in mod.ARMS:
+        if ds in D.SYNTHETIC:
+            bad.append(f"{ds} is a selection-test arm but is not molecular")
+    for ds in mod.MOLECULAR_GT:
+        if ds in D.SYNTHETIC:
+            bad.append(f"{ds} is in the pooled shift estimate but is not molecular")
+    assert not bad, ("a shift claim rests on a non-molecular split:\n  "
+                     + "\n  ".join(bad))
+
+
+def test_the_bibliography_has_no_duplicate_entry():
+    """Two keys for one paper is two numbers for one reference.
+
+    sanchez2020 and sanchezlengeling were the same NeurIPS paper, cited under
+    both keys, and appeared twice in the reference list under [9] and [15].
+    """
+    import re
+    from collections import Counter
+
+    body = (Path(__file__).resolve().parents[1] / "paper" / "body.tex").read_text()
+    items = re.findall(r"\\bibitem\{(\w+)\}(.*?)(?=\\bibitem\{|\\end\{thebibliography\})",
+                       body, flags=re.S)
+    keys = Counter(k for k, _ in items)
+    assert not [k for k, n in keys.items() if n > 1], \
+        f"duplicate bibitem keys: {[k for k, n in keys.items() if n > 1]}"
+
+    def sig(text):
+        """Author surnames plus the title's first words -- enough to match two
+        renderings of one paper that differ only in how initials are set."""
+        t = " ".join(text.split())
+        t = re.sub(r"\\emph\{[^}]*\}", " ", t)
+        t = re.sub(r"[^A-Za-z ]", " ", t).lower()
+        return tuple(w for w in t.split() if len(w) > 3)[:14]
+
+    seen = {}
+    dupes = []
+    for k, text in items:
+        s = sig(text)
+        if s in seen:
+            dupes.append(f"{seen[s]} and {k} are the same reference")
+        seen[s] = k
+    assert not dupes, "duplicate references:\n  " + "\n  ".join(dupes)
+
+
+def test_the_manuscript_does_not_narrate_its_own_drafting():
+    """Negative results belong in the paper; the story of writing it does not.
+
+    Reporting a superseded claim is good practice and stays. Narrating the
+    revision history around it is not the same thing, and the manuscript had
+    drifted into it: "an earlier version of this analysis read this sweep on
+    SynthMotifs", "we did not interpret that pattern", "our own first instinct
+    was to do that", "we keep the record of the wrong diagnosis ... only how
+    hard we looked". Each of those describes the authors rather than the
+    method, and belongs in the repository history, a cover letter or a
+    response to reviewers.
+
+    The distinction this enforces: state what the protocol does and what the
+    data shows, in the present tense. A superseded *number* may be reported --
+    the macros for it exist and are used -- but not as an anecdote.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    body = " ".join((root / "body.tex").read_text().split())
+    body += " " + " ".join((root / "abstract.tex").read_text().split())
+    banned = [
+        r"an earlier (?:version|sweep|run|draft) of (?:this|the) (?:analysis|paper|matrix)",
+        r"we (?:did not|didn't) interpret",
+        r"our own first instinct",
+        r"we record (?:it|the sequence) (?:here )?because",
+        r"we keep the record of",
+        r"only how hard we looked",
+        r"we were not exempt",
+        r"rather than quietly fixing",
+        r"the wrong diagnosis",
+        r"in the direction that flattered",
+        r"we would rather report",
+    ]
+    hits = [p for p in banned if re.search(p, body, re.I)]
+    assert not hits, (
+        "the manuscript narrates its own drafting: " + "; ".join(hits)
+        + "\nState the protocol and the result in the present tense. A "
+          "superseded number may be reported; the story of arriving at it "
+          "belongs in the repository history.")
+
+
+def test_a_figure_and_its_caption_name_the_same_dataset():
+    """The caption is generated; the panels were not.
+
+    Figure 7's caption is built from \\bbDataset, which make_tables computes.
+    make_figures kept its own BB_DATASET constant. When the backbone sweep
+    moved to a molecular arm only the first changed, so the caption read
+    "across the 5 backbones on MolMotifHard" above two panels titled
+    "SynthMotifs - Integrated Gradients". Both now read one selector in
+    msdata; this asserts they agree.
+    """
+    root = Path(__file__).resolve().parents[1] / "paper"
+    if not (root / "generated" / "macros.tex").exists():
+        pytest.skip("paper macros not generated")
+    sys.path.insert(0, str(FIGS))
+    pytest.importorskip("msdata")
+    mf = pytest.importorskip("make_figures")
+    M = _macros()
+    assert M["bbDataset"] == mf.BB_DATASET, (
+        f"caption says \\bbDataset = {M['bbDataset']}, panels plot "
+        f"{mf.BB_DATASET}")

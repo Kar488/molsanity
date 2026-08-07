@@ -50,3 +50,6 @@ venv/
 
 # Built by "make -C paper zip"; regenerated on demand, never committed.
 paper/molsanity_supplementary.zip
+
+# Journal submission package; rebuilt by "make -C paper submission-files".
+paper/submission/

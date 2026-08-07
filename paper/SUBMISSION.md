@@ -24,6 +24,27 @@ karthik.iyer@hotmail.com. Give the institutional address as the primary
 contact — several publishers verify affiliation against the domain, and a
 free-mail-only corresponding address can hold up desk processing.
 
+## Files to upload
+
+The submission form takes an **editable** manuscript file — a Word document, or
+LaTeX with figures zipped, which the publisher compiles. **A PDF is not
+accepted as the manuscript file.** Build everything with
+`make -C paper submission-files`; it writes to `paper/submission/`.
+
+| Form field | File | Notes |
+| --- | --- | --- |
+| Manuscript file | `molsanity_latex_sources.zip` | LaTeX sources + figures. **Requires XeLaTeX** (fontspec/TeX Gyre Pagella); it will not build under pdfLaTeX. The archive's README.txt says so, but flag it in the cover note too — if their compile service is pdfLaTeX-only, ask the editorial office how to proceed rather than silently sending something that fails technical check. |
+| Supplementary material | `Additional_file_1.pdf` | Supplementary notes and summary tables. |
+| Supplementary material | `Additional_file_2.csv` | Per-cell audit matrix (558 rows). |
+| Supplementary material | `Additional_file_3.csv` | Across-seed variance (886 rows). |
+| Supplementary material | `Additional_file_4.csv` | Head-to-head benchmark (520 rows). |
+
+Each is under BMC's 20 MB per-file limit. The manuscript declares all four in
+an "Additional files" list and cites them in order in the text, which is what
+BMC's technical check looks for. Do **not** upload the `.md` files in
+`paper/supplementary/` — that bundle is the repository's own copy of the
+generated reports, not a journal additional-file set.
+
 ## Category
 
 Theoretical and Computational Chemistry — machine learning / cheminformatics.

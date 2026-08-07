@@ -44,8 +44,12 @@ def test_the_seed_variance_report_is_in_the_bundle():
     assert (BUNDLE / "SEED_VARIANCE.md").exists()
     # LaTeX wraps prose, so normalise whitespace before looking for a phrase.
     body = " ".join((ROOT / "paper" / "body.tex").read_text().split())
-    assert "supplementary material" in body, (
-        "the bundle exists but the manuscript never points a reader at it")
+    # The manuscript now names the numbered additional file rather than the
+    # generic phrase: BMC requires each file to be cited by its number, and
+    # "supplementary material" satisfies no technical check.
+    assert "Additional file~3" in body or "Additional file 3" in body, (
+        "the across-seed spread is bundled but the manuscript never points a "
+        "reader at it by number")
 
 
 def test_no_working_document_is_bundled():
@@ -97,3 +101,77 @@ def test_bundled_reports_carry_no_in_progress_language():
                 hits.append(f"{f.name}:{i}: {line.strip()[:90]}")
     assert not hits, "in-progress language in supplementary material:\n  " + \
         "\n  ".join(hits)
+
+
+def test_additional_files_are_numbered_declared_and_cited_in_order():
+    """BMC's additional-file rules, which a .md bundle did not satisfy.
+
+    The submission form takes numbered "Additional file N" items, each listed
+    in the manuscript with its file name and a description, and each cited in
+    sequence in the main text. The previous bundle was five raw .md reports:
+    unnumbered, undeclared, uncited, and in a format BMC does not list. This
+    asserts the three rules that a reader or a technical check would apply.
+    """
+    import re
+
+    paper = ROOT / "paper"
+    body = " ".join((paper / "body.tex").read_text().split())
+
+    declared = set(int(n) for n in re.findall(
+        r"\\textbf\{Additional file (\d+)\}", body))
+    assert declared, "the manuscript declares no additional files"
+    assert declared == set(range(1, max(declared) + 1)), \
+        f"additional files are not numbered consecutively: {sorted(declared)}"
+
+    # Citations in the body, excluding the declaration list itself.
+    decl_at = body.find(r"\paragraph{Additional files}")
+    prose = body[:decl_at] if decl_at > 0 else body
+    cited = [int(n) for n in re.findall(r"Additional file~?\\?~?(\d+)", prose)]
+    first = []
+    for n in cited:
+        if n not in first:
+            first.append(n)
+    assert first == sorted(first), (
+        f"additional files are not cited in sequence: first mentions {first}")
+    assert set(first) == declared, (
+        f"declared {sorted(declared)} but cited {sorted(set(first))}")
+
+    out = paper / "submission"
+    if not out.exists():
+        pytest.skip("submission package not built; run 'make -C paper submission-files'")
+    for n in sorted(declared):
+        hits = list(out.glob(f"Additional_file_{n}.*"))
+        assert hits, f"Additional file {n} is declared but not built"
+        for f in hits:
+            assert f.stat().st_size <= 20 * 1024 * 1024, \
+                f"{f.name} exceeds BMC's 20 MB per-file limit"
+
+
+def test_the_manuscript_upload_is_an_editable_source_archive():
+    """The submission form does not take a PDF as the manuscript file.
+
+    It takes a Word document, or LaTeX with figures compressed into a .zip
+    which the publisher compiles. A PDF-only delivery cannot be submitted, so
+    the package has to carry sources that build on their side: every file
+    main.tex \\input{}s must be inside the archive.
+    """
+    import re
+    import zipfile
+
+    zpath = ROOT / "paper" / "submission" / "molsanity_latex_sources.zip"
+    if not zpath.exists():
+        pytest.skip("source archive not built; run 'make -C paper submission-files'")
+    names = set(zipfile.ZipFile(zpath).namelist())
+    assert "main.tex" in names, "the archive has no main.tex"
+
+    main = (ROOT / "paper" / "main.tex").read_text()
+    body = (ROOT / "paper" / "body.tex").read_text()
+    missing = []
+    for src in (main, body):
+        for inc in re.findall(r"\\(?:input|include)\{([^}]+)\}", src):
+            if not any(n == inc or n == inc + ".tex" for n in names):
+                missing.append(inc)
+        for img in re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", src):
+            if not any(n == img or n.startswith(img + ".") for n in names):
+                missing.append(img)
+    assert not missing, f"the archive is missing inputs the manuscript needs: {missing}"

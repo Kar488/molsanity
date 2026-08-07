@@ -550,6 +550,9 @@ wrong recommendation (\S\ref{sec:selection}), what a practitioner can do
 instead when no ground truth exists (\S\ref{sec:abstention}), the regimes in
 which attributions fail, and the arms and axes on which the audit found
 nothing, which we report at the same length as the ones where it did.
+Supplementary notes and the summary tables behind these sections are
+Additional file~1; the complete per-cell audit matrix every figure and quoted
+statistic is computed from is Additional file~2.
 
 \input{generated/tab_regression}
 \input{generated/tab_paired}
@@ -1428,8 +1431,7 @@ scores $\mutShiftGtBestVal{}$ in the audited seed against an across-seed mean
 of $\mutShiftGtBestSeedMean{}\pm\mutShiftGtBestSeedSd{}$. The ordering is the
 same and the mismatch conclusion does not depend on the seed, but the number
 does, and we report both rather than only the one that supports the claim more
-comfortably. The full per-cell across-seed spread is published as supplementary
-material. What is \emph{not} varied is the
+comfortably. The full per-cell across-seed spread is Additional file~3. What is \emph{not} varied is the
 split rule itself: each regime is one deterministic partition, so no interval
 here covers the variance of choosing a different scaffold-split implementation
 or ratio. Per-cell molecule counts are also modest where the dataset is
@@ -1455,7 +1457,10 @@ SubgraphX on the ground-truth arms only, because its cost per molecule is far
 above a gradient attributor's (\S\ref{sec:repro}). Conclusions that pool over the whole matrix therefore
 weight the gradient family more heavily than a cost-blind design would, and any
 claim about search-based attribution outside the ground-truth arms is
-unsupported here. This is a real coverage limit, and it is the same selection
+unsupported here. The per-cell scores behind this comparison, including the
+field-standard Fidelity$\pm$, sparsity, the GraphFramEx characterisation score
+and the PyG/DIG unfaithfulness metric computed on the same molecules, are
+Additional file~4. This is a real coverage limit, and it is the same selection
 pressure --- expensive attributors get benchmarked less --- that the audit is
 meant to make visible rather than inherit silently.
 
@@ -1612,13 +1617,27 @@ repository is the source of record for this manuscript; it carries
 with a DOI, including the trained weights, is generated from a tagged release
 and deposited to accompany the journal version.
 
-The supplementary material is the pipeline's own generated reports, copied
-unchanged from that repository: the per-cell across-seed variance register, the
-selection experiment as the pipeline emitted it, the head-to-head benchmark
-including the framework metrics, and the rationale-use and abstention
-analyses. It carries generated reports only; the repository's working
-documents are current for the build rather than written for a reader, and this
-paper's limitations are stated in \S\ref{sec:limits}.
+\paragraph{Additional files}
+\begin{itemize}\itemsep2pt
+\item \textbf{Additional file 1} --- \texttt{Additional\_file\_1.pdf}.
+  Supplementary notes and summary tables: the ground-truth benchmark summary
+  per dataset and split, the rationale-use partition testing the Faber
+  objection, and the abstention coverage--reliability analysis.
+\item \textbf{Additional file 2} --- \texttt{Additional\_file\_2.csv}.
+  Per-cell audit matrix, one row per (dataset, backbone, attributor, split,
+  seed) combination; the table every figure and quoted statistic in this
+  manuscript is computed from.
+\item \textbf{Additional file 3} --- \texttt{Additional\_file\_3.csv}.
+  Across-seed mean, standard deviation, minimum and maximum per cell over the
+  $\nPooledSeeds{}$ seeds.
+\item \textbf{Additional file 4} --- \texttt{Additional\_file\_4.csv}.
+  Head-to-head benchmark: every audited cell scored on the MolSanity axes
+  alongside Fidelity$\pm$, sparsity, the GraphFramEx characterisation score and
+  the PyG/DIG unfaithfulness metric, computed on the same molecules.
+\end{itemize}
+All four are generated from the committed artifacts by
+\texttt{paper/make\_\-additional\_\-files.py}, so they cannot describe a
+different run from the manuscript.
 
 Every figure and table in this paper is generated from those artifacts by
 \texttt{paper/figs/make\_\-figures.py} and

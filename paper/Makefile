@@ -12,7 +12,7 @@
 PY ?= python3
 XELATEX ?= xelatex
 
-.PHONY: all figures tables supplementary submission zip pdf fontcheck macrocheck clean
+.PHONY: all figures tables supplementary submission submission-files zip pdf fontcheck macrocheck clean
 
 all: pdf
 
@@ -34,6 +34,12 @@ submission: tables
 # bundle zipped over an old file ships both copies -- which it did: a
 # submission zip went out carrying the current reports at the root and a
 # stale supplementary/ folder from a previous run beside them. Remove first.
+# The journal package: an editable LaTeX source archive for the manuscript
+# upload (the form does not accept a PDF), plus numbered BMC additional
+# files -- narrative to PDF, data to CSV, as BMC asks.
+submission-files: tables figures
+	$(PY) make_additional_files.py
+
 zip: supplementary
 	rm -f molsanity_supplementary.zip
 	cd supplementary && zip -q -X -r ../molsanity_supplementary.zip . -x '.*'

@@ -449,7 +449,11 @@ def latex_sources(zip_path: Path) -> int:
         for f in list(stage.glob("main.*")):
             if f.suffix != ".tex":
                 f.unlink()
-        for _ in range(2):
+        # Three passes, not two: with this many floats and cross-references
+        # the second still ends on "Label(s) may have changed", which means a
+        # submission system that runs a fixed two passes would typeset stale
+        # references.
+        for _ in range(3):
             r = subprocess.run([engine, "-interaction=nonstopmode", "main.tex"],
                                cwd=stage, capture_output=True, text=True)
         log = (stage / "main.log").read_text(errors="ignore")
@@ -458,7 +462,11 @@ def latex_sources(zip_path: Path) -> int:
                               (r"LaTeX Warning: Citation .* undefined", "undefined citations"),
                               (r"LaTeX Warning: Reference .* undefined", "undefined references"),
                               (r"File .* not found|Cannot find image", "missing files"),
-                              (r"Missing character", "glyphs the font cannot set")):
+                              (r"Missing character", "glyphs the font cannot set"),
+                              (r"Label\(s\) may have changed", "stale cross-references"),
+                              (r"newunicodechar Warning: Redefining",
+                               "duplicate Unicode definitions (route them "
+                               "through \\umap so inputenc overrides cleanly)")):
             if re.search(pattern, log, re.M):
                 sys.stdout.write(r.stdout[-2500:])
                 raise SystemExit(

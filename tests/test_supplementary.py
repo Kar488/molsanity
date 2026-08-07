@@ -175,3 +175,34 @@ def test_the_manuscript_upload_is_an_editable_source_archive():
             if not any(n == img or n.startswith(img + ".") for n in names):
                 missing.append(img)
     assert not missing, f"the archive is missing inputs the manuscript needs: {missing}"
+
+
+def test_the_supplementary_pdf_carries_no_raw_markdown():
+    """Additional file 1 is typeset from markdown, so markers can leak.
+
+    The first build printed "_Faithfulness-only selection test_" and "the
+    *ground truth* says is best" with their markers intact, and rendered the
+    star that flags the ground-truth-best attributor as an empty box because
+    the text font has no U+2B50. Both are only visible by opening the PDF.
+
+    The generator already fails the build on a character the font cannot set;
+    this covers the other half -- markup that survived the converter.
+    """
+    import re
+
+    tex = ROOT / "paper" / "submission" / "Additional_file_1.tex"
+    if not tex.exists():
+        pytest.skip("submission package not built; run 'make -C paper submission-files'")
+    body = tex.read_text()
+    body = body.split(r"\begin{document}", 1)[-1]
+    leftovers = []
+    for pattern, what in [(r"\*\*", "bold markers"),
+                          (r"(?<![\\\w])\*(?=\S)", "italic markers"),
+                          (r"(?<!\\)`", "code backticks"),
+                          (r"^\s*[-*]\s+\S", "unconverted list bullets"),
+                          (r"^\s*\|", "unconverted markdown table row"),
+                          (r"^\s*#{1,6}\s", "unconverted heading")]:
+        if re.search(pattern, body, re.M):
+            leftovers.append(what)
+    assert not leftovers, (
+        "raw markdown survived into Additional file 1: " + ", ".join(leftovers))

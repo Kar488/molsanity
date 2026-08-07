@@ -125,17 +125,131 @@ def write_csv(path: Path, report: str) -> int:
     return n
 
 
+UNICODE_TEX = {
+    # Characters the report generators emit that a text serif has no glyph for.
+    # The star marking the ground-truth-best attributor rendered as an empty
+    # box in the first build of this file, which is the kind of defect nobody
+    # notices until a reviewer opens the PDF.
+    "\u2b50": r"$\star$", "\u2605": r"$\star$", "\u2606": r"$\star$",
+    "\u2713": r"$\checkmark$", "\u2717": r"$\times$",
+    "\u03c1": r"$\rho$", "\u03c3": r"$\sigma$", "\u0394": r"$\Delta$",
+    "\u2248": r"$\approx$", "\u2264": r"$\leq$", "\u2265": r"$\geq$",
+    "\u2192": r"$\rightarrow$", "\u2190": r"$\leftarrow$",
+    "\u00b1": r"$\pm$", "\u00d7": r"$\times$", "\u2212": "-",
+    "\u00b7": r"$\cdot$", "\u2014": "---", "\u2013": "--",
+    "\u2018": "`", "\u2019": "'", "\u201c": "``", "\u201d": "''",
+}
+
+
 def tex_escape(s: str) -> str:
-    for a, b in (("\\", r"\textbackslash{}"), ("&", r"\&"), ("%", r"\%"),
-                 ("$", r"\$"), ("#", r"\#"), ("_", r"\_"), ("{", r"\{"),
-                 ("}", r"\}"), ("~", r"\textasciitilde{}"),
-                 ("^", r"\textasciicircum{}")):
+    """Markdown inline -> LaTeX, escaping first so markup cannot be eaten."""
+    for a, b in (("\\", "\x00"), ("&", r"\&"), ("%", r"\%"), ("$", r"\$"),
+                 ("#", r"\#"), ("_", "\x01"), ("{", r"\{"), ("}", r"\}"),
+                 ("~", r"\textasciitilde{}"), ("^", r"\textasciicircum{}")):
         s = s.replace(a, b)
-    # Markdown emphasis survives into the report text; render it rather than
-    # printing the asterisks.
+    # Emphasis is restored from the placeholders, so a literal underscore in a
+    # column name survives while _italics_ still become italics. The first
+    # build printed the markers verbatim: "_Faithfulness-only selection test_".
     s = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", s)
-    s = re.sub(r"`(.+?)`", r"\\texttt{\1}", s)
+    # Single-asterisk emphasis after double, or the greedy bold rule would eat
+    # it. The reports use both: "the *ground truth* says is best" printed its
+    # asterisks in the first build.
+    s = re.sub(r"(?<!\*)\*(?!\s)([^*]+?)(?<!\s)\*(?!\*)", r"\\emph{\1}", s)
+    s = re.sub(r"(?<![A-Za-z0-9])\x01(\S(?:.*?\S)?)\x01(?![A-Za-z0-9])",
+               r"\\emph{\1}", s)
+    s = re.sub(r"`(.+?)`", lambda m: r"\texttt{" + m.group(1) + "}", s)
+    s = s.replace("\x01", r"\_").replace("\x00", r"\textbackslash{}")
+    for ch, tex in UNICODE_TEX.items():
+        s = s.replace(ch, tex)
     return s
+
+
+def md_to_tex(text: str, drop_title: bool = True) -> list[str]:
+    """One report's markdown as LaTeX, preserving the order of prose and tables."""
+    out, buf, lines, i = [], [], text.splitlines(), 0
+
+    def flush():
+        if buf:
+            out.append(tex_escape(" ".join(buf)))
+            out.append("")
+            buf.clear()
+
+    while i < len(lines):
+        s = lines[i].strip()
+        if s.startswith("#"):
+            flush()
+            level, title = len(s) - len(s.lstrip("#")), s.lstrip("#").strip()
+            if not (drop_title and level == 1):
+                out.append(rf"\subsection*{{{tex_escape(title)}}}")
+            i += 1
+            continue
+        if s.startswith("|") and s.endswith("|"):
+            flush()
+            rows = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                cells = [c.strip() for c in lines[i].strip()[1:-1].split("|")]
+                if not all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
+                    rows.append(cells)
+                i += 1
+            if rows:
+                out += tex_table(rows)
+            continue
+        if s.startswith("- ") or s.startswith("* "):
+            flush()
+            out.append(r"\begin{itemize}\itemsep2pt\parskip0pt")
+            while i < len(lines) and lines[i].strip()[:2] in ("- ", "* "):
+                out.append(r"\item " + tex_escape(lines[i].strip()[2:]))
+                i += 1
+            out.append(r"\end{itemize}")
+            continue
+        if s.startswith(">"):
+            flush()
+            # Consecutive quote lines are one paragraph. Emitting a quote
+            # environment per line set each at its own \parskip, which read as
+            # a double-spaced list rather than a block quotation.
+            quoted = []
+            while i < len(lines) and lines[i].strip().startswith(">"):
+                quoted.append(lines[i].strip().lstrip("> ").strip())
+                i += 1
+            out.append(r"\begin{quote}\small " +
+                       tex_escape(" ".join(q for q in quoted if q)) +
+                       r"\end{quote}")
+            continue
+        if set(s) == {"-"} and len(s) >= 3:
+            flush()
+            out.append(r"\medskip\hrule\medskip")
+            i += 1
+            continue
+        if not s:
+            flush()
+            i += 1
+            continue
+        buf.append(s)
+        i += 1
+    flush()
+    return out
+
+
+def tex_table(rows: list[list[str]]) -> list[str]:
+    """A markdown table as LaTeX that stays inside the text block.
+
+    Wide tables ran off the page in the first build -- the selection table lost
+    its last two columns entirely. \\fitbox shrinks a box only when it is wider
+    than the line, so narrow tables keep the body font and wide ones are scaled
+    just enough to fit rather than uniformly squashed.
+    """
+    ncol = max(len(r) for r in rows)
+    rows = [(r + [""] * ncol)[:ncol] for r in rows]
+    # First column is a label, the rest are numbers.
+    spec = "l" + "r" * (ncol - 1)
+    body = [r"\fitbox{%", r"\footnotesize\setlength{\tabcolsep}{5pt}",
+            rf"\begin{{tabular}}{{{spec}}}", r"\toprule",
+            " & ".join(rf"\textbf{{{tex_escape(c)}}}" for c in rows[0]) +
+            r" \\ \midrule"]
+    for r in rows[1:]:
+        body.append(" & ".join(tex_escape(c) for c in r) + r" \\")
+    body += [r"\bottomrule", r"\end{tabular}}", r"\medskip", ""]
+    return body
 
 
 def si_pdf(path: Path) -> None:
@@ -143,105 +257,73 @@ def si_pdf(path: Path) -> None:
     parts = [
         r"\documentclass[10pt,a4paper]{article}",
         r"\usepackage{fontspec}\setmainfont{TeX Gyre Pagella}",
-        r"\usepackage[margin=2.4cm]{geometry}",
-        r"\usepackage{booktabs,longtable,array,xcolor,hyperref}",
+        r"\usepackage{amssymb,amsmath}",
+        r"\usepackage[margin=2.2cm]{geometry}",
+        r"\usepackage{booktabs,array,graphicx,xcolor,hyperref}",
         r"\hypersetup{colorlinks=true,linkcolor=black,urlcolor=[HTML]{264E78}}",
         r"\setlength{\parskip}{5pt}\setlength{\parindent}{0pt}",
-        r"\renewcommand{\arraystretch}{1.15}",
-        r"\title{\vspace{-1.6cm}\bfseries Additional file 1: Supplementary "
-        r"notes and summary tables}",
-        r"\author{MolSanity: A Reliability Audit for Feature Attributions on "
-        r"Molecular Graph Neural Networks}",
+        r"\renewcommand{\arraystretch}{1.12}",
+        r"\newsavebox{\fitb}",
+        r"\newcommand{\fitbox}[1]{\sbox{\fitb}{#1}%",
+        r"  \ifdim\wd\fitb>\linewidth",
+        r"    \noindent\resizebox{\linewidth}{!}{\usebox{\fitb}}%",
+        r"  \else\noindent\usebox{\fitb}\fi}",
+        r"\title{\vspace{-1.8cm}\bfseries Additional file 1:\\"
+        r"Supplementary notes and summary tables}",
+        r"\author{\normalsize MolSanity: A Reliability Audit for Feature "
+        r"Attributions on Molecular Graph Neural Networks}",
         r"\date{}",
-        r"\begin{document}\maketitle",
-        r"\noindent Every table and figure in this file is generated from the "
-        r"committed artifacts of the single run reported in the manuscript, by "
+        r"\begin{document}\maketitle\thispagestyle{empty}",
+        r"\noindent Every table in this file is generated from the committed "
+        r"artifacts of the single run reported in the manuscript, by "
         r"\texttt{paper/make\_additional\_files.py}. Additional files 2--4 "
-        r"carry the full per-cell data in machine-readable form.\par\vspace{6pt}",
+        r"carry the full per-cell data in machine-readable form.",
+        r"\tableofcontents\clearpage",
     ]
-    for i, (report, label) in enumerate(
-            [("BENCHMARK_GT.md", "Ground-truth benchmark by dataset and split"),
-             ("RATIONALE_USE.md", "Does the model read the ground truth?"),
-             ("ABSTENTION.md", "When not to trust an attribution")], start=1):
-        text = (RESULTS / report).read_text()
+    sections = [("BENCHMARK_GT.md", "Ground-truth benchmark by dataset and split"),
+                ("RATIONALE_USE.md", "Does the model read the ground truth?"),
+                ("ABSTENTION.md", "When not to trust an attribution")]
+    for i, (report, label) in enumerate(sections, start=1):
         parts.append(rf"\section*{{S{i}\quad {tex_escape(label)}}}")
-        for heading, header, rows in [(None, None, None)]:
-            pass
-        # Walk the report in order so prose and tables keep their sequence.
-        buf, tbl = [], []
-        def flush_prose():
-            if buf:
-                parts.append(tex_escape(" ".join(buf)))
-                buf.clear()
-        lines = text.splitlines()
-        j = 0
-        while j < len(lines):
-            s = lines[j].strip()
-            if s.startswith("#"):
-                flush_prose()
-                sub = s.lstrip("#").strip()
-                if not sub.lower().startswith(report.split(".")[0].lower()):
-                    parts.append(rf"\subsection*{{{tex_escape(sub)}}}")
-                j += 1
-                continue
-            if s.startswith("|") and s.endswith("|"):
-                flush_prose()
-                tbl = []
-                while j < len(lines) and lines[j].strip().startswith("|"):
-                    cells = [c.strip() for c in lines[j].strip()[1:-1].split("|")]
-                    if not all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
-                        tbl.append(cells)
-                    j += 1
-                if tbl:
-                    ncol = len(tbl[0])
-                    spec = "l" + "r" * (ncol - 1)
-                    parts.append(rf"\begin{{longtable}}{{{spec}}}\toprule")
-                    parts.append(" & ".join(
-                        rf"\textbf{{{tex_escape(c)}}}" for c in tbl[0]) + r"\\\midrule\endhead")
-                    for r in tbl[1:]:
-                        r = (r + [""] * ncol)[:ncol]
-                        parts.append(" & ".join(tex_escape(c) for c in r) + r"\\")
-                    parts.append(r"\bottomrule\end{longtable}")
-                continue
-            if s.startswith("---"):
-                j += 1
-                continue
-            if s.startswith("- "):
-                flush_prose()
-                parts.append(r"\begin{itemize}\itemsep2pt")
-                while j < len(lines) and lines[j].strip().startswith("- "):
-                    parts.append(r"\item " + tex_escape(lines[j].strip()[2:]))
-                    j += 1
-                parts.append(r"\end{itemize}")
-                continue
-            if not s:
-                flush_prose()
-                j += 1
-                continue
-            buf.append(s)
-            j += 1
-        flush_prose()
+        parts.append(rf"\addcontentsline{{toc}}{{section}}"
+                     rf"{{S{i}\quad {tex_escape(label)}}}")
+        parts += md_to_tex((RESULTS / report).read_text())
+        # No forced page break between sections: two of the three are under a
+        # page, and clearing after each left most of a sheet blank.
 
-    parts.append(r"\section*{S4\quad Machine-readable additional files}")
+    n = len(sections) + 1
+    parts.append(rf"\section*{{S{n}\quad Machine-readable additional files}}")
+    parts.append(rf"\addcontentsline{{toc}}{{section}}"
+                 rf"{{S{n}\quad Machine-readable additional files}}")
     parts.append(r"\begin{itemize}\itemsep3pt")
-    for n, ext, title, desc, _src in FILES:
+    for num, ext, title, desc, _src in FILES:
         if ext != "csv":
             continue
-        parts.append(rf"\item \textbf{{Additional file {n}}} "
-                     rf"(\texttt{{Additional\_file\_{n}.csv}}) --- "
-                     rf"{tex_escape(title)}. {tex_escape(desc)}")
+        parts.append(rf"\item \textbf{{Additional file {num}}} "
+                     rf"(\texttt{{Additional\_file\_{num}.csv}}) --- "
+                     rf"{tex_escape(title)} {tex_escape(desc)}")
     parts.append(r"\end{itemize}")
     parts.append(r"\end{document}")
 
     tex = OUT / f"{path.stem}.tex"
     tex.write_text("\n".join(parts) + "\n")
-    for _ in range(2):
+    r = None
+    for _ in range(3):                     # three passes: the ToC needs two
         r = subprocess.run(["xelatex", "-interaction=nonstopmode",
                             "-halt-on-error", tex.name],
                            cwd=OUT, capture_output=True, text=True)
     if not (OUT / f"{path.stem}.pdf").exists():
         sys.stdout.write(r.stdout[-3000:])
         raise SystemExit("Additional file 1 did not compile")
+    log = (OUT / f"{path.stem}.log").read_text(errors="ignore")
+    bad = re.findall(r"Missing character: There is no (\S+)", log)
+    if bad:
+        raise SystemExit(
+            "Additional file 1 has characters the font cannot set: "
+            + ", ".join(sorted(set(bad))) + " -- add them to UNICODE_TEX")
+    over = len(re.findall(r"Overfull \\hbox \((\d{3,})", log))
+    if over:
+        print(f"    note: {over} overfull boxes in the SI (>=100pt)")
     for junk in OUT.glob(f"{path.stem}.*"):
         if junk.suffix not in (".pdf", ".tex"):
             junk.unlink()

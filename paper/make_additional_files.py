@@ -329,21 +329,56 @@ def si_pdf(path: Path) -> None:
             junk.unlink()
 
 
-def latex_sources(zip_path: Path) -> None:
-    """The editable manuscript upload: sources plus figures, flat, zipped."""
+def latex_sources(zip_path: Path) -> int:
+    """The editable manuscript upload: every source file, flat, zipped.
+
+    Flat on purpose. Publisher compile services extract into a single working
+    directory and are not reliable about nested paths, so the staged copies
+    have their ``figs/`` and ``generated/`` prefixes stripped from every
+    \\input and \\includegraphics. The repository keeps its subdirectories;
+    only the archive is flattened, and the rewrite is verified by compiling
+    the extracted archive rather than trusted.
+
+    Only figures the manuscript actually includes are shipped: the repository
+    builds one (fig_coverage) that no float references, and an unused file in
+    a submission archive is a question a reviewer should not have to ask.
+    """
     stage = OUT / "_latex"
     if stage.exists():
         shutil.rmtree(stage)
-    (stage / "figs").mkdir(parents=True)
-    (stage / "generated").mkdir()
-    for name in ("main.tex", "body.tex", "abstract.tex"):
-        shutil.copy2(HERE / name, stage / name)
+    stage.mkdir(parents=True)
+
+    src = {name: (HERE / name).read_text()
+           for name in ("main.tex", "body.tex", "abstract.tex")}
+    used_figs, used_inputs = set(), set()
+    for text in src.values():
+        used_figs |= {Path(m).name for m in re.findall(
+            r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", text)}
+        used_inputs |= {Path(m).name for m in re.findall(
+            r"\\(?:input|include)\{([^}]+)\}", text)}
+
+    def flatten(text: str) -> str:
+        text = re.sub(r"(\\(?:input|include)\{)[^}]*/([^}]+\})", r"\1\2", text)
+        return re.sub(r"(\\includegraphics(?:\[[^\]]*\])?\{)[^}]*/([^}]+\})",
+                      r"\1\2", text)
+
+    for name, text in src.items():
+        (stage / name).write_text(flatten(text))
     for f in sorted((HERE / "generated").glob("*.tex")):
-        shutil.copy2(f, stage / "generated" / f.name)
+        if f.stem in used_inputs or f.name in used_inputs:
+            shutil.copy2(f, stage / f.name)
+    shipped = 0
     for f in sorted((HERE / "figs").glob("*.pdf")):
-        shutil.copy2(f, stage / "figs" / f.name)
-    readme = stage / "README.txt"
-    readme.write_text(
+        if f.name in used_figs or f.stem in used_figs:
+            shutil.copy2(f, stage / f.name)
+            shipped += 1
+    missing = {Path(x).name for x in used_figs} - {
+        p.name for p in stage.iterdir()} - {
+        p.stem for p in stage.iterdir()}
+    if missing:
+        raise SystemExit(f"figures referenced but not built: {sorted(missing)}")
+
+    (stage / "README.txt").write_text(
         "MolSanity -- LaTeX sources for peer review.\n\n"
         "Compile with XeLaTeX (twice, for cross-references):\n"
         "    xelatex main.tex && xelatex main.tex\n\n"
@@ -351,14 +386,38 @@ def latex_sources(zip_path: Path) -> None:
         "so the document will NOT build under pdfLaTeX. TeX Gyre Pagella ships\n"
         "with TeX Live; if it is unavailable, delete the \\setmainfont line in\n"
         "main.tex and the document falls back to the default serif.\n\n"
-        "generated/*.tex hold every number, table and macro quoted in the\n"
-        "manuscript. They are produced from the committed results by\n"
+        "All files are in one directory, with no subfolders to resolve.\n"
+        "tab_*.tex and macros.tex hold every number and table quoted in the\n"
+        "manuscript; they are generated from the committed results by\n"
         "paper/figs/make_tables.py and are included here so the sources build\n"
-        "standalone, without the results directory.\n")
+        "standalone. The bibliography is inline (thebibliography), so there is\n"
+        "no .bib file and no BibTeX pass.\n")
+
+    # Compile the staged tree exactly as the publisher will: a flat directory,
+    # nothing else on the path. A rewrite that broke a path would otherwise
+    # only surface after submission.
+    for _ in range(2):
+        r = subprocess.run(["xelatex", "-interaction=nonstopmode", "main.tex"],
+                           cwd=stage, capture_output=True, text=True)
+    log = (stage / "main.log").read_text(errors="ignore")
+    for pattern, what in ((r"^! ", "errors"),
+                          (r"Undefined control sequence", "undefined macros"),
+                          (r"LaTeX Warning: Citation .* undefined", "undefined citations"),
+                          (r"LaTeX Warning: Reference .* undefined", "undefined references"),
+                          (r"File .* not found|Cannot find image", "missing files")):
+        if re.search(pattern, log, re.M):
+            sys.stdout.write(r.stdout[-2500:])
+            raise SystemExit(f"the flattened source archive has {what}")
+    pages = re.search(r"Output written on main\.pdf \((\d+) pages?\)", log)
+    for junk in list(stage.glob("main.*")):
+        if junk.suffix != ".tex":
+            junk.unlink()
+
     if zip_path.exists():
         zip_path.unlink()          # zip appends; a stale archive would merge
     shutil.make_archive(str(zip_path.with_suffix("")), "zip", stage)
     shutil.rmtree(stage)
+    return int(pages.group(1)) if pages else 0
 
 
 def main() -> int:
@@ -375,8 +434,9 @@ def main() -> int:
         else:
             si_pdf(target)
             print(f"  {target.name}: {target.stat().st_size // 1024} KB")
-    latex_sources(OUT / "molsanity_latex_sources.zip")
-    print(f"  molsanity_latex_sources.zip: manuscript upload (XeLaTeX)")
+    pages = latex_sources(OUT / "molsanity_latex_sources.zip")
+    print(f"  molsanity_latex_sources.zip: manuscript upload, "
+          f"compiles flat to {pages} pages (XeLaTeX)")
     over = [f.name for f in OUT.iterdir()
             if f.is_file() and f.stat().st_size > 20 * 1024 * 1024]
     if over:

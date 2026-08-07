@@ -285,25 +285,31 @@ def test_split_tables_lose_no_rows():
     """Splitting a table across floats is where rows go missing quietly.
 
     The ground-truth matrix was one oversized landscape float until it was
-    split into three, and the molecular matrix into two. A reviewer reading
-    the PDF reported the last table looked truncated -- it was not, but the
-    only way to be sure is to count. Every row in the data must appear in
-    exactly one float.
+    split into four, and the molecular matrix into two. This counted rows in
+    the generated files and passed -- while body.tex only \\input the first
+    three, so 22 of the 142 ground-truth cells were generated, counted, and
+    never printed. Counting the generator proves the generator; the manuscript
+    is what a reviewer reads, so count what the manuscript includes.
     """
     import re
 
-    gen = Path(__file__).resolve().parents[1] / "paper" / "generated"
+    root = Path(__file__).resolve().parents[1] / "paper"
+    gen = root / "generated"
     if not (gen / "macros.tex").exists():
         pytest.skip("paper tables not generated")
     sys.path.insert(0, str(FIGS))
     D = pytest.importorskip("msdata")
     cls, reg = D.load_results()
     rows = list(cls) + list(reg)
+    included = set(re.findall(r"\\input\{generated/([a-z0-9_]+)\}",
+                              (root / "body.tex").read_text()))
 
-    def emitted(pattern):
+    def emitted(prefix):
         n = 0
-        for f in sorted(gen.glob(pattern)):
-            t = f.read_text()
+        for stem in sorted(included):
+            if not stem.startswith(prefix):
+                continue
+            t = (gen / f"{stem}.tex").read_text()
             if "\\midrule" not in t:
                 continue
             body = t.split("\\midrule", 1)[1].split("\\bottomrule")[0]
@@ -312,8 +318,41 @@ def test_split_tables_lose_no_rows():
         return n
 
     n_gt = sum(1 for r in rows if r.get("gt_auroc") is not None)
-    assert emitted("tab_tier1_*.tex") == n_gt, (
-        "ground-truth floats emit a different number of rows than the data has")
+    assert emitted("tab_tier1_") == n_gt, (
+        f"the manuscript prints {emitted('tab_tier1_')} ground-truth rows but "
+        f"the data has {n_gt}; a split float is generated and not \\input")
+
+
+def test_every_generated_table_is_used_or_declared_unused():
+    """A generated float nobody includes is invisible until someone counts.
+
+    tab_tier1_4 sat in generated/ for several revisions, complete and correct
+    and absent from the PDF. Generation is not inclusion, so every table the
+    generator writes must either be \\input by the manuscript or named here as
+    deliberately unused, with the reason.
+    """
+    import re
+
+    root = Path(__file__).resolve().parents[1] / "paper"
+    gen = root / "generated"
+    if not gen.exists():
+        pytest.skip("paper tables not generated")
+    # Deliberately not in the manuscript, and why.
+    UNUSED = {
+        # The same data is shown as Figure 8 with the numbers quoted from
+        # macros in the prose; the table would duplicate it.
+        "tab_regime",
+    }
+    included = set(re.findall(r"\\input\{generated/([a-z0-9_]+)\}",
+                              (root / "body.tex").read_text()))
+    built = {f.stem for f in gen.glob("tab_*.tex")}
+    orphaned = built - included - UNUSED
+    assert not orphaned, (
+        f"generated but never included in the manuscript: {sorted(orphaned)}. "
+        "Add an \\input, or add it to UNUSED with the reason.")
+    stale = UNUSED & included
+    assert not stale, f"listed as unused but actually included: {sorted(stale)}"
+
 
 
 def test_no_selection_verdict_is_asserted_by_hand():

@@ -53,3 +53,8 @@ paper/molsanity_supplementary.zip
 
 # Journal submission package; rebuilt by "make -C paper submission-files".
 paper/submission/
+
+# Dataset cache written relative to the working directory, so it appears
+# wherever a script that touches datasets is run from. /data/ is anchored to
+# the repo root; molsanity/data/ is source and must stay tracked.
+/paper/data/

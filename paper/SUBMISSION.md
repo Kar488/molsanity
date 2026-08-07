@@ -6,6 +6,24 @@ LaTeX macros expanded and the PDF's line-break hyphenation removed — it is a
 copy of what the PDF says, not a reworded version. If the numbers in the paper
 change, regenerate the PDF and re-copy this from it.
 
+## Which venue needs what
+
+The two submissions do not take the same things, and the differences are not
+cosmetic — a ChemRxiv deposit takes the built PDF, a journal submission takes
+editable source.
+
+| | ChemRxiv (preprint) | J. Cheminformatics (journal) |
+| --- | --- | --- |
+| Main file | `paper/main.pdf` — the built two-column PDF | `submission/molsanity_latex_sources.zip` — **a PDF is not accepted** |
+| Cover letter | not required | required |
+| Collection | — (ChemRxiv has categories, not collections) | AI and XAI in Drug Discovery |
+| Author contributions | — (the manuscript's own statement stands) | separate form field |
+| Data availability | — (§ of the manuscript stands) | separate form field |
+| Supplementary | `Additional_file_1..4` | `Additional_file_1..4` |
+
+Everything below the abstract that is marked *(journal only)* can be ignored
+for the preprint deposit; it is kept because the journal submission reuses it.
+
 ---
 
 ## Title
@@ -24,11 +42,29 @@ karthik.iyer@hotmail.com. Give the institutional address as the primary
 contact — several publishers verify affiliation against the domain, and a
 free-mail-only corresponding address can hold up desk processing.
 
-## Files to upload
+## Files to upload — ChemRxiv
 
-The submission form takes an **editable** manuscript file — a Word document, or
+ChemRxiv hosts the article as a PDF, so the main file is the built PDF, not the
+source archive.
+
+| Form field | File | Notes |
+| --- | --- | --- |
+| Main manuscript | `paper/main.pdf` | The two-column build. Rebuild with `make -C paper pdf` if any number changed; the figures and tables in it are generated, so a stale PDF and a fresh `SUBMISSION.md` can disagree. |
+| Supplementary | `submission/Additional_file_1.pdf` | Supplementary notes and summary tables. |
+| Supplementary | `submission/Additional_file_2.csv` | Per-cell audit matrix (558 rows). |
+| Supplementary | `submission/Additional_file_3.csv` | Across-seed variance (886 rows). |
+| Supplementary | `submission/Additional_file_4.csv` | Head-to-head benchmark (520 rows). |
+
+The four additional files are the same in both submissions; only the main file
+differs. Do **not** upload the `.md` files in `paper/supplementary/` — that
+bundle is the repository's own copy of the generated reports, not a
+journal-additional-file set.
+
+## Files to upload — Journal of Cheminformatics *(journal only)*
+
+The journal's form takes an **editable** manuscript file — a Word document, or
 LaTeX with figures zipped, which the publisher compiles. **A PDF is not
-accepted as the manuscript file.** Build everything with
+accepted as the manuscript file there.** Build everything with
 `make -C paper submission-files`; it writes to `paper/submission/`.
 
 | Form field | File | Notes |
@@ -41,9 +77,7 @@ accepted as the manuscript file.** Build everything with
 
 Each is under BMC's 20 MB per-file limit. The manuscript declares all four in
 an "Additional files" list and cites them in order in the text, which is what
-BMC's technical check looks for. Do **not** upload the `.md` files in
-`paper/supplementary/` — that bundle is the repository's own copy of the
-generated reports, not a journal additional-file set.
+BMC's technical check looks for.
 
 ## Category
 
@@ -94,13 +128,15 @@ their measured faithfulness improves, and the calibration-reliability link
 attenuates from a per-cell median of 0.144 to 0.074 when cells are pooled.
 Every number, figure and table regenerates from the committed artifacts.
 
-## Collection
+## Collection *(journal only)*
 
-**AI and XAI in Drug Discovery.** The paper is an explainability-evaluation
-study on molecular property models, which is squarely the collection's scope;
-"Diversifying cheminformatics" is a community/EDI collection and does not fit.
+ChemRxiv has no collection field — it files the deposit under the category
+above. For the journal: **AI and XAI in Drug Discovery.** The paper is an
+explainability-evaluation study on molecular property models, which is squarely
+the collection's scope; "Diversifying cheminformatics" is a community/EDI
+collection and does not fit.
 
-## Cover letter (paste-ready)
+## Cover letter *(journal only)* — paste-ready
 
 > Dear Editors,
 >
@@ -160,8 +196,9 @@ Google Colab.
 
 ## Acknowledgements (paste-ready)
 
-Matches §10 of the manuscript word for word. The submission form replaces the
-in-manuscript statement with whatever is pasted here, so a divergence between
+Matches §10 of the manuscript word for word. For the preprint this text is
+already in the PDF and needs no pasting; the journal form replaces the
+in-manuscript statement with whatever is pasted there, so a divergence between
 the two is a discrepancy a copy-editor has to resolve.
 
 > This work was carried out at La Trobe University. It builds directly on
@@ -192,10 +229,12 @@ Three things to check before pasting:
    Delete the paragraph only if you are certain your reading of the policy
    differs.
 
-## Data availability (paste-ready)
+## Data availability *(journal only)* — paste-ready
 
-A bare repository URL is not a data availability statement — BMC publishes
-this text, and it should say what is available, where, and under what terms.
+ChemRxiv has no data-availability field; the manuscript's own statement stands
+for the preprint. For the journal: a bare repository URL is not a data
+availability statement — BMC publishes this text, and it should say what is
+available, where, and under what terms.
 
 > All code, configurations, trained model checkpoints, per-combination results,
 > per-molecule audit records and the run manifest (seed, library versions,
@@ -221,7 +260,7 @@ this text, and it should say what is available, where, and under what terms.
 > Tox21 molecules respectively by the released code, which reproduces them from
 > those sources. No dataset used here is access-restricted.
 
-## Author contributions (paste-ready)
+## Author contributions *(journal only)* — paste-ready
 
 > K.I. conceived the study, designed and implemented the MolSanity framework
 > and audit pipeline, ran the experiments, produced all figures and tables, and

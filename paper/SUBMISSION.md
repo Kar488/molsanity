@@ -195,6 +195,19 @@ Three things to check before pasting:
    Delete the paragraph only if you are certain your reading of the policy
    differs.
 
+## Author contributions (paste-ready)
+
+> K.I. conceived the study, designed and implemented the MolSanity framework
+> and audit pipeline, ran the experiments, produced all figures and tables, and
+> wrote the manuscript. N.S. supervised the work, advised on study design and
+> interpretation, and critically reviewed and revised the manuscript. All
+> authors read and approved the final manuscript.
+
+If N.S.'s involvement was review and approval only, drop "supervised the work,
+advised on study design and interpretation, and" — overstating a contribution
+is the kind of thing that surfaces badly later, and review plus approval still
+meets the BMC authorship criteria.
+
 ## Declarations
 
 - **Conflict of interest**: none.

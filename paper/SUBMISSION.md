@@ -160,6 +160,10 @@ Google Colab.
 
 ## Acknowledgements (paste-ready)
 
+Matches §10 of the manuscript word for word. The submission form replaces the
+in-manuscript statement with whatever is pasted here, so a divergence between
+the two is a discrepancy a copy-editor has to resolve.
+
 > This work was carried out at La Trobe University. It builds directly on
 > open-source software and released benchmarks: PyTorch Geometric, Captum,
 > RDKit, DIG and GraphXAI, and the MUTAG, MoleculeNet and Therapeutics Data
@@ -168,13 +172,11 @@ Google Colab.
 > be possible without the authors of those packages releasing them openly.
 > Compute for the reported sweep was provided by Google Colab.
 >
-> **Generative AI disclosure.** An AI coding assistant was used during
-> software development and manuscript preparation. It was not used to
-> generate, select or interpret results: all experimental results were
-> produced by the released code, and every reported number, figure and table
-> is generated from the committed artifacts rather than written by hand. The
-> authors designed the study, verified the analyses and take full
-> responsibility for the content.
+> **Generative AI disclosure.** An AI coding assistant was used during software
+> development and manuscript preparation. It was not used to generate, select
+> or interpret results: every number, figure and table is computed by the
+> released code from the committed artifacts. The authors designed the study,
+> verified the analyses and take full responsibility for the content.
 
 Three things to check before pasting:
 

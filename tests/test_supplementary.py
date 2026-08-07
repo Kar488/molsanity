@@ -154,6 +154,11 @@ def test_the_manuscript_upload_is_an_editable_source_archive():
     which the publisher compiles. A PDF-only delivery cannot be submitted, so
     the package has to carry sources that build on their side: every file
     main.tex \\input{}s must be inside the archive.
+
+    Compared by basename, because the archive is deliberately flat -- publisher
+    compile services extract into one working directory and are unreliable
+    about nested paths, so the staged copies have their ``figs/`` and
+    ``generated/`` prefixes stripped. The repository keeps its subdirectories.
     """
     import re
     import zipfile
@@ -163,17 +168,19 @@ def test_the_manuscript_upload_is_an_editable_source_archive():
         pytest.skip("source archive not built; run 'make -C paper submission-files'")
     names = set(zipfile.ZipFile(zpath).namelist())
     assert "main.tex" in names, "the archive has no main.tex"
+    nested = sorted(n for n in names if "/" in n)
+    assert not nested, f"the archive is not flat: {nested[:5]}"
+    stems = {Path(n).stem for n in names}
 
     main = (ROOT / "paper" / "main.tex").read_text()
     body = (ROOT / "paper" / "body.tex").read_text()
     missing = []
     for src in (main, body):
-        for inc in re.findall(r"\\(?:input|include)\{([^}]+)\}", src):
-            if not any(n == inc or n == inc + ".tex" for n in names):
-                missing.append(inc)
-        for img in re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", src):
-            if not any(n == img or n.startswith(img + ".") for n in names):
-                missing.append(img)
+        for pattern in (r"\\(?:input|include)\{([^}]+)\}",
+                        r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}"):
+            for ref in re.findall(pattern, src):
+                if Path(ref).stem not in stems:
+                    missing.append(ref)
     assert not missing, f"the archive is missing inputs the manuscript needs: {missing}"
 
 

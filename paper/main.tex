@@ -1,18 +1,33 @@
 % MolSanity — standalone two-column preprint.
-% Compile with:  xelatex main.tex  (twice, for refs/headers)
+% Compile with either engine, twice for refs/headers:
+%   xelatex main.tex     (development; OpenType Pagella + Pagella Math)
+%   pdflatex main.tex    (publisher compile services; Type 1 Pagella)
 % Figures and tables are generated from the committed results by
 %   python paper/figs/make_figures.py && python paper/figs/make_tables.py
 \documentclass[10pt,twocolumn,letterpaper]{article}
 \usepackage[letterpaper,margin=0.72in,columnsep=0.28in]{geometry}
 
 % ---------------------------------------------------------------- fonts ---
-\usepackage{fontspec}
-\usepackage{unicode-math}
-\setmainfont{TeX Gyre Pagella}
-% Pagella Math is preferred; Latin Modern Math is the documented fallback.
-\IfFontExistsTF{texgyrepagella-math.otf}
-  {\setmathfont{TeX Gyre Pagella Math}}
-  {\setmathfont{Latin Modern Math}}
+% fontspec and unicode-math are XeTeX/LuaTeX only and abort under pdfTeX with
+% "cannot-use-pdftex", which is what a pdfLaTeX-only submission system reports.
+% tgpagella is the Type 1 build of the same typeface, so both engines set the
+% document in Pagella and the pdfTeX path needs no other changes.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{tgpagella}
+  \usepackage{textcomp}
+  \usepackage{amssymb}          % \mathbb, which unicode-math supplies otherwise
+\else
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \setmainfont{TeX Gyre Pagella}
+  % Pagella Math is preferred; Latin Modern Math is the documented fallback.
+  \IfFontExistsTF{texgyrepagella-math.otf}
+    {\setmathfont{TeX Gyre Pagella Math}}
+    {\setmathfont{Latin Modern Math}}
+\fi
 \usepackage{newunicodechar}
 
 % -------------------------------------------------------------- packages --

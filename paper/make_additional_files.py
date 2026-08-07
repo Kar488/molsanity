@@ -424,12 +424,13 @@ def latex_sources(zip_path: Path) -> int:
 
     (stage / "README.txt").write_text(
         "MolSanity -- LaTeX sources for peer review.\n\n"
-        "Compile with XeLaTeX (twice, for cross-references):\n"
-        "    xelatex main.tex && xelatex main.tex\n\n"
-        "XeLaTeX is required: main.tex uses fontspec to set TeX Gyre Pagella,\n"
-        "so the document will NOT build under pdfLaTeX. TeX Gyre Pagella ships\n"
-        "with TeX Live; if it is unavailable, delete the \\setmainfont line in\n"
-        "main.tex and the document falls back to the default serif.\n\n"
+        "Compile with either engine, twice for cross-references:\n"
+        "    pdflatex main.tex && pdflatex main.tex\n"
+        "    xelatex  main.tex && xelatex  main.tex\n\n"
+        "main.tex selects its font path with iftex: pdfTeX gets tgpagella\n"
+        "(Type 1 TeX Gyre Pagella), XeTeX gets fontspec/unicode-math with the\n"
+        "OpenType build. Both produce the same document. Both packages ship\n"
+        "with TeX Live.\n\n"
         "All files are in one directory, with no subfolders to resolve.\n"
         "tab_*.tex and macros.tex hold every number and table quoted in the\n"
         "manuscript; they are generated from the committed results by\n"
@@ -438,21 +439,35 @@ def latex_sources(zip_path: Path) -> int:
         "no .bib file and no BibTeX pass.\n")
 
     # Compile the staged tree exactly as the publisher will: a flat directory,
-    # nothing else on the path. A rewrite that broke a path would otherwise
-    # only surface after submission.
-    for _ in range(2):
-        r = subprocess.run(["xelatex", "-interaction=nonstopmode", "main.tex"],
-                           cwd=stage, capture_output=True, text=True)
-    log = (stage / "main.log").read_text(errors="ignore")
-    for pattern, what in ((r"^! ", "errors"),
-                          (r"Undefined control sequence", "undefined macros"),
-                          (r"LaTeX Warning: Citation .* undefined", "undefined citations"),
-                          (r"LaTeX Warning: Reference .* undefined", "undefined references"),
-                          (r"File .* not found|Cannot find image", "missing files")):
-        if re.search(pattern, log, re.M):
-            sys.stdout.write(r.stdout[-2500:])
-            raise SystemExit(f"the flattened source archive has {what}")
-    pages = re.search(r"Output written on main\.pdf \((\d+) pages?\)", log)
+    # nothing else on the path. pdfLaTeX first and always -- Journal of
+    # Cheminformatics' submission system runs pdfLaTeX and rejected an earlier
+    # archive with "fontspec requires either XeTeX or LuaTeX", so that engine
+    # is the one the archive has to satisfy. XeLaTeX is checked too, because
+    # main.tex claims to build under both and an untested claim is not one.
+    pages = {}
+    for engine in ("pdflatex", "xelatex"):
+        for f in list(stage.glob("main.*")):
+            if f.suffix != ".tex":
+                f.unlink()
+        for _ in range(2):
+            r = subprocess.run([engine, "-interaction=nonstopmode", "main.tex"],
+                               cwd=stage, capture_output=True, text=True)
+        log = (stage / "main.log").read_text(errors="ignore")
+        for pattern, what in ((r"^! ", "errors"),
+                              (r"Undefined control sequence", "undefined macros"),
+                              (r"LaTeX Warning: Citation .* undefined", "undefined citations"),
+                              (r"LaTeX Warning: Reference .* undefined", "undefined references"),
+                              (r"File .* not found|Cannot find image", "missing files"),
+                              (r"Missing character", "glyphs the font cannot set")):
+            if re.search(pattern, log, re.M):
+                sys.stdout.write(r.stdout[-2500:])
+                raise SystemExit(
+                    f"the flattened source archive has {what} under {engine}")
+        # pdfTeX writes "(29 pages, 1834424 bytes)", XeTeX "(29 pages)".
+        m = re.search(r"Output written on main\.pdf \((\d+) pages?[,)]", log)
+        pages[engine] = int(m.group(1)) if m else 0
+    if len(set(pages.values())) != 1:
+        raise SystemExit(f"the two engines disagree on length: {pages}")
     for junk in list(stage.glob("main.*")):
         if junk.suffix != ".tex":
             junk.unlink()
@@ -461,7 +476,7 @@ def latex_sources(zip_path: Path) -> int:
         zip_path.unlink()          # zip appends; a stale archive would merge
     shutil.make_archive(str(zip_path.with_suffix("")), "zip", stage)
     shutil.rmtree(stage)
-    return int(pages.group(1)) if pages else 0
+    return next(iter(pages.values()))
 
 
 def main() -> int:
@@ -480,7 +495,7 @@ def main() -> int:
             print(f"  {target.name}: {target.stat().st_size // 1024} KB")
     pages = latex_sources(OUT / "molsanity_latex_sources.zip")
     print(f"  molsanity_latex_sources.zip: manuscript upload, "
-          f"compiles flat to {pages} pages (XeLaTeX)")
+          f"compiles flat to {pages} pages under pdfLaTeX and XeLaTeX")
     over = [f.name for f in OUT.iterdir()
             if f.is_file() and f.stat().st_size > 20 * 1024 * 1024]
     if over:

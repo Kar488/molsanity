@@ -33,7 +33,7 @@ accepted as the manuscript file.** Build everything with
 
 | Form field | File | Notes |
 | --- | --- | --- |
-| Manuscript file | `molsanity_latex_sources.zip` | LaTeX sources + figures. **Requires XeLaTeX** (fontspec/TeX Gyre Pagella); it will not build under pdfLaTeX. The archive's README.txt says so, but flag it in the cover note too — if their compile service is pdfLaTeX-only, ask the editorial office how to proceed rather than silently sending something that fails technical check. |
+| Manuscript file | `molsanity_latex_sources.zip` | LaTeX sources + figures, flat, no subfolders. Builds under **pdfLaTeX** (which the submission system uses) and XeLaTeX; `main.tex` picks its font path with `iftex`. The builder compiles the staged archive under both engines and refuses to write the zip if either fails or if they disagree on page count. |
 | Supplementary material | `Additional_file_1.pdf` | Supplementary notes and summary tables. |
 | Supplementary material | `Additional_file_2.csv` | Per-cell audit matrix (558 rows). |
 | Supplementary material | `Additional_file_3.csv` | Across-seed variance (886 rows). |
@@ -143,11 +143,6 @@ study on molecular property models, which is squarely the collection's scope;
 > (https://github.com/Kar488/molsanity, MIT licence) contains the pipeline,
 > configurations, trained checkpoints, per-molecule audit records and the run
 > manifest, and a single command regenerates the manuscript from them.
->
-> The manuscript is submitted as LaTeX source. It requires XeLaTeX rather than
-> pdfLaTeX, as it uses fontspec to set TeX Gyre Pagella; a note to this effect
-> is included in the archive. Please let us know if your production system
-> requires a pdfLaTeX-compatible version and we will supply one.
 >
 > A preprint of an earlier version is available on ChemRxiv. The work is not
 > under consideration elsewhere, all authors have approved the submission, and

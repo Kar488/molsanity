@@ -64,51 +64,104 @@ the preprint and the journal version do not end up under different terms.
 
 Feature attributions are routinely used to justify molecular graph neural
 network (GNN) predictions to chemists, yet they are almost never audited for
-reliability: existing evaluation frameworks ask whether an explanation is
-faithful to the model, not whether the model's explanation can be trusted, and
-not where it stops being trustworthy under the scaffold shift that
-characterises real drug-discovery workflows. We present MolSanity, a
-reliability-audit framework that wraps canonical attribution implementations
-(Captum, PyTorch Geometric, RDKit) rather than proposing a new attributor, and
-scores every (dataset × backbone × attributor × split) cell on six axes:
-motif-native coherence, occlusion-attribution faithfulness, ground-truth
-localisation where node labels exist, cross-checkpoint stability, calibration
-linkage, and confidence/correctness regime stratification. Our central finding
-is that faithfulness is not correctness, and that the two carry no dependable
+reliability: existing frameworks ask whether an explanation is faithful to the
+model, not whether it identifies the chemistry that determines the property,
+nor where it stops being trustworthy under scaffold shift. MolSanity is a
+reliability-audit framework that wraps canonical implementations (Captum,
+PyTorch Geometric, RDKit) rather than proposing a new attributor, scoring
+every (dataset × backbone × attributor × split) cell on six axes: motif-native
+coherence, occlusion-attribution faithfulness, ground-truth localisation where
+node labels exist, cross-checkpoint stability, calibration linkage, and
+confidence/correctness regime stratification. Our central finding is that
+faithfulness is not correctness, and that the two carry no dependable
 relationship in either regime. Across 30 selection tests - 5 molecular ground-
-truth arms × two splits × 3 ranking metrics, with dataset, backbone and
-attributor set held fixed within an arm - a faithfulness-only ranking picks an
-attributor other than the ground-truth-best one in 26, and this is no less
-true in distribution (14 of 15) than under scaffold shift (12 of 15). The
-sharpest case is MUTAG under a Bemis-Murcko scaffold split, where all 3
-metrics miss. The occlusion measure selects GuidedBP, whose agreement with the
-mutagenic nitro motif is GT AUROC 0.013 - near-perfectly anti-aligned, and
-sixth of the 7 attributors audited - while the ground truth ranks GNNExpl.
-best at 0.826 in the audited seed, 0.774+/-0.086 across 3 (median paired gap
-0.967 AUROC, Wilcoxon p<0.001, Benjamini-Hochberg q<0.001 over the 30
-selection tests). Pooled over all 47 cells of the 5 molecular ground-truth
-arms (each an across-seed mean of 3 seeds), the faithfulness-correctness rank
-correlation is +0.222 in distribution (p=0.134) and -0.124 under shift
-(p=0.405) - neither distinguishable from zero. Per arm under shift it runs
-from -0.564 on MUTAG to +0.786 on FluorideCarbonyl, so reliability is a
-property of the (dataset, backbone, attributor, split) cell rather than of the
-attributor, and no pooled coefficient describes any of the arms. Restricted to
-the 3 arms that predate two externally authored molecular rationale
-benchmarks, the same computation gives -0.356 at p=0.042; adding those
-benchmarks removes the effect, and the 5-arm figure is the one we report.
-Faithfulness itself does not fall under shift - across the same 47 cells it
-rises, from 0.049 to 0.132 (p=0.005), while ground-truth localisation does not
-move (0.660 to 0.658, p=0.539). The metric therefore moves in the reassuring
-direction across a shift that leaves correctness unchanged, and gives no
-warning either way. Using 31785 committed per-molecule records we further find
-that on confidently-wrong predictions ground-truth localisation degrades
-(0.769 to 0.681, n=275) while their measured faithfulness improves (0.142 to
-0.325) and their stability is no worse - both proxies point away from the
-failure - and that the calibration-reliability link attenuates from a per-cell
-median of 0.144 to 0.074 when cells are pooled, a Simpson's-paradox trap for
-anyone reporting a single aggregate number. Results are the committed
-full.yaml run: 558 of 558 cell-runs completed. Every number, figure and table
-regenerates from the committed artifacts.
+truth arms × two splits × 3 ranking metrics - a faithfulness-only ranking
+picks an attributor other than the ground-truth-best one in 26, and this is no
+less true in distribution (14 of 15) than under scaffold shift (12 of 15); on
+MUTAG under shift it prefers an attributor anti-aligned with the nitro motif
+(GT AUROC 0.013) over one at 0.826. Pooled over 47 cells the faithfulness-
+correctness rank correlation is +0.222 in distribution (p=0.134) and -0.124
+under shift (p=0.405), neither distinguishable from zero, while per arm under
+shift it runs from -0.564 to +0.786: reliability is a property of the
+individual (dataset, backbone, attributor, split) cell rather than of the
+attributor. Restricted to the 3 arms of an earlier analysis it gives -0.356
+(p=0.042); two externally authored rationale benchmarks remove the effect, and
+we report the 5-arm result. Faithfulness itself does not fall under shift - it
+rises, from 0.049 to 0.132, while ground-truth localisation does not move - so
+the metric gives no warning either way. Over 31785 per-molecule records,
+localisation degrades on confidently-wrong predictions (0.769 to 0.681) while
+their measured faithfulness improves, and the calibration-reliability link
+attenuates from a per-cell median of 0.144 to 0.074 when cells are pooled.
+Every number, figure and table regenerates from the committed artifacts.
+
+## Collection
+
+**AI and XAI in Drug Discovery.** The paper is an explainability-evaluation
+study on molecular property models, which is squarely the collection's scope;
+"Diversifying cheminformatics" is a community/EDI collection and does not fit.
+
+## Cover letter (paste-ready)
+
+> Dear Editors,
+>
+> Please consider our manuscript, "MolSanity: A Reliability Audit for Feature
+> Attributions on Molecular Graph Neural Networks", for publication in the
+> Journal of Cheminformatics, as part of the AI and XAI in Drug Discovery
+> collection.
+>
+> Feature attributions are routinely shown to chemists as evidence for a
+> model's prediction, and the frameworks used to evaluate them ask whether an
+> explanation is faithful to the model rather than whether it identifies the
+> chemistry that determines the property. Those are different questions, and
+> our results indicate they do not answer one another. MolSanity audits every
+> (dataset, backbone, attributor, split) cell on six axes and benchmarks
+> against the field-standard metrics computed on the same molecules, wrapping
+> the canonical implementations (Captum, PyTorch Geometric, RDKit, DIG,
+> GraphXAI) rather than proposing another attribution method.
+>
+> Across 30 selection tests spanning five molecular ground-truth arms, a
+> faithfulness-only ranking picks an attributor other than the ground-truth-best
+> one in 26 -- and no less often in distribution than under scaffold shift.
+> Pooled over 47 cells the faithfulness-correctness rank correlation is not
+> distinguishable from zero in either regime, while per arm under shift it
+> ranges from -0.564 to +0.786 under an identical protocol. The practical
+> conclusion is that attribution reliability is a property of the specific
+> cell rather than of the attribution method, which is not how the field
+> currently reports it.
+>
+> We would draw the editors' attention to one aspect of the study. An earlier
+> version of this analysis, restricted to three arms, found a significant
+> collapse in that correlation under scaffold shift (-0.356, p = 0.042). Adding
+> two externally authored rationale benchmarks removed the effect. We report
+> the five-arm result, state the superseded one alongside it, and treat the
+> disagreement as a finding about how narrowly such claims generalise. The
+> manuscript reports negative and null results at the same length as positive
+> ones throughout.
+>
+> Every number, figure and table in the manuscript is generated from committed
+> artifacts by released code; none is transcribed by hand. The repository
+> (https://github.com/Kar488/molsanity, MIT licence) contains the pipeline,
+> configurations, trained checkpoints, per-molecule audit records and the run
+> manifest, and a single command regenerates the manuscript from them.
+>
+> The manuscript is submitted as LaTeX source. It requires XeLaTeX rather than
+> pdfLaTeX, as it uses fontspec to set TeX Gyre Pagella; a note to this effect
+> is included in the archive. Please let us know if your production system
+> requires a pdfLaTeX-compatible version and we will supply one.
+>
+> A preprint of an earlier version is available on ChemRxiv. The work is not
+> under consideration elsewhere, all authors have approved the submission, and
+> we declare no competing interests.
+>
+> Yours sincerely,
+> Karthik Iyer and Nasser Sabar
+> Department of Computer Science and Information Technology, La Trobe
+> University, Melbourne, Australia
+> 22557016@students.latrobe.edu.au
+
+Before sending, check three things in the letter: the ChemRxiv DOI (add it
+once issued), the funding statement, and whether any of the sweep ran outside
+Google Colab.
 
 ## Acknowledgements (paste-ready)
 

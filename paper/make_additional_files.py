@@ -103,25 +103,56 @@ def md_tables(text: str):
     return tables
 
 
+#: Placeholders the reports print for "this metric does not exist on this cell".
+#: They read correctly on a page and parse as text in a spreadsheet, which is
+#: the opposite of what a machine-readable file needs, so they become empty.
+NOT_APPLICABLE = {"—", "–", "-", "n/a", "N/A", "NA", "––"}
+
+
+def _cell(v: str) -> str:
+    v = v.strip()
+    return "" if v in NOT_APPLICABLE else v
+
+
 def write_csv(path: Path, report: str) -> int:
-    """One CSV per report. A `section` column carries the table headings."""
+    """One CSV per report, over the union of every table's columns.
+
+    A report emits several tables and they do not share a schema. Mapping each
+    onto the single widest header silently dropped any column whose name was
+    not in it, and the loss was total where the schemas differ most: all five
+    columns of BENCHMARK's 22 paired-comparison tables -- method A, method B,
+    n, median delta, p-value -- and rmse/mae/r2 for every regression row in
+    RESULTS. The rows were present and empty, which is worse than absent.
+
+    The union keeps every column, in first-seen order, and a row is blank
+    where its table has no such column. The `section` column says which table
+    a row came from, so a reader can filter back to one schema.
+    """
     tables = md_tables((RESULTS / report).read_text())
     if not tables:
         raise SystemExit(f"no tables found in {report}")
-    widest = max(tables, key=lambda t: len(t[1]))[1]
+    cols: list[str] = []
+    for _heading, header, _rows in tables:
+        for c in header:
+            if c not in cols:
+                cols.append(c)
     n = 0
-    with path.open("w", newline="") as fh:
+    # utf-8-sig: the reports carry en dashes and multiplication signs, and
+    # Excel reads a plain UTF-8 CSV as Latin-1 without the BOM.
+    with path.open("w", newline="", encoding="utf-8-sig") as fh:
         w = csv.writer(fh)
-        w.writerow(["section"] + widest)
+        w.writerow(["section"] + cols)
         for heading, header, rows in tables:
-            # Map each table's columns onto the widest header so one file can
-            # hold the several tables a report emits without losing alignment.
             idx = {c: i for i, c in enumerate(header)}
             for r in rows:
                 w.writerow([heading] + [
-                    r[idx[c]] if c in idx and idx[c] < len(r) else ""
-                    for c in widest])
+                    _cell(r[idx[c]]) if c in idx and idx[c] < len(r) else ""
+                    for c in cols])
                 n += 1
+    # Nothing may be dropped: every source column must appear in the output.
+    missing = [c for _h, header, _r in tables for c in header if c not in cols]
+    if missing:
+        raise SystemExit(f"{report}: columns lost from the CSV: {sorted(set(missing))}")
     return n
 
 
@@ -296,13 +327,26 @@ def si_pdf(path: Path) -> None:
     parts.append(rf"\addcontentsline{{toc}}{{section}}"
                  rf"{{S{n}\quad Machine-readable additional files}}")
     parts.append(r"\begin{itemize}\itemsep3pt")
-    for num, ext, title, desc, _src in FILES:
+    for num, ext, title, desc, src in FILES:
         if ext != "csv":
             continue
+        cols = []
+        for _h, header, _r in md_tables((RESULTS / src).read_text()):
+            for c in header:
+                if c not in cols:
+                    cols.append(c)
         parts.append(rf"\item \textbf{{Additional file {num}}} "
                      rf"(\texttt{{Additional\_file\_{num}.csv}}) --- "
-                     rf"{tex_escape(title)} {tex_escape(desc)}")
+                     rf"{tex_escape(title)} {tex_escape(desc)}"
+                     rf" \emph{{Columns:}} \texttt{{section}}, "
+                     + ", ".join(rf"\texttt{{{tex_escape(c)}}}" for c in cols)
+                     + ".")
     parts.append(r"\end{itemize}")
+    parts.append(
+        r"Each file carries the union of the columns of the tables inside it, "
+        r"with \texttt{section} naming the table a row came from; a cell is "
+        r"empty where the metric does not exist for that row, rather than "
+        r"carrying a dash, so the files parse directly as data.")
     parts.append(r"\end{document}")
 
     tex = OUT / f"{path.stem}.tex"

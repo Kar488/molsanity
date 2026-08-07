@@ -213,3 +213,67 @@ def test_the_supplementary_pdf_carries_no_raw_markdown():
             leftovers.append(what)
     assert not leftovers, (
         "raw markdown survived into Additional file 1: " + ", ".join(leftovers))
+
+
+def test_the_csv_additional_files_lose_no_column_and_parse_as_data():
+    """A CSV that is well-formed and silently incomplete is the worst case.
+
+    The writer mapped every table in a report onto the single widest header,
+    so any column whose name was absent from it was dropped without a word.
+    It cost all five columns of BENCHMARK's 22 paired-comparison tables
+    (method A, method B, n, median delta, p-value -- 334 rows reduced to
+    blanks) and rmse/mae/r2 for every regression row in RESULTS. Both files
+    opened fine, had the right row counts, and were missing their data.
+
+    So: assert every source column reaches the output, and that what reaches
+    it is machine-readable -- no ragged rows, no dash standing in for a
+    missing number, no markdown, and a BOM so Excel reads the UTF-8.
+    """
+    import csv
+    import importlib.util
+    import re
+
+    paper = ROOT / "paper"
+    out = paper / "submission"
+    if not out.exists():
+        pytest.skip("submission package not built; run 'make -C paper submission-files'")
+    spec = importlib.util.spec_from_file_location(
+        "make_additional_files", paper / "make_additional_files.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    for num, ext, _title, _desc, src in mod.FILES:
+        if ext != "csv":
+            continue
+        path = out / f"Additional_file_{num}.csv"
+        assert path.exists(), f"Additional file {num} not built"
+        assert path.read_bytes()[:3] == b"\xef\xbb\xbf", (
+            f"{path.name} has no UTF-8 BOM; Excel will read it as Latin-1")
+
+        with path.open(encoding="utf-8-sig", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+        assert rows, f"{path.name} is empty"
+        header = set(rows[0])
+
+        # Every column of every source table must be present.
+        tables = mod.md_tables((mod.RESULTS / src).read_text())
+        source_cols = {c for _h, hdr, _r in tables for c in hdr}
+        missing = sorted(source_cols - header)
+        assert not missing, f"{path.name} drops source columns: {missing}"
+
+        # And every source row.
+        assert len(rows) == sum(len(r) for _h, _hdr, r in tables), (
+            f"{path.name} has {len(rows)} rows, the source tables have "
+            f"{sum(len(r) for _h, _hdr, r in tables)}")
+
+        for i, r in enumerate(rows):
+            assert None not in r, f"{path.name} row {i} is ragged"
+            assert (r.get("section") or "").strip(), \
+                f"{path.name} row {i} has no section label"
+            for k, v in r.items():
+                v = (v or "").strip()
+                assert v not in mod.NOT_APPLICABLE, (
+                    f"{path.name} row {i} column {k!r} carries the placeholder "
+                    f"{v!r}; a missing number must be an empty cell")
+                assert not re.search(r"\*\*|\||(?<!\w)`", v), (
+                    f"{path.name} row {i} column {k!r} carries markdown: {v!r}")

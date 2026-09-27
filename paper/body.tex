@@ -827,18 +827,39 @@ positive result for any metric.
 
 The preceding subsection reaches a null: over $\nPooledCells{}$ molecular
 ground-truth cells there is no pooled faithfulness--correctness relationship in
-either regime. That null is not an absence of structure but a consequence of
-it. Under an identical protocol --- same backbone, same $\mutShiftNAttr{}$
-attributors, same audit code, same seeds --- the per-arm coefficient under
-shift runs from $\armShiftRhoMin{}$ on \armShiftRhoMinDataset{} to
-$+\armShiftRhoMax{}$ on \armShiftRhoMaxDataset{}, and the cost of a
-fidelity-only selection runs from $\selGapMin{}$ to $\selGapMax{}$ AUROC.
-Only the dataset changes. This subsection shows the same instability along the
-other two axes of the cell, the backbone and the attributor, which is why we
-take the cell --- (dataset, backbone, attributor, split) --- to be the correct
-unit of a reliability claim, and why we regard a single headline number about
-an attributor's reliability as the wrong shape of statement rather than merely
-an imprecise one.
+either regime. Under an identical protocol --- same backbone, same
+$\mutShiftNAttr{}$ attributors, same audit code, same seeds --- the per-arm
+coefficient under shift runs from $\armShiftRhoMin{}$ on
+\armShiftRhoMinDataset{} to $+\armShiftRhoMax{}$ on \armShiftRhoMaxDataset{},
+and the cost of a fidelity-only selection runs from $\selGapMin{}$ to
+$\selGapMax{}$ AUROC. Only the dataset changes.
+
+\ifHasArmHomogeneity
+A range is not by itself evidence that the arms differ. With
+$\nArmCellsMin{}$--$\nArmCellsMax{}$ cells per arm, coefficients this far
+apart can arise from one underlying value, so we test it: Cochran's $Q$ on the
+Fisher-transformed per-arm coefficients over the $\nArmsHomog{}$ arms gives
+$Q=\armHomogQ{}$ on $\armHomogDf{}$ degrees of freedom,
+$p=\armHomogP{}$, with $I^{2}=\armHomogISq{}\%$.
+\ifHasArmHomogSig
+The arms therefore differ by more than sampling noise.
+\else
+That is moderate heterogeneity, and it does not reach significance. We
+therefore cannot claim that these arms have genuinely different coefficients,
+and we do not.
+\fi
+\fi
+
+What the data do establish is narrower and sufficient for the practical point:
+no pooled coefficient here can be carried to a new cell. $\nLooSurvive{}$ of
+the $\nLooTotal{}$ leave-one-arm-out refits survive at $p<0.05$, and dropping a
+single arm reverses the sign (Figure~\ref{fig:lead}c). Whether the arms truly
+differ or the estimate is merely too imprecise to pin down, a reader who
+quotes one number for ``the'' faithfulness--correctness relationship is
+quoting something this matrix does not support. This subsection shows the same
+instability along the other two axes of the cell, the backbone and the
+attributor, which is why we take the cell --- (dataset, backbone, attributor,
+split) --- to be the unit a reliability claim has to be indexed to.
 
 \ifHasHeterogeneityScreen
 \paragraph{When is the relationship positive?} The natural follow-up is
@@ -1487,13 +1508,19 @@ $\selGapMin{}$ to $\selGapMax{}$ AUROC. MolSanity's own faithfulness metric is
 no exception, and we do not offer it as a better selector. The two remaining
 findings do different jobs and should not be merged. The pooled coefficients
 ($+\pooledIndRho{}$ and $\pooledShiftRho{}$ over $\nPooledCells{}$ cells,
-neither significant) establish the \emph{absence} of a dependable global
-relationship: there is no faithfulness--correctness law here to appeal to. The
-per-arm spread ($\armShiftRhoMin{}$ to $+\armShiftRhoMax{}$ under an identical
-protocol) establishes \emph{why no pooled figure should be transported} even if
-a future study finds one --- the quantity is not stable across the cells it
-would have to be applied to. Reliability is a property of the individual cell
-rather than of the attributor, the backbone or the regime.
+neither significant) \emph{fail to establish} a dependable global
+relationship: there is no faithfulness--correctness law here that a
+practitioner can appeal to. That is a weaker statement than proving none
+exists, and we intend the weaker one. The per-arm spread ($\armShiftRhoMin{}$
+to $+\armShiftRhoMax{}$ under an identical protocol) shows \emph{why no pooled
+figure should be transported} even if a future study finds one: whether the
+arms genuinely differ --- which $\nArmsHomog{}$ arms cannot settle,
+$Q=\armHomogQ{}$, $p=\armHomogP{}$ --- or the estimate is simply too imprecise,
+the quantity is not pinned down across the cells it would have to be applied
+to. Every leave-one-arm-out refit is non-significant and dropping one arm
+reverses the sign. A reliability claim therefore has to be indexed to the
+cell; a single headline number about an attributor is the wrong shape of
+statement rather than merely an imprecise one.
 For the \nNoGtCells{} molecular rows in the matrix, correctness cannot be
 measured at all with the labels the field currently has, which is the gap that
 most needs closing. The audit is what makes those failures visible; the
@@ -1504,8 +1531,13 @@ artifacts as the grid fills in.
 \label{sec:repro}
 
 \paragraph{What is pinned} Every result in this paper comes from one
-invocation of \texttt{\runConfig{}} at git revision \texttt{\runGitRev{}},
-seeds \runSeedList{}, on Python~\runPython{} with
+invocation of \texttt{\runConfig{}}, seeds \runSeedList{}, launched at git
+revision \texttt{\runGitRev{}} --- the revision the manifest records, and the
+state of the pipeline when the sweep started; its outputs were committed
+afterwards, so that revision is not itself a reproducible checkout. The code,
+configurations and results together are archived at tag
+\texttt{v1.0.0-jcheminf}, which is the version of record for this manuscript
+and the state a reader should obtain. The run was on Python~\runPython{} with
 torch~\runTorch{}, PyTorch Geometric~\runPyG{}, RDKit~\runRDKit{},
 Captum~\runCaptum{}, NumPy~\runNumpy{} and scikit-learn~\runSklearn{}. The run
 manifest records all of these, the seed, the platform string and the CUDA
@@ -1613,10 +1645,13 @@ All code, configurations, trained checkpoints, per-combination results,
 per-molecule audit records and the run manifest (seed, library versions,
 hardware, and the per-combination outcome ledger) are available at
 \url{https://github.com/Kar488/molsanity}, released under the MIT licence. The
-repository is the source of record for this manuscript; it carries
-\texttt{CITATION.cff} and \texttt{.zenodo.json} so that a versioned archive
-with a DOI, including the trained weights, is generated from a tagged release
-and deposited to accompany the journal version.
+state corresponding to this manuscript is tag \texttt{v1.0.0-jcheminf}, from
+which a versioned archive including the trained weights is deposited to
+Zenodo; the repository carries \texttt{CITATION.cff} and
+\texttt{.zenodo.json} so that archive is generated from the tagged release
+rather than assembled by hand. Continuous integration rebuilds every figure,
+table and quoted statistic in this manuscript from the committed results on
+each change, so a divergence between the two fails the build.
 
 \paragraph{Additional files}
 \begin{itemize}\itemsep2pt

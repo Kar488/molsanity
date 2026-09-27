@@ -107,26 +107,27 @@ every (dataset × backbone × attributor × split) cell on six axes: motif-nativ
 coherence, occlusion-attribution faithfulness, ground-truth localisation where
 node labels exist, cross-checkpoint stability, calibration linkage, and
 confidence/correctness regime stratification. Our central finding is that
-faithfulness is not correctness, and that the two carry no dependable
-relationship in either regime. Across 30 selection tests - 5 molecular ground-
+faithfulness is not correctness: across this matrix the two show no dependable
+relationship in either regime. In 30 selection tests - 5 molecular ground-
 truth arms × two splits × 3 ranking metrics - a faithfulness-only ranking
-picks an attributor other than the ground-truth-best one in 26, and this is no
-less true in distribution (14 of 15) than under scaffold shift (12 of 15); on
-MUTAG under shift it prefers an attributor anti-aligned with the nitro motif
-(GT AUROC 0.013) over one at 0.826. Pooled over 47 cells the faithfulness-
-correctness rank correlation is +0.222 in distribution (p=0.134) and -0.124
-under shift (p=0.405), neither distinguishable from zero, while per arm under
-shift it runs from -0.564 to +0.786: reliability is a property of the
-individual (dataset, backbone, attributor, split) cell rather than of the
-attributor. Restricted to the 3 arms of an earlier analysis it gives -0.356
-(p=0.042); two externally authored rationale benchmarks remove the effect, and
-we report the 5-arm result. Faithfulness itself does not fall under shift - it
-rises, from 0.049 to 0.132, while ground-truth localisation does not move - so
-the metric gives no warning either way. Over 31785 per-molecule records,
+picks an attributor other than the ground-truth-best one in 26, no less often
+in distribution (14 of 15) than under shift (12 of 15); on MUTAG under shift
+it prefers an attributor anti-aligned with the nitro motif (GT AUROC 0.013)
+over one at 0.826. Pooled over 47 cells the faithfulness-correctness rank
+correlation is +0.222 in distribution (p=0.134) and -0.124 under shift
+(p=0.405), neither distinguishable from zero, while per arm under shift it
+runs from -0.564 to +0.786 - a spread 5 arms cannot separate from noise
+(Q=8.53, p=0.074). Either way no pooled figure survives leave-one-arm-out, so
+a reliability claim must be indexed to the individual (dataset, backbone,
+attributor, split) cell. Restricted to the 3 arms of an earlier analysis it
+gives -0.356 (p=0.042); two externally authored rationale benchmarks remove
+the effect, and we report the 5-arm result. Faithfulness itself does not fall
+under shift - it rises, from 0.049 to 0.132, while localisation does not move
+- so the metric gives no warning. Over 31785 per-molecule records,
 localisation degrades on confidently-wrong predictions (0.769 to 0.681) while
-their measured faithfulness improves, and the calibration-reliability link
-attenuates from a per-cell median of 0.144 to 0.074 when cells are pooled.
-Every number, figure and table regenerates from the committed artifacts.
+their faithfulness improves, and the calibration-reliability link attenuates
+from a per-cell median of 0.144 to 0.074 when pooled. Every number, figure and
+table regenerates from the committed artifacts.
 
 ## Collection *(journal only)*
 

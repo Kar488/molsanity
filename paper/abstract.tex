@@ -11,13 +11,13 @@ attributor, scoring every (dataset × backbone × attributor × split) cell on s
 axes: motif-native coherence, occlusion--attribution faithfulness, ground-truth
 localisation where node labels exist, cross-checkpoint stability, calibration
 linkage, and confidence/correctness regime stratification.
-Our central finding is that \emph{faithfulness is not correctness}, and that
-the two carry no dependable relationship in either regime. Across
+Our central finding is that \emph{faithfulness is not correctness}: across
+this matrix the two show no dependable relationship in either regime. In
 $\nSelectionTests{}$ selection tests --- $\nArms{}$ molecular ground-truth arms
 $\times$ two splits $\times$ $\mutShiftNMetrics{}$ ranking metrics --- a
 faithfulness-only ranking picks an attributor other than the ground-truth-best
-one in $\nSelMismatch{}$, and this is no less true in distribution
-($\nSelMismatchInd{}$ of $\nSelTestsInd{}$) than under scaffold shift
+one in $\nSelMismatch{}$, no less often in distribution
+($\nSelMismatchInd{}$ of $\nSelTestsInd{}$) than under shift
 ($\nSelMismatchShift{}$ of $\nSelTestsShift{}$); on MUTAG under shift it
 prefers an attributor anti-aligned with the nitro motif (GT AUROC
 $\mutShiftPickGtOccspearman{}$) over one at $\mutShiftGtBestVal{}$. Pooled over
@@ -25,18 +25,19 @@ $\nPooledCells{}$ cells the
 faithfulness--correctness rank correlation is $+\pooledIndRho{}$ in
 distribution ($p=\pooledIndP{}$) and $\pooledShiftRho{}$ under shift
 ($p=\pooledShiftP{}$), neither distinguishable from zero, while per arm under
-shift it runs from $\armShiftRhoMin{}$ to $+\armShiftRhoMax{}$: reliability is
-a property of the individual (dataset, backbone, attributor, split) cell rather
-than of the attributor. Restricted to the $\nPooledPriorArms{}$ arms of an
+shift it runs from $\armShiftRhoMin{}$ to $+\armShiftRhoMax{}$ --- a spread
+$\nArmsHomog{}$ arms cannot separate from noise ($Q=\armHomogQ{}$,
+$p=\armHomogP{}$). Either way no pooled figure survives leave-one-arm-out, so
+a reliability claim must be indexed to the individual (dataset, backbone,
+attributor, split) cell. Restricted to the $\nPooledPriorArms{}$ arms of an
 earlier analysis it gives $\pooledPriorShiftRho{}$
 ($p=\pooledPriorShiftP{}$); two externally authored rationale benchmarks remove
 the effect, and we report the $\nPooledArms{}$-arm result.
 Faithfulness itself does not fall under shift --- it \emph{rises}, from
-$\pooledIndFaith{}$ to $\pooledShiftFaith{}$, while ground-truth localisation
-does not move --- so the metric gives no warning either way. Over \nRecords{}
+$\pooledIndFaith{}$ to $\pooledShiftFaith{}$, while localisation
+does not move --- so the metric gives no warning. Over \nRecords{}
 per-molecule records, localisation degrades on confidently-wrong predictions
-($\regCCGt{}$ to $\regCEGt{}$) while their measured faithfulness
+($\regCCGt{}$ to $\regCEGt{}$) while their faithfulness
 \emph{improves}, and the calibration--reliability link attenuates from a
-per-cell median of $\medCalibRho{}$ to $\pooledCalibRho{}$ when cells are
-pooled. Every number, figure and table regenerates from the committed
-artifacts.
+per-cell median of $\medCalibRho{}$ to $\pooledCalibRho{}$ when pooled. Every
+number, figure and table regenerates from the committed artifacts.

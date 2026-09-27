@@ -468,7 +468,7 @@ def macros():
         # With five arms the spread of the per-arm shift correlation is the
         # result, not noise around a pooled mean, so the endpoints and the arms
         # holding them are emitted for the prose to quote.
-        agree, per_arm_shift = 0, {}
+        agree, per_arm_shift, per_arm_n = 0, {}, {}
         for ds in sorted({k[0] for k in ks}):
             sub = [k for k in ks if k[0] == ds]
             if len(sub) < 4:
@@ -478,6 +478,7 @@ def macros():
             r1, _ = D.spearman([paired[k]["scaffold"][1] for k in sub],
                                [paired[k]["scaffold"][0] for k in sub])
             per_arm_shift[ds] = r1
+            per_arm_n[ds] = len(sub)
             if r1 < r0:
                 agree += 1
         add("nArmsAgree", agree)
@@ -516,6 +517,37 @@ def macros():
             add("armShiftRhoMinDataset", lo)
             add("armShiftRhoMaxDataset", hi)
             add("nArmsShiftNeg", sum(1 for v in per_arm_shift.values() if v < 0))
+
+        # Is the per-arm spread larger than sampling noise? The spread itself
+        # is the paper's most quotable claim, and quoting a range is not the
+        # same as showing the arms differ: with 7-11 cells each, coefficients
+        # this far apart can arise from one underlying value. Cochran's Q on
+        # the Fisher-z-transformed coefficients is the standard homogeneity
+        # test, and running it ourselves is cheaper than a reviewer running it
+        # and finding it unreported. It is emitted whatever it says; the prose
+        # branches on the flag rather than assuming an outcome.
+        _hz = {d: r for d, r in per_arm_shift.items()
+               if per_arm_n.get(d, 0) > 3 and abs(r) < 1.0}
+        add_flag("HasArmHomogeneity", len(_hz) >= 3)
+        if len(_hz) >= 3:
+            from scipy.stats import chi2
+            _w = {d: per_arm_n[d] - 3 for d in _hz}
+            _z = {d: math.atanh(r) for d, r in _hz.items()}
+            _zbar = sum(_w[d] * _z[d] for d in _hz) / sum(_w.values())
+            _Q = sum(_w[d] * (_z[d] - _zbar) ** 2 for d in _hz)
+            _df = len(_hz) - 1
+            _qp = float(chi2.sf(_Q, _df))
+            add("nArmsHomog", len(_hz))
+            add("nArmCellsMin", min(per_arm_n[d] for d in _hz))
+            add("nArmCellsMax", max(per_arm_n[d] for d in _hz))
+            add("armHomogQ", num(_Q, 2))
+            add("armHomogDf", _df)
+            add("armHomogP", "\\ensuremath{<}0.001" if _qp < 0.001 else f"{_qp:.3f}")
+            # I^2: the share of the observed spread not attributable to noise.
+            # Negative values mean less spread than noise predicts and are
+            # reported as zero, which is the convention.
+            add("armHomogISq", f"{max(0.0, (_Q - _df) / _Q) * 100:.0f}")
+            add_flag("HasArmHomogSig", _qp < 0.05)
 
         # Leave-one-arm-out. The pooled p is the number a reader will quote, so
         # the paper must say how much of it any single arm carries -- the first

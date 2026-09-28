@@ -47,7 +47,14 @@ zip: supplementary
 assert not any('/' in x for x in n), 'nested paths in the bundle: %s' % n;\
 print('  molsanity_supplementary.zip: %d files, flat' % len(n))"
 
+# Three passes, not two. Pass 1 writes the labels, pass 2 resolves them and in
+# doing so reflows the floats, which moves the pages some labels point at;
+# without pass 3 LaTeX ends on "Label(s) may have changed" and the PDF ships
+# stale cross-references. Two passes were enough until the document grew past
+# a page boundary, which is exactly the kind of silent drift this build is
+# supposed to prevent.
 pdf: figures tables supplementary submission
+	$(XELATEX) -interaction=nonstopmode main.tex
 	$(XELATEX) -interaction=nonstopmode main.tex
 	$(XELATEX) -interaction=nonstopmode main.tex
 	$(PY) figs/check_macros.py main.log

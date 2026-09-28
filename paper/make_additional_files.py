@@ -474,7 +474,18 @@ def latex_sources(zip_path: Path) -> int:
         # pdfTeX writes "(29 pages, 1834424 bytes)", XeTeX "(29 pages)".
         m = re.search(r"Output written on main\.pdf \((\d+) pages?[,)]", log)
         pages[engine] = int(m.group(1)) if m else 0
-    if len(set(pages.values())) != 1:
+    # A page apart is expected; more than that is not. The engines set the
+    # document in different builds of the same typeface -- XeTeX in OpenType
+    # Pagella through fontspec, pdfTeX in Type 1 tgpagella -- and their metrics
+    # differ slightly, so once the text ends near a page boundary the two land
+    # on opposite sides of it. That happened when the homogeneity test was
+    # added: pdflatex 29 pages, xelatex 30. The two builds were compared by
+    # extracting their text and normalising away hyphenation, and they carry
+    # the same content; the only differences are how each encodes math glyphs
+    # and where one float sits. The battery above is what catches a genuinely
+    # broken build, and such a build differs by far more than one page, so the
+    # tolerance costs nothing the checks above were providing.
+    if max(pages.values()) - min(pages.values()) > 1:
         raise SystemExit(f"the two engines disagree on length: {pages}")
     for junk in list(stage.glob("main.*")):
         if junk.suffix != ".tex":
@@ -484,7 +495,10 @@ def latex_sources(zip_path: Path) -> int:
         zip_path.unlink()          # zip appends; a stale archive would merge
     shutil.make_archive(str(zip_path.with_suffix("")), "zip", stage)
     shutil.rmtree(stage)
-    return next(iter(pages.values()))
+    # Report what each engine actually produced. Returning one number and
+    # printing it as though both agreed would state something false in the
+    # one line a reader checks before uploading.
+    return pages
 
 
 def main() -> int:
@@ -502,8 +516,9 @@ def main() -> int:
             si_pdf(target)
             print(f"  {target.name}: {target.stat().st_size // 1024} KB")
     pages = latex_sources(OUT / "molsanity_latex_sources.zip")
-    print(f"  molsanity_latex_sources.zip: manuscript upload, "
-          f"compiles flat to {pages} pages under pdfLaTeX and XeLaTeX")
+    where = ", ".join(f"{n} pages under {e}" for e, n in sorted(pages.items()))
+    print(f"  molsanity_latex_sources.zip: manuscript upload, compiles flat "
+          f"to {where}")
     over = [f.name for f in OUT.iterdir()
             if f.is_file() and f.stat().st_size > 20 * 1024 * 1024]
     if over:
